@@ -12,8 +12,8 @@ NOCOLOUR='\033[0m'
 
 declare -A components
 components=(
-    [archiver-producer]=build_producer
-    [joark-archiver]=build_consumer
+    [soknadsmottaker]=build_soknadsmottaker
+    [soknadsarkiverer]=build_soknadsarkiverer
     [joark-mock]=build_joark-mock
 )
 
@@ -27,11 +27,11 @@ build() {
 
 	mvn clean install $MVN_FLAGS
 }
-build_producer() {
-	build "archiver-producer"
+build_soknadsmottaker() {
+	build "soknadsmottaker"
 }
-build_consumer() {
-	build "joark-archiver"
+build_soknadsarkiverer() {
+	build "soknadsarkiverer"
 }
 build_joark-mock() {
 	build "joark-mock"
@@ -144,13 +144,13 @@ docker-compose ps
 echo ""
 
 echo "Waiting for services to start ..."
-wait_for_service_to_start "archiver-producer" "8090" &
-wait_for_service_to_start "joark-archiver" "8091" &
+wait_for_service_to_start "soknadsmottaker" "8090" &
+wait_for_service_to_start "soknadsarkiverer" "8091" &
 wait_for_service_to_start "joark-mock" "8092" &
 wait
 
 sleep 2
 echo "Testing"
-curl -s -XPOST -d 'omgwtf' http://localhost:8090/save
+curl -s -XPOST -d 'test' http://localhost:8090/save
 sleep 2
-curl -s -XGET http://localhost:8092/joark/lookup/FTWGMO
+curl -s -XGET http://localhost:8092/joark/lookup/TSET
