@@ -10,44 +10,39 @@ YELLOW='\033[1;33m'
 NOCOLOUR='\033[0m'
 
 
-declare -A components
-components=(
-    [soknadsmottaker]=build_soknadsmottaker
-    [soknadsarkiverer]=build_soknadsarkiverer
-    [joark-mock]=build_joark-mock
-)
+components=()
+components+=("soknadsmottaker")
+components+=("soknadsarkiverer")
+components+=("joark-mock")
+
+check_if_docker_is_running() {
+	docker info &> /dev/null
+	if [ $? -ne 0 ]; then
+		echo "Docker does not seem to be running"
+		exit 1
+	fi
+}
 
 build() {
 	path="$1"
-	command="$2"
 
-	start=$(date +%s)
 	cd $BASE_PATH
 	cd $path
 
 	mvn clean install $MVN_FLAGS
 }
-build_soknadsmottaker() {
-	build "soknadsmottaker"
-}
-build_soknadsarkiverer() {
-	build "soknadsarkiverer"
-}
-build_joark-mock() {
-	build "joark-mock"
-}
 build_components_and_show_progress() {
-	declare -A jobs
+	jobs=()
 
 	longestname=0
-	for key in "${!components[@]}"; do
-		command=${components[$key]}
+	for comp in "${components[@]}"; do
 
-		$command 1> /dev/null &
+		build ${comp} 1> /dev/null &
 		pid=$!
-		jobs[$key]=$pid
+		jobs+=($comp)
+		jobs+=($pid)
 
-		namelen=${#key}
+		namelen=${#comp}
 		if [[ $namelen -ge $longestname ]]; then
 			longestname=$namelen
 		fi
@@ -55,39 +50,44 @@ build_components_and_show_progress() {
 
 
 	j=1
-	sp="/-\|"
+	spinner="/-\|"
 	while true; do
 
-		arr=()
-		for key in "${!jobs[@]}"; do
-			pid=${jobs[$key]}
+		components_being_built=()
+		index=0
+		while [ $index -le ${#jobs[@]} ]; do
+
+			comp=${jobs[$index]}
+			index=$((index + 1))
+			pid=${jobs[$index]}
 
 			if [[ $pid != 0 ]] && [ -d /proc/$pid ]; then
-				arr+=($key)
+				components_being_built+=($comp)
 			elif [[ $pid != 0 ]]; then
-				jobs[$key]=0
+				jobs[$index]=0
 
-				namelen=${#key}
+				namelen=${#comp}
 				spaces=$((longestname-namelen))
 
-				printf "\033[KBuilding $key"
+				printf "\033[KBuilding $comp"
 				printf " %.0s" $(seq 0 $spaces)
 				printf "... [${GREEN}DONE${NOCOLOUR}]\n"
 			fi
+			index=$((index + 1))
 		done
 
-		if [[ ${#arr[@]} == 0 ]]; then
+		if [[ ${#components_being_built[@]} == 0 ]]; then
 			break
 		fi
 
 
 		namesstr=""
-		for i in "${arr[@]}"; do
+		for i in "${components_being_built[@]}"; do
 			namesstr="${namesstr}${YELLOW}${i}${NOCOLOUR}, "
 		done
 		if [[ $namesstr != "" ]]; then
 			namesstr=${namesstr::-2}
-			spinnerstr="${sp:j++%${#sp}:1}"
+			spinnerstr="${spinner:j++%${#spinner}:1}"
 
 			dispstr="Building $namesstr ... $spinnerstr"
 			printf "\033[K${dispstr}"$'\r'
@@ -134,6 +134,7 @@ wait_for_service_to_start() {
 	echo -e "${RED}FAILED TO START $component${NOCOLOUR}"
 }
 
+check_if_docker_is_running
 clean_docker > /dev/null &
 build_components_and_show_progress &
 wait
