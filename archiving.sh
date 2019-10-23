@@ -150,8 +150,6 @@ wait_for_service_to_start "soknadsarkiverer" "8091" &
 wait_for_service_to_start "joark-mock" "8092" &
 wait
 
-sleep 2
-echo "Testing"
-curl -s -XPOST -d 'test' http://localhost:8090/save
-sleep 2
-curl -s -XGET http://localhost:8092/joark/lookup/TSET
+cd arkivering-end-to-end-tests
+mvn clean install
+cd ..
