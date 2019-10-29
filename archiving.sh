@@ -15,6 +15,40 @@ components+=("soknadsmottaker")
 components+=("soknadsarkiverer")
 components+=("joark-mock")
 
+
+check_sufficient_java_version() {
+
+	local result
+	local java_cmd
+	if [[ -n $(type -p java) ]]; then
+		java_cmd=java
+	elif [[ (-n "$JAVA_HOME") && (-x "$JAVA_HOME/bin/java") ]]; then
+		java_cmd="$JAVA_HOME/bin/java"
+	fi
+	local IFS=$'\n'
+	# remove \r for Cygwin
+	local lines=$("$java_cmd" -Xms32M -Xmx32M -version 2>&1 | tr '\r' '\n')
+	if [[ -z $java_cmd ]]; then
+		result=no_java
+	else
+		for line in $lines; do
+			if [[ (-z $result) && ($line = *"version \""*) ]]; then
+				local ver=$(echo $line | sed -e 's/.*version "\(.*\)"\(.*\)/\1/; 1q')
+				# on macOS, sed doesn't support '?'
+				if [[ $ver = "1."* ]]; then
+					result=$(echo $ver | sed -e 's/1\.\([0-9]*\)\(.*\)/\1/; 1q')
+				else
+					result=$(echo $ver | sed -e 's/\([0-9]*\)\(.*\)/\1/; 1q')
+				fi
+			fi
+		done
+	fi
+	if [[ $result -lt 11 ]]; then
+		echo "Needs to have at least version 11 of Java installed. Detected version: $result"
+		exit 1
+	fi
+}
+
 check_if_docker_is_running() {
 	docker info &> /dev/null
 	if [ $? -ne 0 ]; then
@@ -134,7 +168,9 @@ wait_for_service_to_start() {
 	echo -e "${RED}FAILED TO START $component${NOCOLOUR}"
 }
 
+check_sufficient_java_version
 check_if_docker_is_running
+
 clean_docker > /dev/null &
 build_components_and_show_progress &
 wait
