@@ -55,6 +55,15 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<classesDirectory>src</classesDirectory>
+					<excludes>
+						<exclude>**</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<version>${kotlin.version}</version>
