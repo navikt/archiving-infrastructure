@@ -56,3 +56,12 @@ services:
       - joark-mock
     environment:
      - SPRING_PROFILES_ACTIVE=docker
+
+  soknadsfillager:
+    build: ../soknadsfillager
+    ports:
+      - 9042:9042
+    depends_on:
+      - mock-mongodb
+    environment:
+     - SPRING_PROFILES_ACTIVE=docker

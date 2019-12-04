@@ -16,6 +16,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 	private val dependencies = HashMap<String, Int>().also {
 		it["soknadsmottaker"] = 8090
 		it["soknadsarkiverer"] = 8091
+		it["soknadsfillager"] = 9042
 		it["joark-mock"] = 8092
 	}
 
@@ -51,13 +52,13 @@ class ArkiveringEndToEndTestsApplicationTests {
 		val key = dto.personId
 		val url = "http://localhost:${dependencies["joark-mock"]}/joark/lookup/$key"
 
-		val responseEntity : ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilResponse(url)
+		val responseEntity : ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilResponds(url)
 
 		assertEquals(dto.tema, responseEntity.body?.get(0)!!["message"])
 		assertEquals(dto.personId, responseEntity.body?.get(0)!!["name"])
 	}
 
-	private fun <T> pollJoarkUntilResponse(url: String): ResponseEntity<List<T>> {
+	private fun <T> pollJoarkUntilResponds(url: String): ResponseEntity<List<T>> {
 
 		val respType = object: ParameterizedTypeReference<List<T>>(){}
 

@@ -13,6 +13,7 @@ NOCOLOUR='\033[0m'
 components=()
 components+=("soknadsmottaker")
 components+=("soknadsarkiverer")
+components+=("soknadsfillager")
 components+=("joark-mock")
 
 
@@ -183,6 +184,7 @@ echo ""
 echo "Waiting for services to start ..."
 wait_for_service_to_start "soknadsmottaker" "8090" &
 wait_for_service_to_start "soknadsarkiverer" "8091" &
+wait_for_service_to_start "soknadsfillager" "9042" &
 wait_for_service_to_start "joark-mock" "8092" &
 wait
 
