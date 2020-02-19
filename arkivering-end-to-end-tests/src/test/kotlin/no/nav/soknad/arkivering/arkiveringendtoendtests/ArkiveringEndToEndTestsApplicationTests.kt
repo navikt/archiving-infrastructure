@@ -24,7 +24,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 		it["soknadsmottaker"] = "http://localhost:8090/actuator/health"
 		it["soknadsarkiverer"] = "http://localhost:8091/actuator/health"
 		it["soknadsfillager"] = "http://localhost:9042/internal/health"
-		it["joark-mock"] = "http://localhost:8092/actuator/health"
+		it["joark-mock"] = "http://localhost:8092/internal/health"
 	}
 
 	private val restTemplate = RestTemplate()

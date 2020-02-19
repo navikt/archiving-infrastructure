@@ -21,13 +21,6 @@ services:
     ports:
       - 2181:2181
 
-
-  mock-mongodb:
-    image: mongo
-    restart: always
-    ports:
-      - 27017:27017
-
   postgres:
     image: postgres
     environment:
@@ -37,6 +30,7 @@ services:
       - 5432:5432
     volumes:
       - ./soknadsfillager-init.sql:/docker-entrypoint-initdb.d/soknadsfillager-init.sql
+      - ./joark-mock-init.sql:/docker-entrypoint-initdb.d/joark-mock-init.sql
 
 
   joark-mock:
@@ -44,7 +38,7 @@ services:
     ports:
       - 8092:8092
     depends_on:
-      - mock-mongodb
+      - postgres
     environment:
      - SPRING_PROFILES_ACTIVE=docker
 
