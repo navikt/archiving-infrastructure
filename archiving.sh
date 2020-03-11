@@ -181,7 +181,7 @@ docker-compose ps
 echo ""
 
 echo "Waiting for services to start ..."
-wait_for_service_to_start "soknadsmottaker"  "http://localhost:8090/actuator/health" &
+wait_for_service_to_start "soknadsmottaker"  "http://localhost:8090/internal/health" &
 wait_for_service_to_start "soknadsarkiverer" "http://localhost:8091/actuator/health" &
 wait_for_service_to_start "soknadsfillager"  "http://localhost:9042/internal/health" &
 wait_for_service_to_start "joark-mock"       "http://localhost:8092/internal/health" &

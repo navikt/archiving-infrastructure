@@ -21,7 +21,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 	}
 
 	private val healthEndpoints = HashMap<String, String>().also {
-		it["soknadsmottaker"] = "http://localhost:8090/actuator/health"
+		it["soknadsmottaker"] = "http://localhost:8090/internal/health"
 		it["soknadsarkiverer"] = "http://localhost:8091/actuator/health"
 		it["soknadsfillager"] = "http://localhost:9042/internal/health"
 		it["joark-mock"] = "http://localhost:8092/internal/health"
