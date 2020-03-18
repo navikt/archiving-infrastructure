@@ -1,5 +1,8 @@
 package no.nav.soknad.arkivering.arkiveringendtoendtests
 
+import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
+import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
+import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -9,7 +12,9 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
 import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
 
 class ArkiveringEndToEndTestsApplicationTests {
 
@@ -46,9 +51,11 @@ class ArkiveringEndToEndTestsApplicationTests {
 	}
 
 	@Test
-	fun `Send data to Mottaker -- can find data in JoarkMock`() {
-		val dto = createDto()
+	fun `Happy case - one file in file storage`() {
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
 
+		sendFilesToFileStorage(uuid)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
@@ -56,18 +63,18 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 
 	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
-		val key = dto.personId
+		val key = dto.innsendingsId
 		val url = "http://localhost:${dependencies["joark-mock"]}/joark/lookup/$key"
 
-		val responseEntity : ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilResponds(url)
+		val responseEntity: ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilResponds(url)
 
 		assertEquals(dto.tema, responseEntity.body?.get(0)!!["message"])
-		assertEquals(dto.personId, responseEntity.body?.get(0)!!["name"])
+		assertEquals(dto.innsendingsId, responseEntity.body?.get(0)!!["name"])
 	}
 
 	private fun <T> pollJoarkUntilResponds(url: String): ResponseEntity<List<T>> {
 
-		val respType = object: ParameterizedTypeReference<List<T>>(){}
+		val respType = object : ParameterizedTypeReference<List<T>>() {}
 
 		val startTime = System.currentTimeMillis()
 		val timeout = 10 * 1000
@@ -83,16 +90,28 @@ class ArkiveringEndToEndTestsApplicationTests {
 		fail("Failed to get response from Joark")
 	}
 
+	private fun sendFilesToFileStorage(uuid: String) {
+		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray()))
+		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer"
+
+		performPostRequest(files, url)
+	}
+
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
+		performPostRequest(dto, url)
+	}
 
+	private fun performPostRequest(payload: Any, url: String) {
 		val headers = HttpHeaders()
 		headers.contentType = MediaType.APPLICATION_JSON
-		val request = HttpEntity(dto, headers)
+		val request = HttpEntity(payload, headers)
 		restTemplate.postForObject(url, request, String::class.java)
 	}
 
-	private fun createDto() = SoknadInnsendtDto("innsendingId", false, "personId", "tema", LocalDateTime.now(), emptyList())
+	private fun createDto(uuid: String) = SoknadInnsendtDto("innsendingId", false, "personId", "tema", LocalDateTime.now(),
+		listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+			listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
 }
 
 class Health {
