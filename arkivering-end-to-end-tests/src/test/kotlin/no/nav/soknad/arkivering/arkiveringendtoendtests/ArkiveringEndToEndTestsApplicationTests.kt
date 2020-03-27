@@ -11,6 +11,7 @@ import org.junit.jupiter.api.fail
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
+import java.net.URI
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -37,7 +38,6 @@ class ArkiveringEndToEndTestsApplicationTests {
 	@BeforeEach
 	fun setup() {
 		checkThatDependenciesAreUp()
-		resetJoark()
 	}
 
 	private fun checkThatDependenciesAreUp() {
@@ -55,12 +55,14 @@ class ArkiveringEndToEndTestsApplicationTests {
 	fun `Happy case - one file in file storage`() {
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(uuid)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(1)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
 	@Test
@@ -75,23 +77,30 @@ class ArkiveringEndToEndTestsApplicationTests {
 				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
 					listOf(InnsendtVariantDto(uuid1, null, "filnavn", "1024", "variantformat", "PDFA")))
 				))
+		setNormalJoarkBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(uuid0)
 		sendFilesToFileStorage(uuid1)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(1)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid0, 0)
+		pollAndVerifyDataInFileStorage(uuid1, 0)
 	}
 
 	@Test
 	fun `No files in file storage - Nothing is sent to Joark`() {
-		val dto = createDto(UUID.randomUUID().toString())
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
 
+		pollAndVerifyDataInFileStorage(uuid, 0)
 		sendDataToMottaker(dto)
 
 		verifyDataNotInJoark(dto)
-		verifyNumberOfCallsToJoark(0)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
+		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
 	@Test
@@ -106,13 +115,16 @@ class ArkiveringEndToEndTestsApplicationTests {
 				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
 					listOf(InnsendtVariantDto(uuid1, null, "filnavn", "1024", "variantformat", "PDFA")))
 			))
+		setNormalJoarkBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(uuid0)
 		sendFilesToFileStorage(uuid1)
 		sendDataToMottaker(dto)
 
 		verifyDataNotInJoark(dto)
-		verifyNumberOfCallsToJoark(0)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
+		pollAndVerifyDataInFileStorage(uuid0, 1)
+		pollAndVerifyDataInFileStorage(uuid1, 1)
 	}
 
 	@Test
@@ -121,11 +133,12 @@ class ArkiveringEndToEndTestsApplicationTests {
 		val dto = createDto(uuid)
 
 		sendFilesToFileStorage(uuid)
-		mockJoarkRespondsWithCodeForXAttempts(404, 2)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, 2)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(3)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 3)
+		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
 	@Test
@@ -134,25 +147,55 @@ class ArkiveringEndToEndTestsApplicationTests {
 		val dto = createDto(uuid)
 
 		sendFilesToFileStorage(uuid)
-		mockJoarkRespondsWithCodeForXAttempts(500, 1)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(2)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 2)
+		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
 	@Test
-	fun `Joark responds 200 but has wrong response body - What happens?`() { // TODO
+	fun `Joark responds 200 but has wrong response body - Will retry`() {
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
 
+		sendFilesToFileStorage(uuid)
+		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, 3)
+		sendDataToMottaker(dto)
+
+		verifyDataInJoark(dto)
+		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 4)
+		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
-	private fun resetJoark() {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/reset"
+	@Test
+	fun `Joark responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+		val moreAttemptsThanSoknadsarkivererWillPerform = 5
+
+		sendFilesToFileStorage(uuid)
+		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
+		sendDataToMottaker(dto)
+
+		verifyDataInJoark(dto)
+		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 5)
+		pollAndVerifyDataInFileStorage(uuid, 1)
+	}
+
+	private fun setNormalJoarkBehaviour(uuid: String) {
+		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
 		restTemplate.put(url, null)
 	}
 
-	private fun mockJoarkRespondsWithCodeForXAttempts(status: Int, forAttempts: Int) {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/$status/$forAttempts"
+	private fun mockJoarkRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
+		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+		restTemplate.put(url, null)
+	}
+
+	private fun mockJoarkRespondsWithErroneousForXAttempts(uuid: String, forAttempts: Int) {
+		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
 		restTemplate.put(url, null)
 	}
 
@@ -166,10 +209,15 @@ class ArkiveringEndToEndTestsApplicationTests {
 			fail("Expected Joark to not have any results for $key")
 	}
 
-	private fun verifyNumberOfCallsToJoark(expectedNumberOfCalls: Int) {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/numberOfCalls"
+	private fun verifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
+		val numberOfCalls = getNumberOfCallsToJoark(uuid)
+		assertEquals(expectedNumberOfCalls, numberOfCalls)
+	}
+
+	private fun getNumberOfCallsToJoark(uuid: String): Int {
+		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/number-of-calls/$uuid"
 		val responseEntity = restTemplate.getForEntity(url, Int::class.java)
-		assertEquals(expectedNumberOfCalls, responseEntity.body)
+		return responseEntity.body ?: -1
 	}
 
 	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
@@ -182,6 +230,39 @@ class ArkiveringEndToEndTestsApplicationTests {
 			fail("Failed to get response from Joark")
 		assertEquals(dto.tema, responseEntity.body?.get(0)!!["message"])
 		assertEquals(dto.innsendingsId, responseEntity.body?.get(0)!!["name"])
+	}
+
+	private fun pollAndVerifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
+		pollAndVerifyResult("calls to Joark", expectedNumberOfCalls) { getNumberOfCallsToJoark(uuid) }
+	}
+
+	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
+		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer?ids=$uuid"
+		pollAndVerifyResult("files in File Storage", expectedNumberOfHits) { getNumberOfFiles(url) }
+	}
+
+	private fun pollAndVerifyResult(context: String, expected: Int, function: () -> Int) {
+		val startTime = System.currentTimeMillis()
+		val timeout = 10 * 1000
+
+		var result = -1
+		while (System.currentTimeMillis() < startTime + timeout) {
+			result = function.invoke()
+
+			if (result == expected) {
+				return
+			}
+			TimeUnit.MILLISECONDS.sleep(50)
+		}
+		fail("Expected $expected $context, but saw $result")
+	}
+
+	private fun getNumberOfFiles(url: String): Int {
+		val request = RequestEntity<Any>(HttpMethod.GET, URI(url))
+
+		val response = restTemplate.exchange(request, typeRef<List<FilElementDto>>()).body
+
+		return response?.filter { it.fil != null }?.size ?: 0
 	}
 
 	private fun <T> pollJoarkUntilTimeout(url: String): ResponseEntity<List<T>> {
@@ -207,6 +288,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer"
 
 		performPostRequest(files, url)
+		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
@@ -229,3 +311,5 @@ class ArkiveringEndToEndTestsApplicationTests {
 class Health {
 	lateinit var status: String
 }
+
+inline fun <reified T : Any> typeRef(): ParameterizedTypeReference<T> = object : ParameterizedTypeReference<T>() {}
