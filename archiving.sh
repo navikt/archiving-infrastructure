@@ -50,6 +50,22 @@ check_sufficient_java_version() {
 	fi
 }
 
+check_if_components_exists() {
+	status=0
+	for comp in "${components[@]}"; do
+		dir="$BASE_PATH/$comp"
+		if [ ! -d "${dir}" ] ; then
+			echo "Expected to find $comp at $dir  --  Clone with"
+			echo "git clone git@github.com:navikt/${comp}.git"
+			echo ""
+			status=1
+		fi
+	done
+	if [ $status -ne 0 ]; then
+		exit 1
+	fi
+}
+
 check_if_docker_is_running() {
 	docker info &> /dev/null
 	if [ $? -ne 0 ]; then
@@ -60,13 +76,11 @@ check_if_docker_is_running() {
 
 build() {
 	path="$1"
-
-	cd $BASE_PATH
-	cd $path
-
+	cd "$BASE_PATH/$path"
 	mvn clean install $MVN_FLAGS
 }
 build_components_and_show_progress() {
+	status=0
 	jobs=()
 
 	longestname=0
@@ -99,6 +113,9 @@ build_components_and_show_progress() {
 			if [[ $pid != 0 ]] && [ -d /proc/$pid ]; then
 				components_being_built+=($comp)
 			elif [[ $pid != 0 ]]; then
+
+				wait "$pid"
+				jobstatus=$?
 				jobs[$index]=0
 
 				namelen=${#comp}
@@ -106,7 +123,12 @@ build_components_and_show_progress() {
 
 				printf "\033[KBuilding $comp"
 				printf " %.0s" $(seq 0 $spaces)
-				printf "... [${GREEN}DONE${NOCOLOUR}]\n"
+				if [[ $jobstatus != 0 ]]; then
+					status=1
+					printf "... [${RED}FAIL${NOCOLOUR}]\n"
+				else
+					printf "... [${GREEN}DONE${NOCOLOUR}]\n"
+				fi
 			fi
 			index=$((index + 1))
 		done
@@ -133,6 +155,7 @@ build_components_and_show_progress() {
 	printf "\n"
 
 	wait
+	return $status
 }
 
 clean_docker() {
@@ -168,12 +191,16 @@ wait_for_service_to_start() {
 	echo -e "${RED}FAILED TO START $component${NOCOLOUR}"
 }
 
+check_if_components_exists
 check_sufficient_java_version
 check_if_docker_is_running
 
-clean_docker > /dev/null &
-build_components_and_show_progress &
-wait
+clean_docker > /dev/null
+build_components_and_show_progress
+if [ $? -ne 0 ]; then
+	echo "Failed to build, exiting."
+	exit 1
+fi
 start-docker
 
 echo ""
