@@ -110,9 +110,9 @@ build_components_and_show_progress() {
 			index=$((index + 1))
 			pid=${jobs[$index]}
 
-			if [[ $pid != 0 ]] && [ -d /proc/$pid ]; then
+			if [[ $pid != 0 ]] && [[ -n $pid ]] && ps -p $pid > /dev/null 2>&1 ; then
 				components_being_built+=($comp)
-			elif [[ $pid != 0 ]]; then
+			elif [[ $pid != 0 ]] && [[ -n $pid ]]; then
 
 				wait "$pid"
 				jobstatus=$?
