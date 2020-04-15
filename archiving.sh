@@ -110,9 +110,12 @@ build_components_and_show_progress() {
 			index=$((index + 1))
 			pid=${jobs[$index]}
 
-			if [[ $pid != 0 ]] && [[ -n $pid ]] && ps -p $pid > /dev/null 2>&1 ; then
+			if [[ -z $pid ]]; then
+				continue
+			fi
+			if [[ $pid != 0 ]] && ps -p $pid > /dev/null 2>&1 ; then
 				components_being_built+=($comp)
-			elif [[ $pid != 0 ]] && [[ -n $pid ]]; then
+			elif [[ $pid != 0 ]] ; then
 
 				wait "$pid"
 				jobstatus=$?
@@ -143,7 +146,7 @@ build_components_and_show_progress() {
 			namesstr="${namesstr}${YELLOW}${i}${NOCOLOUR}, "
 		done
 		if [[ $namesstr != "" ]]; then
-			namesstr=${namesstr::-2}
+			namesstr=${namesstr%??}
 			spinnerstr="${spinner:j++%${#spinner}:1}"
 
 			dispstr="Building $namesstr ... $spinnerstr"
