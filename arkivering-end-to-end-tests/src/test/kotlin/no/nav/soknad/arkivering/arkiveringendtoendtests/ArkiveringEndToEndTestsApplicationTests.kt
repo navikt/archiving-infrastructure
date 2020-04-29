@@ -303,7 +303,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 		return object : HttpHeaders() {
 			init {
 				val auth = "$username:$password"
-				val encodedAuth: ByteArray = auth.toByteArray()
+				val encodedAuth: ByteArray = encodeBase64(auth.toByteArray())
 				val authHeader = "Basic " + String(encodedAuth)
 				set("Authorization", authHeader)
 			}
