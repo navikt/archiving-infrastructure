@@ -4,6 +4,7 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
+import org.apache.tomcat.util.codec.binary.Base64.encodeBase64
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -12,10 +13,12 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
 import java.net.URI
+import java.nio.charset.Charset
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
+
 
 class ArkiveringEndToEndTestsApplicationTests {
 
@@ -76,7 +79,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
 					listOf(InnsendtVariantDto(uuid1, null, "filnavn", "1024", "variantformat", "PDFA")))
-				))
+			))
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(uuid0)
@@ -293,8 +296,27 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
-		performPostRequest(dto, url)
+		performPostRequest(dto, url, "srvHenvendelse", "password")
 	}
+
+	private fun createHeaders(username: String, password: String): HttpHeaders {
+		return object : HttpHeaders() {
+			init {
+				val auth = "$username:$password"
+				val encodedAuth: ByteArray = auth.toByteArray()
+				val authHeader = "Basic " + String(encodedAuth)
+				set("Authorization", authHeader)
+			}
+		}
+	}
+
+	private fun performPostRequest(payload: Any, url: String, username: String, password: String) {
+		val headers = createHeaders(username, password)
+		headers.contentType = MediaType.APPLICATION_JSON
+		val request = HttpEntity(payload, headers)
+		restTemplate.postForObject(url, request, String::class.java)
+	}
+
 
 	private fun performPostRequest(payload: Any, url: String) {
 		val headers = HttpHeaders()
