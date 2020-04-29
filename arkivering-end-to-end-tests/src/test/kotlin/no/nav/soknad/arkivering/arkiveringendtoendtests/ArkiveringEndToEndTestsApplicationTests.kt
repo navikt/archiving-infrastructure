@@ -296,7 +296,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
-		performPostRequest(dto, url, "srvHenvendelse", "password")
+		performPostRequest(dto, url, "avsender", "password")
 	}
 
 	private fun createHeaders(username: String, password: String): HttpHeaders {
