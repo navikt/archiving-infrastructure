@@ -13,7 +13,6 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
 import java.net.URI
-import java.nio.charset.Charset
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -35,6 +34,9 @@ class ArkiveringEndToEndTestsApplicationTests {
 		it["soknadsfillager"] = "http://localhost:9042/internal/health"
 		it["joark-mock"] = "http://localhost:8092/internal/health"
 	}
+
+	private val mottakerUsername = "avsender"
+	private val mottakerPassword = "password"
 
 	private val restTemplate = RestTemplate()
 
@@ -296,13 +298,13 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
-		performPostRequest(dto, url, "srvHenvendelse", "password")
+		performPostRequest(dto, url, createHeaders())
 	}
 
-	private fun createHeaders(username: String, password: String): HttpHeaders {
+	private fun createHeaders(): HttpHeaders {
 		return object : HttpHeaders() {
 			init {
-				val auth = "$username:$password"
+				val auth = "$mottakerUsername:$mottakerPassword"
 				val encodedAuth: ByteArray = encodeBase64(auth.toByteArray())
 				val authHeader = "Basic " + String(encodedAuth)
 				set("Authorization", authHeader)
@@ -310,16 +312,7 @@ class ArkiveringEndToEndTestsApplicationTests {
 		}
 	}
 
-	private fun performPostRequest(payload: Any, url: String, username: String, password: String) {
-		val headers = createHeaders(username, password)
-		headers.contentType = MediaType.APPLICATION_JSON
-		val request = HttpEntity(payload, headers)
-		restTemplate.postForObject(url, request, String::class.java)
-	}
-
-
-	private fun performPostRequest(payload: Any, url: String) {
-		val headers = HttpHeaders()
+	private fun performPostRequest(payload: Any, url: String, headers: HttpHeaders = HttpHeaders()) {
 		headers.contentType = MediaType.APPLICATION_JSON
 		val request = HttpEntity(payload, headers)
 		restTemplate.postForObject(url, request, String::class.java)
