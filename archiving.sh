@@ -181,7 +181,7 @@ start-docker() {
 
 wait_for_service_to_start() {
 	component="$1"
-	url="$2"
+	url="http://localhost:$2/internal/health"
 
 	for i in {1..90}
 	do
@@ -211,10 +211,10 @@ docker-compose ps
 echo ""
 
 echo "Waiting for services to start ..."
-wait_for_service_to_start "soknadsmottaker"  "http://localhost:8090/internal/health" &
-wait_for_service_to_start "soknadsarkiverer" "http://localhost:8091/actuator/health" &
-wait_for_service_to_start "soknadsfillager"  "http://localhost:9042/internal/health" &
-wait_for_service_to_start "joark-mock"       "http://localhost:8092/internal/health" &
+wait_for_service_to_start "soknadsmottaker"  8090 &
+wait_for_service_to_start "soknadsarkiverer" 8091 &
+wait_for_service_to_start "soknadsfillager"  9042 &
+wait_for_service_to_start "joark-mock"       8092 &
 wait
 
 cd arkivering-end-to-end-tests
