@@ -28,13 +28,6 @@ class ArkiveringEndToEndTestsApplicationTests {
 		it["joark-mock"] = 8092
 	}
 
-	private val healthEndpoints = HashMap<String, String>().also {
-		it["soknadsmottaker"] = "http://localhost:8090/internal/health"
-		it["soknadsarkiverer"] = "http://localhost:8091/actuator/health"
-		it["soknadsfillager"] = "http://localhost:9042/internal/health"
-		it["joark-mock"] = "http://localhost:8092/internal/health"
-	}
-
 	private val mottakerUsername = "avsender"
 	private val mottakerPassword = "password"
 
@@ -46,9 +39,10 @@ class ArkiveringEndToEndTestsApplicationTests {
 	}
 
 	private fun checkThatDependenciesAreUp() {
-		for (dep in healthEndpoints) {
+		for (dep in dependencies) {
 			try {
-				val healthStatusResponse = restTemplate.getForEntity(dep.value, Health::class.java)
+				val url = "http://localhost:${dep.value}/internal/health"
+				val healthStatusResponse = restTemplate.getForEntity(url, Health::class.java)
 				assertEquals("UP", healthStatusResponse.body?.status, "Dependency '${dep.key}' seems to be down")
 			} catch (e: Exception) {
 				fail("Dependency '${dep.key}' seems to be down")
