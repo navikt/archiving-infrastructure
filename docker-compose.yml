@@ -86,7 +86,7 @@ services:
       - postgres
     environment:
      - SPRING_PROFILES_ACTIVE=docker
-     - DATABASE_HOST=localhost
+     - DATABASE_HOST=postgres
      - DATABASE_PORT=5432
      - DATABASE_NAME=soknadsfillager
      - DATABASE_USERNAME=postgres

@@ -259,7 +259,9 @@ class ArkiveringEndToEndTestsApplicationTests {
 	}
 
 	private fun getNumberOfFiles(url: String): Int {
-		val request = RequestEntity<Any>(HttpMethod.GET, URI(url))
+		val headers = createHeaders(filleserUsername, filleserPassword)
+
+		val request = RequestEntity<Any>(headers, HttpMethod.GET, URI(url))
 
 		val response = restTemplate.exchange(request, typeRef<List<FilElementDto>>()).body
 
