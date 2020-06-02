@@ -174,14 +174,14 @@ class ArkiveringEndToEndTestsApplicationTests {
 	fun `Joark responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
-		val moreAttemptsThanSoknadsarkivererWillPerform = 5
+		val moreAttemptsThanSoknadsarkivererWillPerform = 7
 
 		sendFilesToFileStorage(uuid)
 		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 5)
+		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 6)
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
