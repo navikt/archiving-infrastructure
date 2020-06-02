@@ -176,6 +176,8 @@ start-docker() {
 	docker-compose build
 	echo ""
 	echo "Starting docker ..."
+	docker-compose up -d kafka-broker
+	sleep 10  # Wait for kafka-broker to finish initialization before starting other containers
 	docker-compose up -d
 }
 
