@@ -39,19 +39,20 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=soknadsfillager
     ports:
       - 5432:5432
-    volumes:
-      - ./soknadsfillager-init.sql:/docker-entrypoint-initdb.d/soknadsfillager-init.sql
-      - ./joark-mock-init.sql:/docker-entrypoint-initdb.d/joark-mock-init.sql
+#    volumes:
+#      - ./soknadsfillager-init.sql:/docker-entrypoint-initdb.d/soknadsfillager-init.sql
+#      - ./joark-mock-init.sql:/docker-entrypoint-initdb.d/joark-mock-init.sql
 
 
   joark-mock:
     build: ../joark-mock
     ports:
       - 8092:8092
-    depends_on:
-      - postgres
+#    depends_on:
+#      - postgres
     environment:
      - SPRING_PROFILES_ACTIVE=docker
 
@@ -85,3 +86,9 @@ services:
       - postgres
     environment:
      - SPRING_PROFILES_ACTIVE=docker
+     - DATABASE_HOST=localhost
+     - DATABASE_PORT=5432
+     - DATABASE_NAME=soknadsfillager
+     - DATABASE_USERNAME=postgres
+     - DATABASE_PASSWORD=postgres
+     - APPLICATION_PROFILE=docker

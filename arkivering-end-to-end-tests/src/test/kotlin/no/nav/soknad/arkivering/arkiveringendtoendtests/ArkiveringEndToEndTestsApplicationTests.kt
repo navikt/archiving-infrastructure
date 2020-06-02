@@ -30,6 +30,8 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 	private val mottakerUsername = "avsender"
 	private val mottakerPassword = "password"
+	private val filleserUsername = "arkiverer"
+	private val filleserPassword = "password"
 
 	private val restTemplate = RestTemplate()
 
@@ -286,19 +288,19 @@ class ArkiveringEndToEndTestsApplicationTests {
 		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray()))
 		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer"
 
-		performPostRequest(files, url)
+		performPostRequest(files, url, createHeaders(filleserUsername, filleserPassword))
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
-		performPostRequest(dto, url, createHeaders())
+		performPostRequest(dto, url, createHeaders(mottakerUsername, mottakerPassword))
 	}
 
-	private fun createHeaders(): HttpHeaders {
+	private fun createHeaders(username: String, password: String): HttpHeaders {
 		return object : HttpHeaders() {
 			init {
-				val auth = "$mottakerUsername:$mottakerPassword"
+				val auth = "$username:$password"
 				val encodedAuth: ByteArray = encodeBase64(auth.toByteArray())
 				val authHeader = "Basic " + String(encodedAuth)
 				set("Authorization", authHeader)
