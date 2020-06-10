@@ -5,21 +5,24 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import org.apache.tomcat.util.codec.binary.Base64.encodeBase64
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.fail
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.*
 import org.springframework.web.client.RestTemplate
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.Network
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import java.net.URI
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
 
-
-class ArkiveringEndToEndTestsApplicationTests {
+@TestInstance(PER_CLASS)
+class EndToEndTests {
 
 	private val dependencies = HashMap<String, Int>().also {
 		it["soknadsmottaker"] = 8090
@@ -35,22 +38,95 @@ class ArkiveringEndToEndTestsApplicationTests {
 
 	private val restTemplate = RestTemplate()
 
-	@BeforeEach
-	fun setup() {
-		checkThatDependenciesAreUp()
+	private lateinit var postgresContainer: KPostgreSQLContainer
+	private lateinit var kafkaContainer: KafkaContainer
+	private lateinit var joarkMockContainer: KGenericContainer
+	private lateinit var soknadsfillagerContainer: KGenericContainer
+	private lateinit var soknadsmottakerContainer: KGenericContainer
+	private lateinit var soknadsarkivererContainer: KGenericContainer
+
+	@BeforeAll
+	fun startContainer() {
+		val postgresUsername = "postgres"
+		val databaseName = "soknadsfillager"
+		val databaseContainerName = "postgres"
+		val databaseContainerPort = 5432
+
+
+		val network = Network.newNetwork()
+
+		postgresContainer = KPostgreSQLContainer()
+			.withNetworkAliases(databaseContainerName)
+			.withExposedPorts(databaseContainerPort)
+			.withNetwork(network)
+			.withUsername(postgresUsername)
+			.withPassword(postgresUsername)
+			.withDatabaseName(databaseName)
+
+		kafkaContainer = KafkaContainer()
+			.withNetworkAliases("kafka-broker")
+			.withNetwork(network)
+
+		postgresContainer.start()
+		kafkaContainer.start()
+
+		soknadsfillagerContainer = KGenericContainer("archiving-infrastructure_soknadsfillager")
+			.withNetworkAliases("soknadsfillager")
+			.withExposedPorts(dependencies["soknadsfillager"])
+			.withNetwork(network)
+			.withEnv(hashMapOf(
+				"SPRING_PROFILES_ACTIVE" to "docker",
+				"DATABASE_JDBC_URL" to "jdbc:postgresql://$databaseContainerName:$databaseContainerPort/$databaseName",
+				"DATABASE_NAME" to databaseName,
+				"APPLICATION_USERNAME" to postgresUsername,
+				"APPLICATION_PASSWORD" to postgresUsername))
+			.dependsOn(postgresContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
+		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
+			.withNetworkAliases("soknadsmottaker")
+			.withExposedPorts(dependencies["soknadsmottaker"])
+			.withNetwork(network)
+			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
+			.dependsOn(kafkaContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
+		joarkMockContainer = KGenericContainer("archiving-infrastructure_joark-mock")
+			.withNetworkAliases("joark-mock")
+			.withExposedPorts(dependencies["joark-mock"])
+			.withNetwork(network)
+			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
+		soknadsfillagerContainer.start()
+		joarkMockContainer.start()
+		soknadsmottakerContainer.start()
+
+		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure_soknadsarkiverer")
+			.withNetworkAliases("soknadsarkiverer")
+			.withExposedPorts(dependencies["soknadsarkiverer"])
+			.withNetwork(network)
+			.withEnv(hashMapOf(
+				"SPRING_PROFILES_ACTIVE" to "docker",
+				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.host}:${kafkaContainer.firstMappedPort}",
+				"FILESTORAGE_HOST" to "${soknadsfillagerContainer.host}:${soknadsfillagerContainer.firstMappedPort}",
+				"JOARK_HOST" to "${joarkMockContainer.host}:${joarkMockContainer.firstMappedPort}"))
+			.dependsOn(kafkaContainer)
+			.dependsOn(soknadsfillagerContainer)
+			.dependsOn(joarkMockContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
+		soknadsarkivererContainer.start()
 	}
 
-	private fun checkThatDependenciesAreUp() {
-		for (dep in dependencies) {
-			try {
-				val url = "http://localhost:${dep.value}/internal/health"
-				val healthStatusResponse = restTemplate.getForEntity(url, Health::class.java)
-				assertEquals("UP", healthStatusResponse.body?.status, "Dependency '${dep.key}' seems to be down")
-			} catch (e: Exception) {
-				fail("Dependency '${dep.key}' seems to be down")
-			}
-		}
+	@AfterAll
+	fun teardown() {
+		soknadsfillagerContainer.stop()
+		soknadsmottakerContainer.stop()
+		soknadsarkivererContainer.stop()
+		joarkMockContainer.stop()
 	}
+
 
 	@Test
 	fun `Happy case - one file in file storage`() {
@@ -321,8 +397,8 @@ class ArkiveringEndToEndTestsApplicationTests {
 			listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
 }
 
-class Health {
-	lateinit var status: String
-}
-
 inline fun <reified T : Any> typeRef(): ParameterizedTypeReference<T> = object : ParameterizedTypeReference<T>() {}
+
+class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
+
+class KPostgreSQLContainer : PostgreSQLContainer<KPostgreSQLContainer>()

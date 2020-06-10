@@ -42,17 +42,12 @@ services:
       - POSTGRES_DB=soknadsfillager
     ports:
       - 5432:5432
-#    volumes:
-#      - ./soknadsfillager-init.sql:/docker-entrypoint-initdb.d/soknadsfillager-init.sql
-#      - ./joark-mock-init.sql:/docker-entrypoint-initdb.d/joark-mock-init.sql
 
 
   joark-mock:
     build: ../joark-mock
     ports:
       - 8092:8092
-#    depends_on:
-#      - postgres
     environment:
      - SPRING_PROFILES_ACTIVE=docker
 
