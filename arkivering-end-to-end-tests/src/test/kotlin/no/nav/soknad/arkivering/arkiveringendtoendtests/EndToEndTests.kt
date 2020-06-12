@@ -40,6 +40,7 @@ class EndToEndTests {
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
+	private lateinit var schemaRegistryContainer: KGenericContainer
 	private lateinit var joarkMockContainer: KGenericContainer
 	private lateinit var soknadsfillagerContainer: KGenericContainer
 	private lateinit var soknadsmottakerContainer: KGenericContainer
@@ -49,14 +50,15 @@ class EndToEndTests {
 	fun startContainer() {
 		val postgresUsername = "postgres"
 		val databaseName = "soknadsfillager"
-		val databaseContainerName = "postgres"
 		val databaseContainerPort = 5432
+		val kafkaBrokerPort = 9092
+		val schemaRegistryPort = 8081
 
 
 		val network = Network.newNetwork()
 
 		postgresContainer = KPostgreSQLContainer()
-			.withNetworkAliases(databaseContainerName)
+			.withNetworkAliases("postgres")
 			.withExposedPorts(databaseContainerPort)
 			.withNetwork(network)
 			.withUsername(postgresUsername)
@@ -70,25 +72,33 @@ class EndToEndTests {
 		postgresContainer.start()
 		kafkaContainer.start()
 
+		createTopic("privat-soknadInnsendt-v1-default")
+		createTopic("privat-soknadInnsendt-processingEventLog-v1-default")
+		createTopic("privat-soknadInnsendt-messages-v1-default")
+
+
+		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
+			.withNetworkAliases("kafka-schema-registry")
+			.withExposedPorts(schemaRegistryPort)
+			.withNetwork(network)
+			.withEnv(hashMapOf(
+				"SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" to "PLAINTEXT://${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
+				"SCHEMA_REGISTRY_HOST_NAME" to "localhost",
+				"SCHEMA_REGISTRY_LISTENERS" to "http://0.0.0.0:$schemaRegistryPort"))
+			.dependsOn(kafkaContainer)
+			.waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
+
 		soknadsfillagerContainer = KGenericContainer("archiving-infrastructure_soknadsfillager")
 			.withNetworkAliases("soknadsfillager")
 			.withExposedPorts(dependencies["soknadsfillager"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
 				"SPRING_PROFILES_ACTIVE" to "docker",
-				"DATABASE_JDBC_URL" to "jdbc:postgresql://$databaseContainerName:$databaseContainerPort/$databaseName",
+				"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:$databaseContainerPort/$databaseName",
 				"DATABASE_NAME" to databaseName,
 				"APPLICATION_USERNAME" to postgresUsername,
 				"APPLICATION_PASSWORD" to postgresUsername))
 			.dependsOn(postgresContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
-
-		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
-			.withNetworkAliases("soknadsmottaker")
-			.withExposedPorts(dependencies["soknadsmottaker"])
-			.withNetwork(network)
-			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
-			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		joarkMockContainer = KGenericContainer("archiving-infrastructure_joark-mock")
@@ -98,9 +108,20 @@ class EndToEndTests {
 			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
+		schemaRegistryContainer.start()
 		soknadsfillagerContainer.start()
 		joarkMockContainer.start()
-		soknadsmottakerContainer.start()
+
+		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
+			.withNetworkAliases("soknadsmottaker")
+			.withExposedPorts(dependencies["soknadsmottaker"])
+			.withNetwork(network)
+			.withEnv(hashMapOf(
+				"SPRING_PROFILES_ACTIVE" to "docker",
+				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
+				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:$schemaRegistryPort"))
+			.dependsOn(kafkaContainer, schemaRegistryContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure_soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
@@ -108,23 +129,50 @@ class EndToEndTests {
 			.withNetwork(network)
 			.withEnv(hashMapOf(
 				"SPRING_PROFILES_ACTIVE" to "docker",
-				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.host}:${kafkaContainer.firstMappedPort}",
-				"FILESTORAGE_HOST" to "${soknadsfillagerContainer.host}:${soknadsfillagerContainer.firstMappedPort}",
-				"JOARK_HOST" to "${joarkMockContainer.host}:${joarkMockContainer.firstMappedPort}"))
-			.dependsOn(kafkaContainer)
-			.dependsOn(soknadsfillagerContainer)
-			.dependsOn(joarkMockContainer)
+				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
+				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:$schemaRegistryPort",
+				"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${dependencies["soknadsfillager"]}",
+				"JOARK_HOST" to "http://${joarkMockContainer.networkAliases[0]}:${dependencies["joark-mock"]}"))
+			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, joarkMockContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
+		soknadsmottakerContainer.start()
 		soknadsarkivererContainer.start()
+	}
+
+	private fun createTopic(topicName: String) {
+		// kafka container uses with embedded zookeeper
+		// confluent platform and Kafka compatibility 5.1.x <-> kafka 2.1.x
+		// kafka 2.1.x require option --zookeeper, later versions use --bootstrap-servers instead
+		val topic =  "/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic $topicName"
+
+		try {
+			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topic)
+			if (result.exitCode != 0) {
+				println("\n\nKafka Container logs:\n${kafkaContainer.logs}")
+				fail("Failed to create topic '$topicName'. Error:\n${result.stderr}")
+			}
+		} catch (e: Exception) {
+			e.printStackTrace()
+			fail("Failed to create topic '$topicName'")
+		}
 	}
 
 	@AfterAll
 	fun teardown() {
+		println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
+		println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
+		println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererContainer.logs}")
+		println("\n\nLogs joark-mock:\n${joarkMockContainer.logs}")
+
 		soknadsfillagerContainer.stop()
 		soknadsmottakerContainer.stop()
 		soknadsarkivererContainer.stop()
 		joarkMockContainer.stop()
+
+		postgresContainer.stop()
+		kafkaContainer.stop()
+		schemaRegistryContainer.stop()
 	}
 
 
@@ -262,23 +310,23 @@ class EndToEndTests {
 	}
 
 	private fun setNormalJoarkBehaviour(uuid: String) {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
 		restTemplate.put(url, null)
 	}
 
 	private fun mockJoarkRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
 		restTemplate.put(url, null)
 	}
 
 	private fun mockJoarkRespondsWithErroneousForXAttempts(uuid: String, forAttempts: Int) {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
 		restTemplate.put(url, null)
 	}
 
 	private fun verifyDataNotInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/lookup/$key"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/lookup/$key"
 
 		val responseEntity: ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
 
@@ -292,14 +340,14 @@ class EndToEndTests {
 	}
 
 	private fun getNumberOfCallsToJoark(uuid: String): Int {
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/mock/response-behaviour/number-of-calls/$uuid"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/number-of-calls/$uuid"
 		val responseEntity = restTemplate.getForEntity(url, Int::class.java)
 		return responseEntity.body ?: -1
 	}
 
 	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${dependencies["joark-mock"]}/joark/lookup/$key"
+		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/lookup/$key"
 
 		val responseEntity: ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
 
@@ -314,7 +362,7 @@ class EndToEndTests {
 	}
 
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
-		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer?ids=$uuid"
+		val url = "http://localhost:${soknadsfillagerContainer.firstMappedPort}/filer?ids=$uuid"
 		pollAndVerifyResult("files in File Storage", expectedNumberOfHits) { getNumberOfFiles(url) }
 	}
 
@@ -364,14 +412,14 @@ class EndToEndTests {
 
 	private fun sendFilesToFileStorage(uuid: String) {
 		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray()))
-		val url = "http://localhost:${dependencies["soknadsfillager"]}/filer"
+		val url = "http://localhost:${soknadsfillagerContainer.firstMappedPort}/filer"
 
 		performPostRequest(files, url, createHeaders(filleserUsername, filleserPassword))
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
-		val url = "http://localhost:${dependencies["soknadsmottaker"]}/save"
+		val url = "http://localhost:${soknadsmottakerContainer.firstMappedPort}/save"
 		performPostRequest(dto, url, createHeaders(mottakerUsername, mottakerPassword))
 	}
 
