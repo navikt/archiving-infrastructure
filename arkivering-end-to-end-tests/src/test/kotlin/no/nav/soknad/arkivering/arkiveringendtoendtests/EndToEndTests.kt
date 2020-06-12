@@ -4,6 +4,9 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaProperties
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.avroschemas.*
 import org.apache.tomcat.util.codec.binary.Base64.encodeBase64
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -18,6 +21,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import java.net.URI
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -35,8 +39,10 @@ class EndToEndTests {
 	private val mottakerPassword = "password"
 	private val filleserUsername = "arkiverer"
 	private val filleserPassword = "password"
+	private val kafkaProperties = KafkaProperties()
 
 	private val restTemplate = RestTemplate()
+	private lateinit var kafkaPublisher: KafkaPublisher
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
@@ -72,9 +78,9 @@ class EndToEndTests {
 		postgresContainer.start()
 		kafkaContainer.start()
 
-		createTopic("privat-soknadInnsendt-v1-default")
-		createTopic("privat-soknadInnsendt-processingEventLog-v1-default")
-		createTopic("privat-soknadInnsendt-messages-v1-default")
+		createTopic(kafkaProperties.inputTopic)
+		createTopic(kafkaProperties.processingEventLogTopic)
+		createTopic(kafkaProperties.messageTopic)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
@@ -138,6 +144,8 @@ class EndToEndTests {
 
 		soknadsmottakerContainer.start()
 		soknadsarkivererContainer.start()
+
+		kafkaPublisher = KafkaPublisher(kafkaContainer.firstMappedPort, schemaRegistryContainer.firstMappedPort)
 	}
 
 	private fun createTopic(topicName: String) {
@@ -309,6 +317,68 @@ class EndToEndTests {
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
+	@Test
+	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+		val key = UUID.randomUUID().toString()
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid, uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		sendFilesToFileStorage(uuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(key, uuid)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@Test
+	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+		val key = UUID.randomUUID().toString()
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid, uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		sendFilesToFileStorage(uuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(key, uuid)
+		putProcessingEventOnKafkaTopic(key)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	private fun shutDownSoknadsarkiverer() {
+		soknadsarkivererContainer.stop()
+	}
+
+	private fun startUpSoknadsarkiverer() {
+		soknadsarkivererContainer.start()
+
+		val healthStatusCode = {
+			val url = "http://localhost:${soknadsarkivererContainer.firstMappedPort}/internal/health"
+			restTemplate.getForEntity(url, String::class.java).statusCodeValue
+		}
+		loopAndVerify(200, healthStatusCode, { assertEquals(200, healthStatusCode.invoke(), "Soknadsarkiverer does not seem to be up") })
+	}
+
+	private fun putInputEventOnKafkaTopic(key: String, uuid: String) {
+		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(uuid))
+	}
+
+	private fun putProcessingEventOnKafkaTopic(key: String) {
+		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.RECEIVED))
+		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.STARTED))
+		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.STARTED))
+	}
+
+
 	private fun setNormalJoarkBehaviour(uuid: String) {
 		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
 		restTemplate.put(url, null)
@@ -358,28 +428,31 @@ class EndToEndTests {
 	}
 
 	private fun pollAndVerifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		pollAndVerifyResult("calls to Joark", expectedNumberOfCalls) { getNumberOfCallsToJoark(uuid) }
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) },
+			{ assertEquals(expectedNumberOfCalls, getNumberOfCallsToJoark(uuid), "Expected $expectedNumberOfCalls calls to Joark") })
 	}
 
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
 		val url = "http://localhost:${soknadsfillagerContainer.firstMappedPort}/filer?ids=$uuid"
-		pollAndVerifyResult("files in File Storage", expectedNumberOfHits) { getNumberOfFiles(url) }
+		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url) },
+			{ assertEquals(expectedNumberOfHits, getNumberOfFiles(url), "Expected $expectedNumberOfHits files in File Storage") })
 	}
 
-	private fun pollAndVerifyResult(context: String, expected: Int, function: () -> Int) {
+	private fun loopAndVerify(expectedCount: Int, getCount: () -> Int,
+														finalCheck: () -> Any = { assertEquals(expectedCount, getCount.invoke()) }) {
+
 		val startTime = System.currentTimeMillis()
-		val timeout = 10 * 1000
+		val timeout = 30 * 1000
 
-		var result = -1
 		while (System.currentTimeMillis() < startTime + timeout) {
-			result = function.invoke()
+			val matches = getCount.invoke()
 
-			if (result == expected) {
-				return
+			if (matches == expectedCount) {
+				break
 			}
 			TimeUnit.MILLISECONDS.sleep(50)
 		}
-		fail("Expected $expected $context, but saw $result")
+		finalCheck.invoke()
 	}
 
 	private fun getNumberOfFiles(url: String): Int {
@@ -440,9 +513,22 @@ class EndToEndTests {
 		restTemplate.postForObject(url, request, String::class.java)
 	}
 
-	private fun createDto(uuid: String) = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
-		listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-			listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
+	private fun createDto(uuid: String, innsendingsId: String = UUID.randomUUID().toString()) =
+		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
+			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+				listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
+
+	private fun createSoknadarkivschema(uuid: String): Soknadarkivschema {
+		val soknadInnsendtDto = createDto(uuid, uuid)
+		val innsendtDokumentDto = soknadInnsendtDto.innsendteDokumenter[0]
+		val innsendtVariantDto = innsendtDokumentDto.varianter[0]
+
+		val mottattVariant = listOf(MottattVariant(innsendtVariantDto.uuid, innsendtVariantDto.filNavn, innsendtVariantDto.filtype, innsendtVariantDto.variantformat))
+
+		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
+
+		return Soknadarkivschema(uuid, soknadInnsendtDto.personId, soknadInnsendtDto.tema, soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+	}
 }
 
 inline fun <reified T : Any> typeRef(): ParameterizedTypeReference<T> = object : ParameterizedTypeReference<T>() {}
