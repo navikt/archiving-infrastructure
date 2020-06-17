@@ -185,7 +185,7 @@ class EndToEndTests {
 
 
 	@Test
-	fun `Happy case - one file in file storage`() {
+	fun `Happy case - one file ends up in Joark`() {
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
 		setNormalJoarkBehaviour(dto.innsendingsId)
@@ -199,7 +199,22 @@ class EndToEndTests {
 	}
 
 	@Test
-	fun `Happy case - several files in file storage`() {
+	fun `Poison pill followed by proper message - one file ends up in Joark`() {
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		putPoisonPillOnKafkaTopic(uuid)
+		sendFilesToFileStorage(uuid)
+		sendDataToMottaker(dto)
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@Test
+	fun `Happy case - several files in file storage - one file ends up in Joark`() {
 		val uuid0 = UUID.randomUUID().toString()
 		val uuid1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
@@ -346,13 +361,61 @@ class EndToEndTests {
 
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(key, uuid)
-		putProcessingEventOnKafkaTopic(key)
+		putProcessingEventOnKafkaTopic(key, EventTypes.STARTED, EventTypes.STARTED)
 		startUpSoknadsarkiverer()
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
+
+	@Test
+	fun `Soknadsarkiverer restarts before finishing to put input event in Joark - will pick event up and send to Joark`() {
+		val attemptsThanSoknadsarkivererWillPerform = 6
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+
+		sendFilesToFileStorage(uuid)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
+		sendDataToMottaker(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+
+		shutDownSoknadsarkiverer()
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 7)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@Test
+	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in Joark`() {
+		val finishedKey = UUID.randomUUID().toString()
+		val finishedUuid = UUID.randomUUID().toString()
+		val newUuid = UUID.randomUUID().toString()
+		val finishedDto = createDto(finishedUuid, finishedUuid)
+		val newDto = createDto(newUuid, newUuid)
+		setNormalJoarkBehaviour(finishedDto.innsendingsId)
+		setNormalJoarkBehaviour(newDto.innsendingsId)
+
+		sendFilesToFileStorage(finishedUuid)
+		sendFilesToFileStorage(newUuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(finishedKey, finishedUuid)
+		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.STARTED, EventTypes.FINISHED)
+		sendDataToMottaker(newDto)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(newDto)
+		verifyDataNotInJoark(finishedDto)
+		verifyNumberOfCallsToJoark(newDto.innsendingsId, 1)
+		verifyNumberOfCallsToJoark(finishedDto.innsendingsId, 0)
+		pollAndVerifyDataInFileStorage(newUuid, 0)
+		pollAndVerifyDataInFileStorage(finishedUuid, 1)
+	}
+
 
 	private fun shutDownSoknadsarkiverer() {
 		soknadsarkivererContainer.stop()
@@ -368,14 +431,16 @@ class EndToEndTests {
 		loopAndVerify(200, healthStatusCode, { assertEquals(200, healthStatusCode.invoke(), "Soknadsarkiverer does not seem to be up") })
 	}
 
+	private fun putPoisonPillOnKafkaTopic(key: String) {
+		kafkaPublisher.putDataOnTopic(key, "unserializableString")
+	}
+
 	private fun putInputEventOnKafkaTopic(key: String, uuid: String) {
 		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(uuid))
 	}
 
-	private fun putProcessingEventOnKafkaTopic(key: String) {
-		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.RECEIVED))
-		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.STARTED))
-		kafkaPublisher.putDataOnTopic(key, ProcessingEvent(EventTypes.STARTED))
+	private fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
+		eventTypes.forEach {eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
 	}
 
 
@@ -405,8 +470,7 @@ class EndToEndTests {
 	}
 
 	private fun verifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		val numberOfCalls = getNumberOfCallsToJoark(uuid)
-		assertEquals(expectedNumberOfCalls, numberOfCalls)
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) })
 	}
 
 	private fun getNumberOfCallsToJoark(uuid: String): Int {
