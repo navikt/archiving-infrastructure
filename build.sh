@@ -83,7 +83,7 @@ build_components_and_show_progress() {
 	status=0
 	jobs=()
 
-	longestname=0
+	longest_name=0
 	for comp in "${components[@]}"; do
 
 		build ${comp} 1> /dev/null &
@@ -92,8 +92,8 @@ build_components_and_show_progress() {
 		jobs+=($pid)
 
 		namelen=${#comp}
-		if [[ $namelen -ge $longestname ]]; then
-			longestname=$namelen
+		if [[ $namelen -ge $longest_name ]]; then
+			longest_name=$namelen
 		fi
 	done
 
@@ -122,7 +122,7 @@ build_components_and_show_progress() {
 				jobs[$index]=0
 
 				namelen=${#comp}
-				spaces=$((longestname-namelen))
+				spaces=$((longest_name-namelen))
 
 				printf "\033[KBuilding $comp"
 				printf " %.0s" $(seq 0 $spaces)
@@ -171,30 +171,11 @@ clean_docker() {
 	fi
 }
 
-start-docker() {
+build-docker() {
 	echo "Building docker ..."
 	docker-compose build
-	echo ""
-	echo "Starting docker ..."
-	docker-compose up -d kafka-broker
-	sleep 10  # Wait for kafka-broker to finish initialization before starting other containers
-	docker-compose up -d
 }
 
-wait_for_service_to_start() {
-	component="$1"
-	url="http://localhost:$2/internal/health"
-
-	for i in {1..90}
-	do
-		if [[ $(curl -s -XGET $url) == {\"status\":\"UP\"* ]]; then
-			echo -e "${GREEN}Started $component${NOCOLOUR}"
-			return
-		fi
-		sleep 1
-	done
-	echo -e "${RED}FAILED TO START $component${NOCOLOUR}"
-}
 
 check_if_components_exists
 check_sufficient_java_version
@@ -206,19 +187,4 @@ if [ $? -ne 0 ]; then
 	echo "Failed to build, exiting."
 	exit 1
 fi
-start-docker
-
-echo ""
-docker-compose ps
-echo ""
-
-echo "Waiting for services to start ..."
-wait_for_service_to_start "soknadsmottaker"  8090 &
-wait_for_service_to_start "soknadsarkiverer" 8091 &
-wait_for_service_to_start "soknadsfillager"  9042 &
-wait_for_service_to_start "joark-mock"       8092 &
-wait
-
-cd arkivering-end-to-end-tests
-mvn clean install
-cd ..
+build-docker

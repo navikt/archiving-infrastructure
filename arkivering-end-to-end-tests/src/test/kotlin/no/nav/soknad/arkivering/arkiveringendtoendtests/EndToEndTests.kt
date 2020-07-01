@@ -1,23 +1,33 @@
 package no.nav.soknad.arkivering.arkiveringendtoendtests
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import org.apache.tomcat.util.codec.binary.Base64.encodeBase64
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaProperties
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.avroschemas.*
+import okhttp3.Headers
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okio.BufferedSink
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
-import org.springframework.core.ParameterizedTypeReference
-import org.springframework.http.*
-import org.springframework.web.client.RestTemplate
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
-import java.net.URI
+import java.io.IOException
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -30,13 +40,20 @@ class EndToEndTests {
 		it["soknadsfillager"] = 9042
 		it["joark-mock"] = 8092
 	}
+	private val kafkaBrokerPort = 9092
+	private val schemaRegistryPort = 8081
+
+	private val useTestcontainers = System.getProperty("useTestcontainers")?.toBoolean() ?: true
 
 	private val mottakerUsername = "avsender"
 	private val mottakerPassword = "password"
 	private val filleserUsername = "arkiverer"
 	private val filleserPassword = "password"
+	private val kafkaProperties = KafkaProperties()
 
-	private val restTemplate = RestTemplate()
+	private val restClient = OkHttpClient()
+	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
+	private lateinit var kafkaPublisher: KafkaPublisher
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
@@ -47,12 +64,37 @@ class EndToEndTests {
 	private lateinit var soknadsarkivererContainer: KGenericContainer
 
 	@BeforeAll
-	fun startContainer() {
+	fun setup() {
+		println("useTestcontainers: $useTestcontainers")
+
+		if (useTestcontainers)
+			startContainers()
+		else
+			checkThatDependenciesAreUp()
+
+		kafkaPublisher = KafkaPublisher(getPortForKafkaBroker(), getPortForSchemaRegistry())
+	}
+
+	private fun checkThatDependenciesAreUp() {
+		for (dep in dependencies) {
+			try {
+				val url = "http://localhost:${dep.value}/internal/health"
+
+				val request = Request.Builder().url(url).get().build()
+				val response = restClient.newCall(request).execute().use { response -> response.body?.string() ?: "" }
+				val health = objectMapper.readValue(response, Health::class.java)
+
+				assertEquals("UP", health.status, "Dependency '${dep.key}' seems to be down")
+			} catch (e: Exception) {
+				fail("Dependency '${dep.key}' seems to be down")
+			}
+		}
+	}
+
+	private fun startContainers() {
 		val postgresUsername = "postgres"
 		val databaseName = "soknadsfillager"
 		val databaseContainerPort = 5432
-		val kafkaBrokerPort = 9092
-		val schemaRegistryPort = 8081
 
 
 		val network = Network.newNetwork()
@@ -72,9 +114,9 @@ class EndToEndTests {
 		postgresContainer.start()
 		kafkaContainer.start()
 
-		createTopic("privat-soknadInnsendt-v1-default")
-		createTopic("privat-soknadInnsendt-processingEventLog-v1-default")
-		createTopic("privat-soknadInnsendt-messages-v1-default")
+		createTopic(kafkaProperties.inputTopic)
+		createTopic(kafkaProperties.processingEventLogTopic)
+		createTopic(kafkaProperties.messageTopic)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
@@ -160,24 +202,26 @@ class EndToEndTests {
 
 	@AfterAll
 	fun teardown() {
-		println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
-		println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
-		println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererContainer.logs}")
-		println("\n\nLogs joark-mock:\n${joarkMockContainer.logs}")
+		if (useTestcontainers) {
+			println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
+			println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
+			println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererContainer.logs}")
+			println("\n\nLogs joark-mock:\n${joarkMockContainer.logs}")
 
-		soknadsfillagerContainer.stop()
-		soknadsmottakerContainer.stop()
-		soknadsarkivererContainer.stop()
-		joarkMockContainer.stop()
+			soknadsfillagerContainer.stop()
+			soknadsmottakerContainer.stop()
+			soknadsarkivererContainer.stop()
+			joarkMockContainer.stop()
 
-		postgresContainer.stop()
-		kafkaContainer.stop()
-		schemaRegistryContainer.stop()
+			postgresContainer.stop()
+			kafkaContainer.stop()
+			schemaRegistryContainer.stop()
+		}
 	}
 
 
 	@Test
-	fun `Happy case - one file in file storage`() {
+	fun `Happy case - one file ends up in Joark`() {
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
 		setNormalJoarkBehaviour(dto.innsendingsId)
@@ -191,7 +235,22 @@ class EndToEndTests {
 	}
 
 	@Test
-	fun `Happy case - several files in file storage`() {
+	fun `Poison pill followed by proper message - one file ends up in Joark`() {
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		putPoisonPillOnKafkaTopic(uuid)
+		sendFilesToFileStorage(uuid)
+		sendDataToMottaker(dto)
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@Test
+	fun `Happy case - several files in file storage - one file ends up in Joark`() {
 		val uuid0 = UUID.randomUUID().toString()
 		val uuid1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
@@ -309,144 +368,311 @@ class EndToEndTests {
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
+	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@Test
+	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+		val key = UUID.randomUUID().toString()
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid, uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		sendFilesToFileStorage(uuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(key, uuid)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@Test
+	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+		val key = UUID.randomUUID().toString()
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid, uuid)
+		setNormalJoarkBehaviour(dto.innsendingsId)
+
+		sendFilesToFileStorage(uuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(key, uuid)
+		putProcessingEventOnKafkaTopic(key, EventTypes.STARTED, EventTypes.STARTED)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@Test
+	fun `Soknadsarkiverer restarts before finishing to put input event in Joark - will pick event up and send to Joark`() {
+		val attemptsThanSoknadsarkivererWillPerform = 6
+		val uuid = UUID.randomUUID().toString()
+		val dto = createDto(uuid)
+
+		sendFilesToFileStorage(uuid)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
+		sendDataToMottaker(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
+		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+
+		shutDownSoknadsarkiverer()
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(dto)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 7)
+		pollAndVerifyDataInFileStorage(uuid, 0)
+	}
+
+	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@Test
+	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in Joark`() {
+		val finishedKey = UUID.randomUUID().toString()
+		val finishedUuid = UUID.randomUUID().toString()
+		val newUuid = UUID.randomUUID().toString()
+		val finishedDto = createDto(finishedUuid, finishedUuid)
+		val newDto = createDto(newUuid, newUuid)
+		setNormalJoarkBehaviour(finishedDto.innsendingsId)
+		setNormalJoarkBehaviour(newDto.innsendingsId)
+
+		sendFilesToFileStorage(finishedUuid)
+		sendFilesToFileStorage(newUuid)
+
+		shutDownSoknadsarkiverer()
+		putInputEventOnKafkaTopic(finishedKey, finishedUuid)
+		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.STARTED, EventTypes.FINISHED)
+		sendDataToMottaker(newDto)
+		startUpSoknadsarkiverer()
+
+		verifyDataInJoark(newDto)
+		verifyDataNotInJoark(finishedDto)
+		verifyNumberOfCallsToJoark(newDto.innsendingsId, 1)
+		verifyNumberOfCallsToJoark(finishedDto.innsendingsId, 0)
+		pollAndVerifyDataInFileStorage(newUuid, 0)
+		pollAndVerifyDataInFileStorage(finishedUuid, 1)
+	}
+
+	private fun getPortForSoknadsarkiverer() = if (useTestcontainers) soknadsarkivererContainer.firstMappedPort else dependencies["soknadsarkiverer"]
+	private fun getPortForSoknadsmottaker() = if (useTestcontainers) soknadsmottakerContainer.firstMappedPort else dependencies["soknadsmottaker"]
+	private fun getPortForSoknadsfillager() = if (useTestcontainers) soknadsfillagerContainer.firstMappedPort else dependencies["soknadsfillager"]
+	private fun getPortForJoarkMock() = if (useTestcontainers) joarkMockContainer.firstMappedPort else dependencies["joark-mock"]
+	private fun getPortForKafkaBroker() = if (useTestcontainers) kafkaContainer.firstMappedPort else kafkaBrokerPort
+	private fun getPortForSchemaRegistry() = if (useTestcontainers) schemaRegistryContainer.firstMappedPort else schemaRegistryPort
+
+	private fun shutDownSoknadsarkiverer() {
+		soknadsarkivererContainer.stop()
+	}
+
+	private fun startUpSoknadsarkiverer() {
+		soknadsarkivererContainer.start()
+
+		val url = "http://localhost:${getPortForSoknadsarkiverer()}/internal/health"
+		val healthStatusCode = {
+			val request = Request.Builder().url(url).get().build()
+			restClient.newCall(request).execute().use { response -> response.code }
+		}
+		loopAndVerify(200, healthStatusCode, { assertEquals(200, healthStatusCode.invoke(), "Soknadsarkiverer does not seem to be up") })
+	}
+
+	private fun putPoisonPillOnKafkaTopic(key: String) {
+		kafkaPublisher.putDataOnTopic(key, "unserializableString")
+	}
+
+	private fun putInputEventOnKafkaTopic(key: String, uuid: String) {
+		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(uuid))
+	}
+
+	private fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
+		eventTypes.forEach {eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
+	}
+
+
 	private fun setNormalJoarkBehaviour(uuid: String) {
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
-		restTemplate.put(url, null)
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
+		performPutCall(url)
 	}
 
 	private fun mockJoarkRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
-		restTemplate.put(url, null)
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+		performPutCall(url)
 	}
 
 	private fun mockJoarkRespondsWithErroneousForXAttempts(uuid: String, forAttempts: Int) {
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
-		restTemplate.put(url, null)
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
+		performPutCall(url)
+	}
+
+	private fun performPutCall(url: String) {
+		val requestBody = object : RequestBody() {
+			override fun contentType() = "application/json".toMediaType()
+			override fun writeTo(sink: BufferedSink) { }
+		}
+
+		val request = Request.Builder().url(url).put(requestBody).build()
+
+		restClient.newCall(request).execute().use { response ->
+			if (!response.isSuccessful)
+				throw IOException("Unexpected code $response")
+		}
 	}
 
 	private fun verifyDataNotInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/lookup/$key"
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
 
-		val responseEntity: ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
+		val response: Optional<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
 
-		if (responseEntity.hasBody())
+		if (response.isPresent)
 			fail("Expected Joark to not have any results for $key")
 	}
 
 	private fun verifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		val numberOfCalls = getNumberOfCallsToJoark(uuid)
-		assertEquals(expectedNumberOfCalls, numberOfCalls)
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) })
 	}
 
 	private fun getNumberOfCallsToJoark(uuid: String): Int {
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/mock/response-behaviour/number-of-calls/$uuid"
-		val responseEntity = restTemplate.getForEntity(url, Int::class.java)
-		return responseEntity.body ?: -1
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/number-of-calls/$uuid"
+		val request = Request.Builder().url(url).get().build()
+		return restClient.newCall(request).execute().use { response -> response.body?.string()?.toInt() ?: -1 }
 	}
 
 	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${joarkMockContainer.firstMappedPort}/joark/lookup/$key"
+		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
 
-		val responseEntity: ResponseEntity<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
+		val response: Optional<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
 
-		if (!responseEntity.hasBody())
+		if (!response.isPresent)
 			fail("Failed to get response from Joark")
-		assertEquals(dto.tema, responseEntity.body?.get(0)!!["message"])
-		assertEquals(dto.innsendingsId, responseEntity.body?.get(0)!!["name"])
+		assertEquals(dto.tema, response.get()[0]["message"])
+		assertEquals(dto.innsendingsId, response.get()[0]["name"])
 	}
 
 	private fun pollAndVerifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		pollAndVerifyResult("calls to Joark", expectedNumberOfCalls) { getNumberOfCallsToJoark(uuid) }
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) },
+			{ assertEquals(expectedNumberOfCalls, getNumberOfCallsToJoark(uuid), "Expected $expectedNumberOfCalls calls to Joark") })
 	}
 
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
-		val url = "http://localhost:${soknadsfillagerContainer.firstMappedPort}/filer?ids=$uuid"
-		pollAndVerifyResult("files in File Storage", expectedNumberOfHits) { getNumberOfFiles(url) }
+		val url = "http://localhost:${getPortForSoknadsfillager()}/filer?ids=$uuid"
+		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url) },
+			{ assertEquals(expectedNumberOfHits, getNumberOfFiles(url), "Expected $expectedNumberOfHits files in File Storage") })
 	}
 
-	private fun pollAndVerifyResult(context: String, expected: Int, function: () -> Int) {
+	private fun loopAndVerify(expectedCount: Int, getCount: () -> Int,
+														finalCheck: () -> Any = { assertEquals(expectedCount, getCount.invoke()) }) {
+
 		val startTime = System.currentTimeMillis()
-		val timeout = 10 * 1000
+		val timeout = 30 * 1000
 
-		var result = -1
 		while (System.currentTimeMillis() < startTime + timeout) {
-			result = function.invoke()
+			val matches = getCount.invoke()
 
-			if (result == expected) {
-				return
+			if (matches == expectedCount) {
+				break
 			}
 			TimeUnit.MILLISECONDS.sleep(50)
 		}
-		fail("Expected $expected $context, but saw $result")
+		finalCheck.invoke()
 	}
 
 	private fun getNumberOfFiles(url: String): Int {
 		val headers = createHeaders(filleserUsername, filleserPassword)
 
-		val request = RequestEntity<Any>(headers, HttpMethod.GET, URI(url))
+		val request = Request.Builder().url(url).headers(headers).get().build()
+		val response = restClient.newCall(request).execute()
+		if (response.isSuccessful) {
+			val bytes = response.body?.bytes()
+			val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
 
-		val response = restTemplate.exchange(request, typeRef<List<FilElementDto>>()).body
-
-		return response?.filter { it.fil != null }?.size ?: 0
+			return listOfFiles.filter { it.fil != null }.size
+		}
+		return 0
 	}
 
-	private fun <T> pollJoarkUntilTimeout(url: String): ResponseEntity<List<T>> {
+	private fun <T> pollJoarkUntilTimeout(url: String): Optional<List<T>> {
 
-		val respType = object : ParameterizedTypeReference<List<T>>() {}
+		val request = Request.Builder().url(url).get().build()
 
 		val startTime = System.currentTimeMillis()
 		val timeout = 10 * 1000
 
 		while (System.currentTimeMillis() < startTime + timeout) {
-			val responseEntity = restTemplate.exchange(url, HttpMethod.GET, null, respType)
+			val response = restClient.newCall(request).execute()
+			val responseBody = response.body
 
-			if (responseEntity.body != null && responseEntity.body!!.isNotEmpty()) {
-				return responseEntity
+			if (response.isSuccessful && responseBody != null) {
+				val body = responseBody.string()
+				if (body != "[]") {
+					val list = objectMapper.readValue(body, object : TypeReference<List<T>>() {})
+					return Optional.of(list)
+				}
 			}
 			TimeUnit.MILLISECONDS.sleep(50)
 		}
-		return ResponseEntity.of(Optional.empty())
+		return Optional.empty()
 	}
 
 	private fun sendFilesToFileStorage(uuid: String) {
-		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray()))
-		val url = "http://localhost:${soknadsfillagerContainer.firstMappedPort}/filer"
+		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray(), LocalDateTime.now()))
+		val url = "http://localhost:${getPortForSoknadsfillager()}/filer"
 
 		performPostRequest(files, url, createHeaders(filleserUsername, filleserPassword))
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
-		val url = "http://localhost:${soknadsmottakerContainer.firstMappedPort}/save"
+		val url = "http://localhost:${getPortForSoknadsmottaker()}/save"
 		performPostRequest(dto, url, createHeaders(mottakerUsername, mottakerPassword))
 	}
 
-	private fun createHeaders(username: String, password: String): HttpHeaders {
-		return object : HttpHeaders() {
-			init {
-				val auth = "$username:$password"
-				val encodedAuth: ByteArray = encodeBase64(auth.toByteArray())
-				val authHeader = "Basic " + String(encodedAuth)
-				set("Authorization", authHeader)
+	private fun createHeaders(username: String, password: String): Headers {
+
+		val auth = "$username:$password"
+		val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+		return Headers.headersOf("Authorization", authHeader)
+	}
+
+	private fun performPostRequest(payload: Any, url: String, headers: Headers) {
+		val requestBody = object : RequestBody() {
+			override fun contentType() = "application/json".toMediaType()
+			override fun writeTo(sink: BufferedSink) {
+				sink.writeUtf8(objectMapper.writeValueAsString(payload))
 			}
 		}
+
+		val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
+
+		restClient.newCall(request).execute()
 	}
 
-	private fun performPostRequest(payload: Any, url: String, headers: HttpHeaders = HttpHeaders()) {
-		headers.contentType = MediaType.APPLICATION_JSON
-		val request = HttpEntity(payload, headers)
-		restTemplate.postForObject(url, request, String::class.java)
-	}
+	private fun createDto(uuid: String, innsendingsId: String = UUID.randomUUID().toString()) =
+		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
+			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+				listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
 
-	private fun createDto(uuid: String) = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
-		listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-			listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
+	private fun createSoknadarkivschema(uuid: String): Soknadarkivschema {
+		val soknadInnsendtDto = createDto(uuid, uuid)
+		val innsendtDokumentDto = soknadInnsendtDto.innsendteDokumenter[0]
+		val innsendtVariantDto = innsendtDokumentDto.varianter[0]
+
+		val mottattVariant = listOf(MottattVariant(innsendtVariantDto.uuid, innsendtVariantDto.filNavn, innsendtVariantDto.filtype, innsendtVariantDto.variantformat))
+
+		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
+
+		return Soknadarkivschema(uuid, soknadInnsendtDto.personId, soknadInnsendtDto.tema, soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+	}
 }
-
-inline fun <reified T : Any> typeRef(): ParameterizedTypeReference<T> = object : ParameterizedTypeReference<T>() {}
 
 class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
 class KPostgreSQLContainer : PostgreSQLContainer<KPostgreSQLContainer>()
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class Health {
+	lateinit var status: String
+}
