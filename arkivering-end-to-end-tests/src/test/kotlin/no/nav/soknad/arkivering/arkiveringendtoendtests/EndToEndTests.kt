@@ -63,6 +63,9 @@ class EndToEndTests {
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
 
+	private var soknadsarkivererLogs = ""
+
+
 	@BeforeAll
 	fun setup() {
 		println("useTestcontainers: $useTestcontainers")
@@ -205,7 +208,7 @@ class EndToEndTests {
 		if (useTestcontainers) {
 			println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
 			println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
-			println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererContainer.logs}")
+			println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererLogs + soknadsarkivererContainer.logs}")
 			println("\n\nLogs joark-mock:\n${joarkMockContainer.logs}")
 
 			soknadsfillagerContainer.stop()
@@ -464,6 +467,7 @@ class EndToEndTests {
 	private fun getPortForSchemaRegistry() = if (useTestcontainers) schemaRegistryContainer.firstMappedPort else schemaRegistryPort
 
 	private fun shutDownSoknadsarkiverer() {
+		soknadsarkivererLogs += soknadsarkivererContainer.logs + "\n"
 		soknadsarkivererContainer.stop()
 	}
 
@@ -479,15 +483,18 @@ class EndToEndTests {
 	}
 
 	private fun putPoisonPillOnKafkaTopic(key: String) {
+		println("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
 	private fun putInputEventOnKafkaTopic(key: String, uuid: String) {
+		println("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(uuid))
 	}
 
 	private fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
-		eventTypes.forEach {eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
+		println("Processing event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		eventTypes.forEach { eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
 	}
 
 
@@ -618,6 +625,7 @@ class EndToEndTests {
 	}
 
 	private fun sendFilesToFileStorage(uuid: String) {
+		println("fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		val files = listOf(FilElementDto(uuid, "apabepa".toByteArray(), LocalDateTime.now()))
 		val url = "http://localhost:${getPortForSoknadsfillager()}/filer"
 
@@ -626,6 +634,7 @@ class EndToEndTests {
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
+		println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		val url = "http://localhost:${getPortForSoknadsmottaker()}/save"
 		performPostRequest(dto, url, createHeaders(mottakerUsername, mottakerPassword))
 	}
