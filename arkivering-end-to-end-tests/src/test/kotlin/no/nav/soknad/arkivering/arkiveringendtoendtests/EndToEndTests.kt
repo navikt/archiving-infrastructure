@@ -189,7 +189,7 @@ class EndToEndTests {
 		// kafka container uses with embedded zookeeper
 		// confluent platform and Kafka compatibility 5.1.x <-> kafka 2.1.x
 		// kafka 2.1.x require option --zookeeper, later versions use --bootstrap-servers instead
-		val topic =  "/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic $topicName"
+		val topic = "/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic $topicName"
 
 		try {
 			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topic)
@@ -243,7 +243,7 @@ class EndToEndTests {
 		val dto = createDto(uuid)
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
-		putPoisonPillOnKafkaTopic(uuid)
+		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
 		sendFilesToFileStorage(uuid)
 		sendDataToMottaker(dto)
 
@@ -360,14 +360,14 @@ class EndToEndTests {
 	fun `Joark responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
-		val moreAttemptsThanSoknadsarkivererWillPerform = 7
+		val moreAttemptsThanSoknadsarkivererWillPerform = 6
 
 		sendFilesToFileStorage(uuid)
 		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
-		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 6)
+		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 5)
 		pollAndVerifyDataInFileStorage(uuid, 1)
 	}
 
@@ -402,7 +402,7 @@ class EndToEndTests {
 
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(key, uuid)
-		putProcessingEventOnKafkaTopic(key, EventTypes.STARTED, EventTypes.STARTED)
+		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
 		startUpSoknadsarkiverer()
 
 		verifyDataInJoark(dto)
@@ -413,7 +413,7 @@ class EndToEndTests {
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Soknadsarkiverer restarts before finishing to put input event in Joark - will pick event up and send to Joark`() {
-		val attemptsThanSoknadsarkivererWillPerform = 6
+		val attemptsThanSoknadsarkivererWillPerform = 5
 		val uuid = UUID.randomUUID().toString()
 		val dto = createDto(uuid)
 
@@ -427,7 +427,7 @@ class EndToEndTests {
 		startUpSoknadsarkiverer()
 
 		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 7)
+		verifyNumberOfCallsToJoark(dto.innsendingsId, 6)
 		pollAndVerifyDataInFileStorage(uuid, 0)
 	}
 
@@ -447,7 +447,7 @@ class EndToEndTests {
 
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(finishedKey, finishedUuid)
-		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.STARTED, EventTypes.FINISHED)
+		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.FINISHED)
 		sendDataToMottaker(newDto)
 		startUpSoknadsarkiverer()
 
@@ -516,7 +516,7 @@ class EndToEndTests {
 	private fun performPutCall(url: String) {
 		val requestBody = object : RequestBody() {
 			override fun contentType() = "application/json".toMediaType()
-			override fun writeTo(sink: BufferedSink) { }
+			override fun writeTo(sink: BufferedSink) {}
 		}
 
 		val request = Request.Builder().url(url).put(requestBody).build()
