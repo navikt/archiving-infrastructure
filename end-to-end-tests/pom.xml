@@ -4,9 +4,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>no.nav.soknad.arkivering</groupId>
-	<artifactId>arkivering-end-to-end-tests</artifactId>
+	<artifactId>end-to-end-tests</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
-	<name>arkivering-end-to-end-tests</name>
+	<name>End-to-end-tests</name>
 	<description>End-to-end-tester</description>
 
 	<properties>

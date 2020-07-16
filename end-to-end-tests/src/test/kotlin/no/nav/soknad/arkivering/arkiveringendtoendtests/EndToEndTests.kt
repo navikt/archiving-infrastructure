@@ -225,239 +225,244 @@ class EndToEndTests {
 
 	@Test
 	fun `Happy case - one file ends up in Joark`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Poison pill followed by proper message - one file ends up in Joark`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Happy case - several files in file storage - one file ends up in Joark`() {
-		val uuid0 = UUID.randomUUID().toString()
-		val uuid1 = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
 			listOf(
 				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(uuid0, null, "filnavn", "1024", "variantformat", "PDFA"))),
+					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
 
 				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(uuid1, null, "filnavn", "1024", "variantformat", "PDFA")))
+					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
 			))
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
-		sendFilesToFileStorage(uuid0)
-		sendFilesToFileStorage(uuid1)
+		sendFilesToFileStorage(fileId0)
+		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
-		pollAndVerifyDataInFileStorage(uuid0, 0)
-		pollAndVerifyDataInFileStorage(uuid1, 0)
+		pollAndVerifyDataInFileStorage(fileId0, 0)
+		pollAndVerifyDataInFileStorage(fileId1, 0)
 	}
 
 	@Test
 	fun `No files in file storage - Nothing is sent to Joark`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 		sendDataToMottaker(dto)
 
 		verifyDataNotInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Several Hovedskjemas - Nothing is sent to Joark`() {
-		val uuid0 = UUID.randomUUID().toString()
-		val uuid1 = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
 			listOf(
 				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(uuid0, null, "filnavn", "1024", "variantformat", "PDFA"))),
+					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
 
 				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(uuid1, null, "filnavn", "1024", "variantformat", "PDFA")))
+					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
 			))
 		setNormalJoarkBehaviour(dto.innsendingsId)
 
-		sendFilesToFileStorage(uuid0)
-		sendFilesToFileStorage(uuid1)
+		sendFilesToFileStorage(fileId0)
+		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
 		verifyDataNotInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
-		pollAndVerifyDataInFileStorage(uuid0, 1)
-		pollAndVerifyDataInFileStorage(uuid1, 1)
+		pollAndVerifyDataInFileStorage(fileId0, 1)
+		pollAndVerifyDataInFileStorage(fileId1, 1)
 	}
 
 	@Test
 	fun `Joark responds 404 on first two attempts - Works on third attempt`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, 2)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 3)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Joark responds 500 on first attempt - Works on second attempt`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 2)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Joark responds 200 but has wrong response body - Will retry`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, 3)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 4)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Joark responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 		val moreAttemptsThanSoknadsarkivererWillPerform = 6
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
 		verifyDataInJoark(dto)
 		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 5)
-		pollAndVerifyDataInFileStorage(uuid, 1)
+		pollAndVerifyDataInFileStorage(fileId, 1)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
 		val key = UUID.randomUUID().toString()
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid, uuid)
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		val fileId = UUID.randomUUID().toString()
+		val innsendingsId = UUID.randomUUID().toString()
+		setNormalJoarkBehaviour(innsendingsId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, uuid)
+		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		verifyDataInJoark(createDto(fileId, innsendingsId))
+		verifyNumberOfCallsToJoark(innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
 		val key = UUID.randomUUID().toString()
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid, uuid)
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		val fileId = UUID.randomUUID().toString()
+		val innsendingsId = UUID.randomUUID().toString()
+		setNormalJoarkBehaviour(innsendingsId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, uuid)
+		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
 		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		verifyDataInJoark(createDto(fileId, innsendingsId))
+		verifyNumberOfCallsToJoark(innsendingsId, 1)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Soknadsarkiverer restarts before finishing to put input event in Joark - will pick event up and send to Joark`() {
 		val attemptsThanSoknadsarkivererWillPerform = 5
-		val uuid = UUID.randomUUID().toString()
-		val dto = createDto(uuid)
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
 
-		sendFilesToFileStorage(uuid)
+		sendFilesToFileStorage(fileId)
 		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
 		sendDataToMottaker(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
 		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+		TimeUnit.SECONDS.sleep(1)
 
 		shutDownSoknadsarkiverer()
 		startUpSoknadsarkiverer()
 
 		verifyDataInJoark(dto)
 		verifyNumberOfCallsToJoark(dto.innsendingsId, 6)
-		pollAndVerifyDataInFileStorage(uuid, 0)
+		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in Joark`() {
 		val finishedKey = UUID.randomUUID().toString()
-		val finishedUuid = UUID.randomUUID().toString()
-		val newUuid = UUID.randomUUID().toString()
-		val finishedDto = createDto(finishedUuid, finishedUuid)
-		val newDto = createDto(newUuid, newUuid)
-		setNormalJoarkBehaviour(finishedDto.innsendingsId)
-		setNormalJoarkBehaviour(newDto.innsendingsId)
+		val finishedFileId = UUID.randomUUID().toString()
+		val newFileId = UUID.randomUUID().toString()
+		val finishedInnsendingsId = UUID.randomUUID().toString()
+		val newInnsendingsId = UUID.randomUUID().toString()
 
-		sendFilesToFileStorage(finishedUuid)
-		sendFilesToFileStorage(newUuid)
+		val finishedDto = createDto(finishedFileId, finishedInnsendingsId)
+		val newDto = createDto(newFileId, newInnsendingsId)
+		setNormalJoarkBehaviour(finishedInnsendingsId)
+		setNormalJoarkBehaviour(newInnsendingsId)
+
+		sendFilesToFileStorage(finishedFileId)
+		sendFilesToFileStorage(newFileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(finishedKey, finishedUuid)
+		putInputEventOnKafkaTopic(finishedKey, finishedInnsendingsId, finishedFileId)
 		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.FINISHED)
 		sendDataToMottaker(newDto)
 		startUpSoknadsarkiverer()
 
 		verifyDataInJoark(newDto)
 		verifyDataNotInJoark(finishedDto)
-		verifyNumberOfCallsToJoark(newDto.innsendingsId, 1)
-		verifyNumberOfCallsToJoark(finishedDto.innsendingsId, 0)
-		pollAndVerifyDataInFileStorage(newUuid, 0)
-		pollAndVerifyDataInFileStorage(finishedUuid, 1)
+		verifyNumberOfCallsToJoark(newInnsendingsId, 1)
+		verifyNumberOfCallsToJoark(finishedInnsendingsId, 0)
+		pollAndVerifyDataInFileStorage(newFileId, 0)
+		pollAndVerifyDataInFileStorage(finishedFileId, 1)
 	}
+
 
 	private fun getPortForSoknadsarkiverer() = if (useTestcontainers) soknadsarkivererContainer.firstMappedPort else dependencies["soknadsarkiverer"]
 	private fun getPortForSoknadsmottaker() = if (useTestcontainers) soknadsmottakerContainer.firstMappedPort else dependencies["soknadsmottaker"]
@@ -487,9 +492,9 @@ class EndToEndTests {
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
-	private fun putInputEventOnKafkaTopic(key: String, uuid: String) {
+	private fun putInputEventOnKafkaTopic(key: String, innsendingsId: String, fileId: String) {
 		println("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(uuid))
+		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(innsendingsId, fileId))
 	}
 
 	private fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
@@ -659,13 +664,13 @@ class EndToEndTests {
 		restClient.newCall(request).execute()
 	}
 
-	private fun createDto(uuid: String, innsendingsId: String = UUID.randomUUID().toString()) =
+	private fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
 		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
 			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-				listOf(InnsendtVariantDto(uuid, null, "filnavn", "1024", "variantformat", "PDFA")))))
+				listOf(InnsendtVariantDto(fileId, null, "filnavn", "1024", "variantformat", "PDFA")))))
 
-	private fun createSoknadarkivschema(uuid: String): Soknadarkivschema {
-		val soknadInnsendtDto = createDto(uuid, uuid)
+	private fun createSoknadarkivschema(innsendingsId: String, fileId: String): Soknadarkivschema {
+		val soknadInnsendtDto = createDto(fileId, innsendingsId)
 		val innsendtDokumentDto = soknadInnsendtDto.innsendteDokumenter[0]
 		val innsendtVariantDto = innsendtDokumentDto.varianter[0]
 
@@ -673,7 +678,7 @@ class EndToEndTests {
 
 		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
 
-		return Soknadarkivschema(uuid, soknadInnsendtDto.personId, soknadInnsendtDto.tema, soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+		return Soknadarkivschema(innsendingsId, soknadInnsendtDto.personId, soknadInnsendtDto.tema, soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 }
 
