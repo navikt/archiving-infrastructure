@@ -18,6 +18,7 @@ import okhttp3.RequestBody
 import okio.BufferedSink
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.testcontainers.containers.GenericContainer
@@ -536,7 +537,7 @@ class EndToEndTests {
 		val key = dto.innsendingsId
 		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
 
-		val response: Optional<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
+		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
 
 		if (response.isPresent)
 			fail("Expected Joark to not have any results for $key")
@@ -556,12 +557,13 @@ class EndToEndTests {
 		val key = dto.innsendingsId
 		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
 
-		val response: Optional<List<LinkedHashMap<String, String>>> = pollJoarkUntilTimeout(url)
+		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
 
 		if (!response.isPresent)
 			fail("Failed to get response from Joark")
-		assertEquals(dto.tema, response.get()[0]["message"])
-		assertEquals(dto.innsendingsId, response.get()[0]["name"])
+		assertEquals(dto.innsendingsId, response.get()["id"])
+		assertEquals(dto.tema, response.get()["tema"])
+		assertTrue((response.get()["title"]).toString().contains(dto.innsendteDokumenter[0].tittel!!))
 	}
 
 	private fun pollAndVerifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
@@ -606,7 +608,7 @@ class EndToEndTests {
 		return 0
 	}
 
-	private fun <T> pollJoarkUntilTimeout(url: String): Optional<List<T>> {
+	private fun <T> pollJoarkUntilTimeout(url: String): Optional<T> {
 
 		val request = Request.Builder().url(url).get().build()
 
@@ -620,8 +622,8 @@ class EndToEndTests {
 			if (response.isSuccessful && responseBody != null) {
 				val body = responseBody.string()
 				if (body != "[]") {
-					val list = objectMapper.readValue(body, object : TypeReference<List<T>>() {})
-					return Optional.of(list)
+					val resp = objectMapper.readValue(body, object : TypeReference<T>() {})
+					return Optional.of(resp)
 				}
 			}
 			TimeUnit.MILLISECONDS.sleep(50)
