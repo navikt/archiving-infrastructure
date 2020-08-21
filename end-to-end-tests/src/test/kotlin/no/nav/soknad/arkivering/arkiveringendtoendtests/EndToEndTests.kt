@@ -535,7 +535,7 @@ class EndToEndTests {
 
 	private fun verifyDataNotInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
+		val url = "http://localhost:${getPortForJoarkMock()}/rest/journalpostapi/v1/lookup/$key"
 
 		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
 
@@ -555,7 +555,7 @@ class EndToEndTests {
 
 	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/lookup/$key"
+		val url = "http://localhost:${getPortForJoarkMock()}/rest/journalpostapi/v1/lookup/$key"
 
 		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
 
