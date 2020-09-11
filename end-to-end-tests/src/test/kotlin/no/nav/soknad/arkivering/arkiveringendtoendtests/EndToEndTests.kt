@@ -174,7 +174,7 @@ class EndToEndTests {
 			.withExposedPorts(dependencies["soknadsarkiverer"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
-				"SPRING_PROFILES_ACTIVE" to "docker",
+				"SPRING_PROFILES_ACTIVE" to "test",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:$schemaRegistryPort",
 				"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${dependencies["soknadsfillager"]}",
