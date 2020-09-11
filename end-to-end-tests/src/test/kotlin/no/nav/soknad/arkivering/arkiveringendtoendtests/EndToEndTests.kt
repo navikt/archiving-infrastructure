@@ -598,12 +598,14 @@ class EndToEndTests {
 		val headers = createHeaders(filleserUsername, filleserPassword)
 
 		val request = Request.Builder().url(url).headers(headers).get().build()
-		val response = restClient.newCall(request).execute()
-		if (response.isSuccessful) {
-			val bytes = response.body?.bytes()
-			val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
 
-			return listOfFiles.filter { it.fil != null }.size
+		restClient.newCall(request).execute().use {
+			if (it.isSuccessful) {
+				val bytes = it.body?.bytes()
+				val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
+
+				return listOfFiles.filter { file -> file.fil != null }.size
+			}
 		}
 		return 0
 	}
@@ -616,17 +618,19 @@ class EndToEndTests {
 		val timeout = 10 * 1000
 
 		while (System.currentTimeMillis() < startTime + timeout) {
-			val response = restClient.newCall(request).execute()
-			val responseBody = response.body
+			restClient.newCall(request).execute().use {
 
-			if (response.isSuccessful && responseBody != null) {
-				val body = responseBody.string()
-				if (body != "[]") {
-					val resp = objectMapper.readValue(body, object : TypeReference<T>() {})
-					return Optional.of(resp)
+				val responseBody = it.body
+
+				if (it.isSuccessful && responseBody != null) {
+					val body = responseBody.string()
+					if (body != "[]") {
+						val resp = objectMapper.readValue(body, object : TypeReference<T>() {})
+						return Optional.of(resp)
+					}
 				}
+				TimeUnit.MILLISECONDS.sleep(50)
 			}
-			TimeUnit.MILLISECONDS.sleep(50)
 		}
 		return Optional.empty()
 	}
@@ -663,7 +667,7 @@ class EndToEndTests {
 
 		val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
 
-		restClient.newCall(request).execute()
+		restClient.newCall(request).execute().close()
 	}
 
 	private fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
