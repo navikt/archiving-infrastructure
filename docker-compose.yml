@@ -71,9 +71,11 @@ services:
       - soknadsfillager
       - joark-mock
     environment:
-     - SPRING_PROFILES_ACTIVE=docker
+     - SPRING_PROFILES_ACTIVE=test
      - FILESTORAGE_HOST=http://soknadsfillager:9042
      - JOARK_HOST=http://joark-mock:8092
+     - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
+     - SCHEMA_REGISTRY_URL=http://kafka-schema-registry:8081
 
   soknadsfillager:
     build: ../soknadsfillager
