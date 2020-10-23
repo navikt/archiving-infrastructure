@@ -11,7 +11,9 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.StringSerializer
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
 
 class KafkaPublisher(private val kafkaPort: Int, private val schemaRegistryPort: Int) {
 
@@ -42,6 +44,7 @@ class KafkaPublisher(private val kafkaPort: Int, private val schemaRegistryPort:
 																 kafkaProducer: KafkaProducer<String, T>): RecordMetadata {
 
 		val producerRecord = ProducerRecord(topic, key, value)
+		headers.add("MESSAGE_ID", UUID.randomUUID().toString().toByteArray())
 		headers.forEach { h -> producerRecord.headers().add(h) }
 
 		return kafkaProducer
