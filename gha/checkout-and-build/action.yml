@@ -8,11 +8,15 @@ inputs:
     description: 'Branch to check out'
     required: false
     default: ""
+  sub_directory:
+    description: 'Directory to go to before building'
+    required: false
+    default: "."
   skip_tests:
     description: 'Whether tests should be skipped during build'
     required: false
     default: "true"
-  docker_build:
+  run_docker_build:
     description: 'Whether docker build should be run'
     required: false
     default: "true"
@@ -29,6 +33,7 @@ runs:
         if [[ "${{ inputs.branch }}" != "" ]]; then
           git checkout ${{ inputs.branch }}
         fi
+        cd ${{ inputs.sub_directory }}
 
         if [[ ${{ inputs.skip_tests }} = "true" ]]; then
           TEST_PARAM="-DskipTests"
@@ -38,7 +43,7 @@ runs:
 
         mvn clean install $TEST_PARAM
 
-        if [[ ${{ inputs.docker_build }} = "true" ]]; then
+        if [[ ${{ inputs.run_docker_build }} = "true" ]]; then
           TAG="archiving-infrastructure_${{ inputs.component_name }}:latest"
           docker build --tag $TAG .
         fi
