@@ -38,7 +38,7 @@ runs:
 
         mvn clean install $TEST_PARAM
 
-        if [[ ${{ inputs.skip_tests }} = "true" ]]; then
+        if [[ ${{ inputs.docker_build }} = "true" ]]; then
           TAG="archiving-infrastructure_${{ inputs.component_name }}:latest"
           docker build --tag $TAG .
         fi
