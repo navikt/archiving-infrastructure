@@ -26,7 +26,7 @@ runs:
       run: |
         git clone https://github.com/navikt/${{ inputs.component_name }}.git
         cd ${{ inputs.component_name }}
-        if [[ ${{ inputs.branch }} != "" ]]; then
+        if [[ "${{ inputs.branch }}" != "" ]]; then
           git checkout ${{ inputs.branch }}
         fi
 
