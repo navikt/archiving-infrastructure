@@ -1,0 +1,45 @@
+name: 'Checkout and build'
+description: 'Checkout, compile and docker build component'
+inputs:
+  component_name:
+    description: 'Name of component'
+    required: true
+  branch:
+    description: 'Branch to check out'
+    required: false
+    default: ""
+  skip_tests:
+    description: 'Whether tests should be skipped during build'
+    required: false
+    default: "true"
+  docker_build:
+    description: 'Whether docker build should be run'
+    required: false
+    default: "true"
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: 'Checkout, compile and Docker Build'
+      shell: bash
+      run: |
+        git clone https://github.com/navikt/${{ inputs.component_name }}.git
+        cd ${{ inputs.component_name }}
+        if [[ ${{ inputs.branch }} != "" ]]; then
+          git checkout ${{ inputs.branch }}
+        fi
+
+        if [[ ${{ inputs.skip_tests }} = "true" ]]; then
+          TEST_PARAM="-DskipTests"
+        else
+          TEST_PARAM=""
+        fi
+
+        mvn clean install $TEST_PARAM
+
+        if [[ ${{ inputs.skip_tests }} = "true" ]]; then
+          TAG="archiving-infrastructure_${{ inputs.component_name }}:latest"
+          docker build --tag $TAG .
+        fi
+        cd -
