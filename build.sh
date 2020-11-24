@@ -124,7 +124,7 @@ build_components_and_show_progress() {
 				namelen=${#comp}
 				spaces=$((longest_name-namelen))
 
-				printf "\033[KBuilding $comp"
+				printf " \033[KBuilding $comp"
 				printf " %.0s" $(seq 0 $spaces)
 				if [[ $jobstatus != 0 ]]; then
 					status=1
@@ -149,7 +149,7 @@ build_components_and_show_progress() {
 			namesstr=${namesstr%??}
 			spinnerstr="${spinner:j++%${#spinner}:1}"
 
-			dispstr="Building $namesstr ... $spinnerstr"
+			dispstr=" Building $namesstr ... $spinnerstr"
 			printf "\033[K${dispstr}"$'\r'
 		fi
 
