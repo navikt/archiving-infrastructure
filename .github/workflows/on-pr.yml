@@ -19,13 +19,6 @@ jobs:
           java-version: '11'
 
 
-      - name: 'Build the code for this PR'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@master
-        with:
-          component_name: archiving-infrastructure
-          sub_directory: arkiv-mock
-          branch: ${GITHUB_HEAD_REF} # Branch of current PR
-
       - name: 'Build the code for soknadsmottaker'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@master
         with:
@@ -41,12 +34,18 @@ jobs:
         with:
           component_name: soknadsarkiverer
 
+      - name: 'Build the code for arkiv-mock'
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@master
+        with:
+          component_name: archiving-infrastructure
+          branch: ${GITHUB_HEAD_REF} # Branch of current PR
+          sub_directory: arkiv-mock
 
       - name: 'Run the end-to-end-tests'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@master
         with:
           component_name: archiving-infrastructure
-          sub_directory: end-to-end-tests
           branch: ${GITHUB_HEAD_REF} # Branch of current PR
+          sub_directory: end-to-end-tests
           skip_tests: false
           run_docker_build: false
