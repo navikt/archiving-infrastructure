@@ -28,7 +28,9 @@ runs:
     - name: 'Checkout, compile and Docker Build'
       shell: bash
       run: |
-        git clone https://github.com/navikt/${{ inputs.component_name }}.git
+        if [ ! -d "${{ inputs.component_name }}" ]; then
+          git clone https://github.com/navikt/${{ inputs.component_name }}.git
+        fi
         cd ${{ inputs.component_name }}
         if [[ "${{ inputs.branch }}" != "" ]]; then
           git checkout ${{ inputs.branch }}
