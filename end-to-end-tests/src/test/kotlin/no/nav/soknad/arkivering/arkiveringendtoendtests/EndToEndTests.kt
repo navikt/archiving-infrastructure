@@ -39,7 +39,7 @@ class EndToEndTests {
 		it["soknadsmottaker"] = 8090
 		it["soknadsarkiverer"] = 8091
 		it["soknadsfillager"] = 9042
-		it["joark-mock"] = 8092
+		it["arkiv-mock"] = 8092
 	}
 	private val kafkaBrokerPort = 9092
 	private val schemaRegistryPort = 8081
@@ -59,7 +59,7 @@ class EndToEndTests {
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
 	private lateinit var schemaRegistryContainer: KGenericContainer
-	private lateinit var joarkMockContainer: KGenericContainer
+	private lateinit var arkivMockContainer: KGenericContainer
 	private lateinit var soknadsfillagerContainer: KGenericContainer
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
@@ -147,16 +147,16 @@ class EndToEndTests {
 			.dependsOn(postgresContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		joarkMockContainer = KGenericContainer("archiving-infrastructure_joark-mock")
-			.withNetworkAliases("joark-mock")
-			.withExposedPorts(dependencies["joark-mock"])
+		arkivMockContainer = KGenericContainer("archiving-infrastructure_arkiv-mock")
+			.withNetworkAliases("arkiv-mock")
+			.withExposedPorts(dependencies["arkiv-mock"])
 			.withNetwork(network)
 			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		schemaRegistryContainer.start()
 		soknadsfillagerContainer.start()
-		joarkMockContainer.start()
+		arkivMockContainer.start()
 
 		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
@@ -178,8 +178,8 @@ class EndToEndTests {
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:$schemaRegistryPort",
 				"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${dependencies["soknadsfillager"]}",
-				"JOARK_HOST" to "http://${joarkMockContainer.networkAliases[0]}:${dependencies["joark-mock"]}"))
-			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, joarkMockContainer)
+				"JOARK_HOST" to "http://${arkivMockContainer.networkAliases[0]}:${dependencies["arkiv-mock"]}"))
+			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		soknadsmottakerContainer.start()
@@ -210,12 +210,12 @@ class EndToEndTests {
 			println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
 			println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
 			println("\n\nLogs soknadsarkiverer:\n${soknadsarkivererLogs + soknadsarkivererContainer.logs}")
-			println("\n\nLogs joark-mock:\n${joarkMockContainer.logs}")
+			println("\n\nLogs arkiv-mock:\n${arkivMockContainer.logs}")
 
 			soknadsfillagerContainer.stop()
 			soknadsmottakerContainer.stop()
 			soknadsarkivererContainer.stop()
-			joarkMockContainer.stop()
+			arkivMockContainer.stop()
 
 			postgresContainer.stop()
 			kafkaContainer.stop()
@@ -225,36 +225,36 @@ class EndToEndTests {
 
 
 	@Test
-	fun `Happy case - one file ends up in Joark`() {
+	fun `Happy case - one file ends up in the archive`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		setNormalArchiveBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Poison pill followed by proper message - one file ends up in Joark`() {
+	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		setNormalArchiveBehaviour(dto.innsendingsId)
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
 		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Happy case - several files in file storage - one file ends up in Joark`() {
+	fun `Happy case - several files in file storage - one file ends up in the archive`() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
@@ -265,34 +265,34 @@ class EndToEndTests {
 				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
 					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
 			))
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		setNormalArchiveBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(fileId0)
 		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 1)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(fileId0, 0)
 		pollAndVerifyDataInFileStorage(fileId1, 0)
 	}
 
 	@Test
-	fun `No files in file storage - Nothing is sent to Joark`() {
+	fun `No files in file storage - Nothing is sent to the archive`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		setNormalArchiveBehaviour(dto.innsendingsId)
 
 		pollAndVerifyDataInFileStorage(fileId, 0)
 		sendDataToMottaker(dto)
 
-		verifyDataNotInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
+		verifyDataNotInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 0)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Several Hovedskjemas - Nothing is sent to Joark`() {
+	fun `Several Hovedskjemas - Nothing is sent to the archive`() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
@@ -303,82 +303,82 @@ class EndToEndTests {
 				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
 					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
 			))
-		setNormalJoarkBehaviour(dto.innsendingsId)
+		setNormalArchiveBehaviour(dto.innsendingsId)
 
 		sendFilesToFileStorage(fileId0)
 		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
-		verifyDataNotInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 0)
+		verifyDataNotInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 0)
 		pollAndVerifyDataInFileStorage(fileId0, 1)
 		pollAndVerifyDataInFileStorage(fileId1, 1)
 	}
 
 	@Test
-	fun `Joark responds 404 on first two attempts - Works on third attempt`() {
+	fun `Archive responds 404 on first two attempts - Works on third attempt`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, 2)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, 2)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 3)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 3)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Joark responds 500 on first attempt - Works on second attempt`() {
+	fun `Archive responds 500 on first attempt - Works on second attempt`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 2)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 2)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Joark responds 200 but has wrong response body - Will retry`() {
+	fun `Archive responds 200 but has wrong response body - Will retry`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, 3)
+		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, 3)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 4)
+		verifyDataInArchive(dto)
+		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, 4)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
-	fun `Joark responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
+	fun `Archive responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 		val moreAttemptsThanSoknadsarkivererWillPerform = 6
 
 		sendFilesToFileStorage(fileId)
-		mockJoarkRespondsWithErroneousForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
+		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
-		verifyDataInJoark(dto)
-		pollAndVerifyNumberOfCallsToJoark(dto.innsendingsId, 5)
+		verifyDataInArchive(dto)
+		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, 5)
 		pollAndVerifyDataInFileStorage(fileId, 1)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
-	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
 		val innsendingsId = UUID.randomUUID().toString()
-		setNormalJoarkBehaviour(innsendingsId)
+		setNormalArchiveBehaviour(innsendingsId)
 
 		sendFilesToFileStorage(fileId)
 
@@ -386,18 +386,18 @@ class EndToEndTests {
 		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(createDto(fileId, innsendingsId))
-		verifyNumberOfCallsToJoark(innsendingsId, 1)
+		verifyDataInArchive(createDto(fileId, innsendingsId))
+		verifyNumberOfCallsToArchive(innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
-	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to Joark`() {
+	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
 		val innsendingsId = UUID.randomUUID().toString()
-		setNormalJoarkBehaviour(innsendingsId)
+		setNormalArchiveBehaviour(innsendingsId)
 
 		sendFilesToFileStorage(fileId)
 
@@ -406,36 +406,36 @@ class EndToEndTests {
 		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(createDto(fileId, innsendingsId))
-		verifyNumberOfCallsToJoark(innsendingsId, 1)
+		verifyDataInArchive(createDto(fileId, innsendingsId))
+		verifyNumberOfCallsToArchive(innsendingsId, 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
-	fun `Soknadsarkiverer restarts before finishing to put input event in Joark - will pick event up and send to Joark`() {
+	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
 		val attemptsThanSoknadsarkivererWillPerform = 5
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
 		sendDataToMottaker(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
-		mockJoarkRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
 		TimeUnit.SECONDS.sleep(1)
 
 		shutDownSoknadsarkiverer()
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(dto)
-		verifyNumberOfCallsToJoark(dto.innsendingsId, 6)
+		verifyDataInArchive(dto)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, 6)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
-	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in Joark`() {
+	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in the archive`() {
 		val finishedKey = UUID.randomUUID().toString()
 		val finishedFileId = UUID.randomUUID().toString()
 		val newFileId = UUID.randomUUID().toString()
@@ -444,8 +444,8 @@ class EndToEndTests {
 
 		val finishedDto = createDto(finishedFileId, finishedInnsendingsId)
 		val newDto = createDto(newFileId, newInnsendingsId)
-		setNormalJoarkBehaviour(finishedInnsendingsId)
-		setNormalJoarkBehaviour(newInnsendingsId)
+		setNormalArchiveBehaviour(finishedInnsendingsId)
+		setNormalArchiveBehaviour(newInnsendingsId)
 
 		sendFilesToFileStorage(finishedFileId)
 		sendFilesToFileStorage(newFileId)
@@ -456,10 +456,10 @@ class EndToEndTests {
 		sendDataToMottaker(newDto)
 		startUpSoknadsarkiverer()
 
-		verifyDataInJoark(newDto)
-		verifyDataNotInJoark(finishedDto)
-		verifyNumberOfCallsToJoark(newInnsendingsId, 1)
-		verifyNumberOfCallsToJoark(finishedInnsendingsId, 0)
+		verifyDataInArchive(newDto)
+		verifyDataNotInArchive(finishedDto)
+		verifyNumberOfCallsToArchive(newInnsendingsId, 1)
+		verifyNumberOfCallsToArchive(finishedInnsendingsId, 0)
 		pollAndVerifyDataInFileStorage(newFileId, 0)
 		pollAndVerifyDataInFileStorage(finishedFileId, 1)
 	}
@@ -468,7 +468,7 @@ class EndToEndTests {
 	private fun getPortForSoknadsarkiverer() = if (useTestcontainers) soknadsarkivererContainer.firstMappedPort else dependencies["soknadsarkiverer"]
 	private fun getPortForSoknadsmottaker() = if (useTestcontainers) soknadsmottakerContainer.firstMappedPort else dependencies["soknadsmottaker"]
 	private fun getPortForSoknadsfillager() = if (useTestcontainers) soknadsfillagerContainer.firstMappedPort else dependencies["soknadsfillager"]
-	private fun getPortForJoarkMock() = if (useTestcontainers) joarkMockContainer.firstMappedPort else dependencies["joark-mock"]
+	private fun getPortForArkivMock() = if (useTestcontainers) arkivMockContainer.firstMappedPort else dependencies["arkiv-mock"]
 	private fun getPortForKafkaBroker() = if (useTestcontainers) kafkaContainer.firstMappedPort else kafkaBrokerPort
 	private fun getPortForSchemaRegistry() = if (useTestcontainers) schemaRegistryContainer.firstMappedPort else schemaRegistryPort
 
@@ -504,18 +504,18 @@ class EndToEndTests {
 	}
 
 
-	private fun setNormalJoarkBehaviour(uuid: String) {
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/set-normal-behaviour/$uuid"
+	private fun setNormalArchiveBehaviour(uuid: String) {
+		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
 		performPutCall(url)
 	}
 
-	private fun mockJoarkRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+	private fun mockArchiveRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
+		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
 		performPutCall(url)
 	}
 
-	private fun mockJoarkRespondsWithErroneousForXAttempts(uuid: String, forAttempts: Int) {
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
+	private fun mockArchiveRespondsWithErroneousBodyForXAttempts(uuid: String, forAttempts: Int) {
+		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
 		performPutCall(url)
 	}
 
@@ -533,42 +533,42 @@ class EndToEndTests {
 		}
 	}
 
-	private fun verifyDataNotInJoark(dto: SoknadInnsendtDto) {
+	private fun verifyDataNotInArchive(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForJoarkMock()}/rest/journalpostapi/v1/lookup/$key"
+		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/lookup/$key"
 
-		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
+		val response: Optional<LinkedHashMap<String, String>> = pollArchiveUntilTimeout(url)
 
 		if (response.isPresent)
-			fail("Expected Joark to not have any results for $key")
+			fail("Expected the archive to not have any results for $key")
 	}
 
-	private fun verifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) })
+	private fun verifyNumberOfCallsToArchive(uuid: String, expectedNumberOfCalls: Int) {
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToArchive(uuid) })
 	}
 
-	private fun getNumberOfCallsToJoark(uuid: String): Int {
-		val url = "http://localhost:${getPortForJoarkMock()}/joark/mock/response-behaviour/number-of-calls/$uuid"
+	private fun getNumberOfCallsToArchive(uuid: String): Int {
+		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/number-of-calls/$uuid"
 		val request = Request.Builder().url(url).get().build()
 		return restClient.newCall(request).execute().use { response -> response.body?.string()?.toInt() ?: -1 }
 	}
 
-	private fun verifyDataInJoark(dto: SoknadInnsendtDto) {
+	private fun verifyDataInArchive(dto: SoknadInnsendtDto) {
 		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForJoarkMock()}/rest/journalpostapi/v1/lookup/$key"
+		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/lookup/$key"
 
-		val response: Optional<LinkedHashMap<String, String>> = pollJoarkUntilTimeout(url)
+		val response: Optional<LinkedHashMap<String, String>> = pollArchiveUntilTimeout(url)
 
 		if (!response.isPresent)
-			fail("Failed to get response from Joark")
+			fail("Failed to get response from the archive")
 		assertEquals(dto.innsendingsId, response.get()["id"])
 		assertEquals(dto.tema, response.get()["tema"])
 		assertTrue((response.get()["title"]).toString().contains(dto.innsendteDokumenter[0].tittel!!))
 	}
 
-	private fun pollAndVerifyNumberOfCallsToJoark(uuid: String, expectedNumberOfCalls: Int) {
-		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToJoark(uuid) },
-			{ assertEquals(expectedNumberOfCalls, getNumberOfCallsToJoark(uuid), "Expected $expectedNumberOfCalls calls to Joark") })
+	private fun pollAndVerifyNumberOfCallsToArchive(uuid: String, expectedNumberOfCalls: Int) {
+		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToArchive(uuid) },
+			{ assertEquals(expectedNumberOfCalls, getNumberOfCallsToArchive(uuid), "Expected $expectedNumberOfCalls calls to the archive") })
 	}
 
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
@@ -610,7 +610,7 @@ class EndToEndTests {
 		return 0
 	}
 
-	private fun <T> pollJoarkUntilTimeout(url: String): Optional<T> {
+	private fun <T> pollArchiveUntilTimeout(url: String): Optional<T> {
 
 		val request = Request.Builder().url(url).get().build()
 

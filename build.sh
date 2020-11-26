@@ -1,6 +1,5 @@
 #!/bin/bash
 
-BASE_PATH=".."
 MVN_FLAGS="-DskipTests"
 #MVN_FLAGS=""
 
@@ -11,10 +10,10 @@ NOCOLOUR='\033[0m'
 
 
 components=()
-components+=("soknadsmottaker")
-components+=("soknadsarkiverer")
-components+=("soknadsfillager")
-components+=("joark-mock")
+components+=("../soknadsmottaker")
+components+=("../soknadsarkiverer")
+components+=("../soknadsfillager")
+components+=("./arkiv-mock")
 
 
 check_sufficient_java_version() {
@@ -52,9 +51,9 @@ check_sufficient_java_version() {
 
 check_if_components_exists() {
 	status=0
-	for comp in "${components[@]}"; do
-		dir="$BASE_PATH/$comp"
+	for dir in "${components[@]}"; do
 		if [ ! -d "${dir}" ] ; then
+		  comp=$(echo "${dir}" | cut -d'/' -f 2)
 			echo "Expected to find $comp at $dir  --  Clone with"
 			echo "git clone git@github.com:navikt/${comp}.git"
 			echo ""
@@ -75,8 +74,7 @@ check_if_docker_is_running() {
 }
 
 build() {
-	path="$1"
-	cd "$BASE_PATH/$path"
+	cd "$1"
 	mvn clean install $MVN_FLAGS
 }
 build_components_and_show_progress() {
@@ -84,9 +82,10 @@ build_components_and_show_progress() {
 	jobs=()
 
 	longest_name=0
-	for comp in "${components[@]}"; do
+	for dir in "${components[@]}"; do
 
-		build ${comp} 1> /dev/null &
+		build ${dir} 1> /dev/null &
+		comp=$(echo "${dir}" | cut -d'/' -f 2)
 		pid=$!
 		jobs+=($comp)
 		jobs+=($pid)
