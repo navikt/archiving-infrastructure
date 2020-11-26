@@ -1,0 +1,17 @@
+server:
+  port: 8092
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints.web:
+    exposure:
+      include: info, health, metrics, prometheus
+    base-path: "/internal"
+    path-mapping:
+      info: "/isAlive"
+  metrics:
+    export:
+      prometheus:
+        enabled: true

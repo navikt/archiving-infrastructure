@@ -44,8 +44,8 @@ services:
       - 5432:5432
 
 
-  joark-mock:
-    build: ../joark-mock
+  arkiv-mock:
+    build: arkiv-mock
     ports:
       - 8092:8092
     environment:
@@ -69,11 +69,11 @@ services:
       - kafka-broker
       - kafka-schema-registry
       - soknadsfillager
-      - joark-mock
+      - arkiv-mock
     environment:
      - SPRING_PROFILES_ACTIVE=test
      - FILESTORAGE_HOST=http://soknadsfillager:9042
-     - JOARK_HOST=http://joark-mock:8092
+     - JOARK_HOST=http://arkiv-mock:8092
      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
      - SCHEMA_REGISTRY_URL=http://kafka-schema-registry:8081
 

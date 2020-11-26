@@ -36,5 +36,5 @@ echo "Waiting for services to start ..."
 wait_for_service_to_start "soknadsmottaker"  8090 &
 wait_for_service_to_start "soknadsarkiverer" 8091 &
 wait_for_service_to_start "soknadsfillager"  9042 &
-wait_for_service_to_start "joark-mock"       8092 &
+wait_for_service_to_start "arkiv-mock"       8092 &
 wait
