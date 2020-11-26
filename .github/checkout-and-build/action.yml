@@ -46,7 +46,8 @@ runs:
         mvn clean install $TEST_PARAM
 
         if [[ ${{ inputs.run_docker_build }} = "true" ]]; then
-          TAG="archiving-infrastructure_${{ inputs.component_name }}:latest"
+          APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
+          TAG="archiving-infrastructure_${APP_NAME}:latest"
           docker build --tag $TAG .
         fi
         cd -
