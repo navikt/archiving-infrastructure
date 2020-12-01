@@ -46,6 +46,8 @@ class EndToEndTests {
 
 	private val useTestcontainers = System.getProperty("useTestcontainers")?.toBoolean() ?: true
 
+	private val attemptsThanSoknadsarkivererWillPerform = 6
+
 	private val mottakerUsername = "avsender"
 	private val mottakerPassword = "password"
 	private val filleserUsername = "arkiverer"
@@ -317,43 +319,46 @@ class EndToEndTests {
 
 	@Test
 	fun `Archive responds 404 on first two attempts - Works on third attempt`() {
+		val erroneousAttempts = 2
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, 2)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, erroneousAttempts)
 		sendDataToMottaker(dto)
 
 		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 3)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Archive responds 500 on first attempt - Works on second attempt`() {
+		val erroneousAttempts = 1
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, erroneousAttempts)
 		sendDataToMottaker(dto)
 
 		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 2)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
 	@Test
 	fun `Archive responds 200 but has wrong response body - Will retry`() {
+		val erroneousAttempts = 3
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
 		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, 3)
+		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, erroneousAttempts)
 		sendDataToMottaker(dto)
 
 		verifyDataInArchive(dto)
-		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, 4)
+		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -361,14 +366,14 @@ class EndToEndTests {
 	fun `Archive responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		val moreAttemptsThanSoknadsarkivererWillPerform = 6
+		val moreAttemptsThanSoknadsarkivererWillPerform = attemptsThanSoknadsarkivererWillPerform + 1
 
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
 		verifyDataInArchive(dto)
-		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, 5)
+		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
 		pollAndVerifyDataInFileStorage(fileId, 1)
 	}
 
@@ -414,7 +419,6 @@ class EndToEndTests {
 	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
 	@Test
 	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
-		val attemptsThanSoknadsarkivererWillPerform = 5
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 
@@ -429,7 +433,7 @@ class EndToEndTests {
 		startUpSoknadsarkiverer()
 
 		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 6)
+		verifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform + 1)
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
