@@ -10,6 +10,7 @@ import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
 import no.nav.soknad.archiving.arkivmock.service.kafka.KafkaPublisher
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
 import java.util.*
 
 @Service
@@ -43,7 +44,8 @@ class ArkivMockService(private val arkivRepository: ArkivRepository,
 	}
 
 	private fun createArkivDbData(arkivData: ArkivData) =
-		ArkivDbData(arkivData.eksternReferanseId, arkivData.tittel, arkivData.tema, LocalDateTime.now())
+		ArkivDbData(arkivData.eksternReferanseId, arkivData.tittel, arkivData.tema, LocalDateTime.now(),
+			LocalDateTime.parse(arkivData.datoMottatt, ISO_LOCAL_DATE_TIME))
 
 	private fun saveToDatabaseAndAlertOnKafka(data: ArkivDbData) {
 		val dbEntity = arkivRepository.save(data)

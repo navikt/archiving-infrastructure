@@ -730,7 +730,7 @@ class EndToEndTests {
 	}
 
 	private fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
-		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
+		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", null,
 			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
 				listOf(InnsendtVariantDto(fileId, null, "filnavn", "1024", "variantformat", "PDFA")))))
 
@@ -743,7 +743,8 @@ class EndToEndTests {
 
 		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
 
-		return Soknadarkivschema(innsendingsId, soknadInnsendtDto.personId, soknadInnsendtDto.tema, soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+		val date = soknadInnsendtDto.innsendtDato ?: LocalDateTime.now()
+		return Soknadarkivschema(innsendingsId, soknadInnsendtDto.personId, soknadInnsendtDto.tema, date.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 }
 
