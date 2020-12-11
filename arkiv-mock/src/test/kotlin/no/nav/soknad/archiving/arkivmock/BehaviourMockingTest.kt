@@ -134,7 +134,7 @@ class BehaviourMockingTest {
 
 	private fun createRequestData(personId: String) =
 		ArkivData(
-			Bruker(personId, "FNR"), LocalDate.now().format(DateTimeFormatter.ISO_DATE), emptyList(),
+			Bruker(personId, "FNR"), LocalDate.now().format(DateTimeFormatter.ISO_DATE_TIME), emptyList(),
 			personId, "INNGAAENDE", "NAV_NO", "tema", "tittel"
 		)
 }
