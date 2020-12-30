@@ -1,11 +1,15 @@
 package no.nav.soknad.archiving.arkivmock
 
-import no.nav.soknad.archiving.arkivmock.dto.Bruker
+import com.nhaarman.mockitokotlin2.*
 import no.nav.soknad.archiving.arkivmock.dto.ArkivData
+import no.nav.soknad.archiving.arkivmock.dto.Bruker
 import no.nav.soknad.archiving.arkivmock.exceptions.InternalServerErrorException
 import no.nav.soknad.archiving.arkivmock.exceptions.NotFoundException
-import no.nav.soknad.archiving.arkivmock.rest.BehaviourMocking
+import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
 import no.nav.soknad.archiving.arkivmock.rest.ArkivRestInterface
+import no.nav.soknad.archiving.arkivmock.rest.BehaviourMocking
+import no.nav.soknad.archiving.arkivmock.service.kafka.KafkaPublisher
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -13,11 +17,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
-import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 @SpringBootTest
 class BehaviourMockingTest {
@@ -28,6 +33,12 @@ class BehaviourMockingTest {
 	@Autowired
 	private lateinit var behaviourMocking: BehaviourMocking
 
+	@Autowired
+	private lateinit var arkivRepository: ArkivRepository
+
+	@MockBean
+	private lateinit var kafkaPublisher: KafkaPublisher
+
 	private val id = UUID.randomUUID().toString()
 
 	@BeforeEach
@@ -35,91 +46,95 @@ class BehaviourMockingTest {
 		behaviourMocking.resetMockResponseBehaviour(id)
 	}
 
+	@AfterEach
+	fun teardown() {
+		reset(kafkaPublisher)
+		clearInvocations(kafkaPublisher)
+	}
+
 	@Test
 	fun `No specified mock behaviour - Will save to DB`() {
+		val dbCountBefore = arkivRepository.count().toInt()
 		val response = arkivRestInterface.receiveMessage(createRequestData(id))
 
 		assertEquals(HttpStatus.OK, response.statusCode)
 		assertTrue(response.body!!.contains("{\"dokumenter\":[],\"journalpostId\":\""))
 		assertTrue(response.body!!.contains("\",\"journalpostferdigstilt\":true,\"journalstatus\":\"MIDLERTIDIG\",\"melding\":\"null\"}"))
-
-		arkivRestInterface.lookup(id)
-
 		assertEquals(1, behaviourMocking.getNumberOfCalls(id))
+		TimeUnit.SECONDS.sleep(1)
+		verify(kafkaPublisher, times(1)).putNumberOfCallsOnTopic(eq(id), eq(1), any())
+		verify(kafkaPublisher, times(1)).putDataOnTopic(eq(id), any(), any())
+		verify(kafkaPublisher, times(1)).putNumberOfEntitiesOnTopic(eq(id), eq(dbCountBefore + 1), any())
 	}
 
 	@Test
 	fun `Mock response with Ok Status but wrong body - Will save to DB`() {
+		val dbCountBefore = arkivRepository.count().toInt()
 		behaviourMocking.mockOkResponseWithErroneousBody(id, 1)
 
 		val response = arkivRestInterface.receiveMessage(createRequestData(id))
 
 		assertEquals(HttpStatus.OK, response.statusCode)
 		assertEquals("THIS_IS_A_MOCKED_INVALID_RESPONSE", response.body)
-
-		arkivRestInterface.lookup(id)
-
 		assertEquals(1, behaviourMocking.getNumberOfCalls(id))
+		TimeUnit.SECONDS.sleep(1)
+		verify(kafkaPublisher, times(1)).putNumberOfCallsOnTopic(eq(id), eq(1), any())
+		verify(kafkaPublisher, times(1)).putDataOnTopic(eq(id), any(), any())
+		verify(kafkaPublisher, times(1)).putNumberOfEntitiesOnTopic(eq(id), eq(dbCountBefore + 1), any())
 	}
 
 	@Test
 	fun `Responds with status 404 two times, third time works - Will save to DB on third attempt`() {
+		val dbCountBefore = arkivRepository.count().toInt()
 		behaviourMocking.mockResponseBehaviour(id, 404, 2)
 
 		assertThrows<NotFoundException> {
 			arkivRestInterface.receiveMessage(createRequestData(id))
 		}
-		assertThrows<ResponseStatusException> {
-			arkivRestInterface.lookup(id)
-		}
 
 		assertThrows<NotFoundException> {
 			arkivRestInterface.receiveMessage(createRequestData(id))
 		}
-		assertThrows<ResponseStatusException> {
-			arkivRestInterface.lookup(id)
-		}
 
 		val response = arkivRestInterface.receiveMessage(createRequestData(id))
-		assertEquals(HttpStatus.OK, response.statusCode)
-		arkivRestInterface.lookup(id)
 
+		assertEquals(HttpStatus.OK, response.statusCode)
 		assertEquals(3, behaviourMocking.getNumberOfCalls(id))
+		TimeUnit.SECONDS.sleep(1)
+		verify(kafkaPublisher, times(1)).putNumberOfCallsOnTopic(eq(id), eq(1), any())
+		verify(kafkaPublisher, times(1)).putDataOnTopic(eq(id), any(), any())
+		verify(kafkaPublisher, times(1)).putNumberOfEntitiesOnTopic(eq(id), eq(dbCountBefore + 1), any())
 	}
 
 	@Test
 	fun `Responds with status 500 three times, third time works - Will save to DB on third attempt`() {
+		val dbCountBefore = arkivRepository.count().toInt()
 		behaviourMocking.mockResponseBehaviour(id, 500, 3)
 
 		assertThrows<InternalServerErrorException> {
 			arkivRestInterface.receiveMessage(createRequestData(id))
 		}
-		assertThrows<ResponseStatusException> {
-			arkivRestInterface.lookup(id)
-		}
 
 		assertThrows<InternalServerErrorException> {
 			arkivRestInterface.receiveMessage(createRequestData(id))
 		}
-		assertThrows<ResponseStatusException> {
-			arkivRestInterface.lookup(id)
-		}
 
 		assertThrows<InternalServerErrorException> {
 			arkivRestInterface.receiveMessage(createRequestData(id))
-		}
-		assertThrows<ResponseStatusException> {
-			arkivRestInterface.lookup(id)
 		}
 
 		val response = arkivRestInterface.receiveMessage(createRequestData(id))
 		assertEquals(HttpStatus.OK, response.statusCode)
-		arkivRestInterface.lookup(id)
-
 		assertEquals(4, behaviourMocking.getNumberOfCalls(id))
+		TimeUnit.SECONDS.sleep(1)
+		verify(kafkaPublisher, times(1)).putNumberOfCallsOnTopic(eq(id), eq(1), any())
+		verify(kafkaPublisher, times(1)).putDataOnTopic(eq(id), any(), any())
+		verify(kafkaPublisher, times(1)).putNumberOfEntitiesOnTopic(eq(id), eq(dbCountBefore + 1), any())
 	}
 
 	private fun createRequestData(personId: String) =
-		ArkivData(Bruker(personId, "FNR"), LocalDate.now().format(DateTimeFormatter.ISO_DATE), emptyList(),
-			personId, "INNGAAENDE", "NAV_NO", "tema", "tittel")
+		ArkivData(
+			Bruker(personId, "FNR"), LocalDate.now().format(DateTimeFormatter.ISO_DATE), emptyList(),
+			personId, "INNGAAENDE", "NAV_NO", "tema", "tittel"
+		)
 }
