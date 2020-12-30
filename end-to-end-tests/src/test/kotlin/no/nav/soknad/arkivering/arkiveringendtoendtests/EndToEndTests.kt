@@ -3,12 +3,12 @@ package no.nav.soknad.arkivering.arkiveringendtoendtests
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.*
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.ArkivMockKafkaListener
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaProperties
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.arkiveringendtoendtests.locks.VerificationTask
+import no.nav.soknad.arkivering.arkiveringendtoendtests.locks.VerificationTaskManager
 import no.nav.soknad.arkivering.avroschemas.*
 import okhttp3.Headers
 import okhttp3.MediaType.Companion.toMediaType
@@ -18,7 +18,6 @@ import okhttp3.RequestBody
 import okio.BufferedSink
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.testcontainers.containers.GenericContainer
@@ -57,6 +56,7 @@ class EndToEndTests {
 	private val restClient = OkHttpClient()
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
+	private lateinit var arkivMockKafkaListener: ArkivMockKafkaListener
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
@@ -79,6 +79,7 @@ class EndToEndTests {
 			checkThatDependenciesAreUp()
 
 		kafkaPublisher = KafkaPublisher(getPortForKafkaBroker(), getPortForSchemaRegistry())
+		arkivMockKafkaListener = ArkivMockKafkaListener(getPortForKafkaBroker(), getPortForSchemaRegistry())
 	}
 
 	private fun checkThatDependenciesAreUp() {
@@ -123,6 +124,9 @@ class EndToEndTests {
 		createTopic(kafkaProperties.inputTopic)
 		createTopic(kafkaProperties.processingEventLogTopic)
 		createTopic(kafkaProperties.messageTopic)
+		createTopic(kafkaProperties.entitiesTopic)
+		createTopic(kafkaProperties.numberOfCallsTopic)
+		createTopic(kafkaProperties.numberOfEntitiesTopic)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
@@ -149,15 +153,20 @@ class EndToEndTests {
 			.dependsOn(postgresContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
+		schemaRegistryContainer.start()
+		soknadsfillagerContainer.start()
+
 		arkivMockContainer = KGenericContainer("archiving-infrastructure_arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
 			.withExposedPorts(dependencies["arkiv-mock"])
 			.withNetwork(network)
-			.withEnv(hashMapOf("SPRING_PROFILES_ACTIVE" to "docker"))
+			.withEnv(hashMapOf(
+				"SPRING_PROFILES_ACTIVE" to "docker",
+				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:$kafkaBrokerPort",
+				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:$schemaRegistryPort"))
+			.dependsOn(kafkaContainer, schemaRegistryContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		schemaRegistryContainer.start()
-		soknadsfillagerContainer.start()
 		arkivMockContainer.start()
 
 		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
@@ -208,6 +217,7 @@ class EndToEndTests {
 
 	@AfterAll
 	fun teardown() {
+		arkivMockKafkaListener.close()
 		if (useTestcontainers) {
 			println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
 			println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
@@ -235,8 +245,9 @@ class EndToEndTests {
 		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -250,8 +261,9 @@ class EndToEndTests {
 		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -273,8 +285,9 @@ class EndToEndTests {
 		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId0, 0)
 		pollAndVerifyDataInFileStorage(fileId1, 0)
 	}
@@ -288,8 +301,9 @@ class EndToEndTests {
 		pollAndVerifyDataInFileStorage(fileId, 0)
 		sendDataToMottaker(dto)
 
-		verifyDataNotInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 0)
+		assertThatArkivMock()
+			.doesNotContainKey(dto.innsendingsId)
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -311,8 +325,9 @@ class EndToEndTests {
 		sendFilesToFileStorage(fileId1)
 		sendDataToMottaker(dto)
 
-		verifyDataNotInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, 0)
+		assertThatArkivMock()
+			.doesNotContainKey(dto.innsendingsId)
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId0, 1)
 		pollAndVerifyDataInFileStorage(fileId1, 1)
 	}
@@ -327,8 +342,9 @@ class EndToEndTests {
 		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, erroneousAttempts)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(erroneousAttempts + 1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -342,8 +358,9 @@ class EndToEndTests {
 		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, erroneousAttempts)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(erroneousAttempts + 1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -357,8 +374,9 @@ class EndToEndTests {
 		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, erroneousAttempts)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, erroneousAttempts + 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(erroneousAttempts + 1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -372,8 +390,9 @@ class EndToEndTests {
 		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
-		verifyDataInArchive(dto)
-		pollAndVerifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 1)
 	}
 
@@ -391,8 +410,9 @@ class EndToEndTests {
 		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
 		startUpSoknadsarkiverer()
 
-		verifyDataInArchive(createDto(fileId, innsendingsId))
-		verifyNumberOfCallsToArchive(innsendingsId, 1)
+		assertThatArkivMock()
+			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -411,8 +431,9 @@ class EndToEndTests {
 		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
 		startUpSoknadsarkiverer()
 
-		verifyDataInArchive(createDto(fileId, innsendingsId))
-		verifyNumberOfCallsToArchive(innsendingsId, 1)
+		assertThatArkivMock()
+			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -425,15 +446,18 @@ class EndToEndTests {
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
 		sendDataToMottaker(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform)
+		assertThatArkivMock()
+			.hasBeenCalled(attemptsThanSoknadsarkivererWillPerform timesForKey dto.innsendingsId)
+			.verify()
 		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
 		TimeUnit.SECONDS.sleep(1)
 
 		shutDownSoknadsarkiverer()
 		startUpSoknadsarkiverer()
 
-		verifyDataInArchive(dto)
-		verifyNumberOfCallsToArchive(dto.innsendingsId, attemptsThanSoknadsarkivererWillPerform + 1)
+		assertThatArkivMock()
+			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform + 1))
+			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -446,7 +470,6 @@ class EndToEndTests {
 		val finishedInnsendingsId = UUID.randomUUID().toString()
 		val newInnsendingsId = UUID.randomUUID().toString()
 
-		val finishedDto = createDto(finishedFileId, finishedInnsendingsId)
 		val newDto = createDto(newFileId, newInnsendingsId)
 		setNormalArchiveBehaviour(finishedInnsendingsId)
 		setNormalArchiveBehaviour(newInnsendingsId)
@@ -460,14 +483,108 @@ class EndToEndTests {
 		sendDataToMottaker(newDto)
 		startUpSoknadsarkiverer()
 
-		verifyDataInArchive(newDto)
-		verifyDataNotInArchive(finishedDto)
-		verifyNumberOfCallsToArchive(newInnsendingsId, 1)
-		verifyNumberOfCallsToArchive(finishedInnsendingsId, 0)
-		pollAndVerifyDataInFileStorage(newFileId, 0)
+		assertThatArkivMock()
+			.containsData(newDto andWasCalled times(1))
+			.doesNotContainKey(finishedInnsendingsId)
+			.verify()
 		pollAndVerifyDataInFileStorage(finishedFileId, 1)
+		pollAndVerifyDataInFileStorage(newFileId, 0)
 	}
 
+	private fun assertThatArkivMock(): VerificationTaskManager {
+		arkivMockKafkaListener.clearVerifiers()
+		return VerificationTaskManager()
+	}
+
+	private fun VerificationTaskManager.containsData(pair: Pair<SoknadInnsendtDto, Int>): VerificationTaskManager {
+		val (countVerifier, valueVerifier) = createVerificationTasksForEntityAndCount(this, pair.first, pair.second)
+		return registerVerificationTasks(countVerifier, valueVerifier)
+	}
+
+	private fun VerificationTaskManager.hasBeenCalled(pair: Pair<String, Int>): VerificationTaskManager {
+		val countVerifier = createVerificationTaskForCount(this, pair.first, pair.second)
+		this.registerTasks(listOf(countVerifier))
+		arkivMockKafkaListener.addVerifierForNumberOfCalls(countVerifier)
+		return this
+	}
+
+	private fun VerificationTaskManager.doesNotContainKey(key: String): VerificationTaskManager {
+		val (countVerifier, valueVerifier) = createVerificationTaskForAbsenceOfKey(this, key)
+		return registerVerificationTasks(countVerifier, valueVerifier)
+	}
+
+	private fun VerificationTaskManager.registerVerificationTasks(
+		countVerifier: VerificationTask<Int>,
+		valueVerifier: VerificationTask<ArkivDbData>
+	): VerificationTaskManager {
+
+		this.registerTasks(listOf(countVerifier, valueVerifier))
+		arkivMockKafkaListener.addVerifierForEntities(valueVerifier)
+		arkivMockKafkaListener.addVerifierForNumberOfCalls(countVerifier)
+		return this
+	}
+
+	private fun VerificationTaskManager.verify() {
+		this.assertAllTasksSucceeds()
+	}
+
+	private infix fun SoknadInnsendtDto.andWasCalled(count: Int) = this to count
+
+	private infix fun Int.timesForKey(key: String) = key to this
+
+	/**
+	 * Syntactic sugar to make tests read nicer. The function just returns its parameter back
+	 */
+	private fun times(count: Int) = count
+
+
+	private fun createVerificationTasksForEntityAndCount(
+		manager: VerificationTaskManager,
+		dto: SoknadInnsendtDto,
+		expectedCount: Int
+	): Pair<VerificationTask<Int>, VerificationTask<ArkivDbData>> {
+
+		val countVerifier = createVerificationTaskForCount(manager, dto.innsendingsId, expectedCount)
+
+		val valueVerifier = VerificationTask.Builder<ArkivDbData>()
+			.withManager(manager)
+			.forKey(dto.innsendingsId)
+			.verifyPresence()
+			.verifyThat(dto.innsendingsId, { entity -> entity.id }, "Assert correct entity id")
+			.verifyThat(dto.tema, { entity -> entity.tema }, "Assert correct entity tema")
+			.verifyThat(dto.innsendteDokumenter[0].tittel, { entity -> entity.title }, "Assert correct entity title")
+			.build()
+
+		return countVerifier to valueVerifier
+	}
+
+	private fun createVerificationTaskForCount(manager: VerificationTaskManager, key: String, expectedCount: Int) =
+		VerificationTask.Builder<Int>()
+			.withManager(manager)
+			.forKey(key)
+			.verifyPresence()
+			.verifyThat(expectedCount, { count -> count }, "Assert correct number of attempts to save to the Archive")
+			.build()
+
+	private fun createVerificationTaskForAbsenceOfKey(
+		manager: VerificationTaskManager,
+		key: String
+	): Pair<VerificationTask<Int>, VerificationTask<ArkivDbData>> {
+
+		val countVerifier = VerificationTask.Builder<Int>()
+			.withManager(manager)
+			.forKey(key)
+			.verifyAbsence()
+			.build()
+
+		val valueVerifier = VerificationTask.Builder<ArkivDbData>()
+			.withManager(manager)
+			.forKey(key)
+			.verifyAbsence()
+			.build()
+
+		return countVerifier to valueVerifier
+	}
 
 	private fun getPortForSoknadsarkiverer() = if (useTestcontainers) soknadsarkivererContainer.firstMappedPort else dependencies["soknadsarkiverer"]
 	private fun getPortForSoknadsmottaker() = if (useTestcontainers) soknadsmottakerContainer.firstMappedPort else dependencies["soknadsmottaker"]
@@ -537,44 +654,6 @@ class EndToEndTests {
 		}
 	}
 
-	private fun verifyDataNotInArchive(dto: SoknadInnsendtDto) {
-		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/lookup/$key"
-
-		val response: Optional<LinkedHashMap<String, String>> = pollArchiveUntilTimeout(url)
-
-		if (response.isPresent)
-			fail("Expected the archive to not have any results for $key")
-	}
-
-	private fun verifyNumberOfCallsToArchive(uuid: String, expectedNumberOfCalls: Int) {
-		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToArchive(uuid) })
-	}
-
-	private fun getNumberOfCallsToArchive(uuid: String): Int {
-		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/number-of-calls/$uuid"
-		val request = Request.Builder().url(url).get().build()
-		return restClient.newCall(request).execute().use { response -> response.body?.string()?.toInt() ?: -1 }
-	}
-
-	private fun verifyDataInArchive(dto: SoknadInnsendtDto) {
-		val key = dto.innsendingsId
-		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/lookup/$key"
-
-		val response: Optional<LinkedHashMap<String, String>> = pollArchiveUntilTimeout(url)
-
-		if (!response.isPresent)
-			fail("Failed to get response from the archive")
-		assertEquals(dto.innsendingsId, response.get()["id"])
-		assertEquals(dto.tema, response.get()["tema"])
-		assertTrue((response.get()["title"]).toString().contains(dto.innsendteDokumenter[0].tittel!!))
-	}
-
-	private fun pollAndVerifyNumberOfCallsToArchive(uuid: String, expectedNumberOfCalls: Int) {
-		loopAndVerify(expectedNumberOfCalls, { getNumberOfCallsToArchive(uuid) },
-			{ assertEquals(expectedNumberOfCalls, getNumberOfCallsToArchive(uuid), "Expected $expectedNumberOfCalls calls to the archive") })
-	}
-
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
 		val url = "http://localhost:${getPortForSoknadsfillager()}/filer?ids=$uuid"
 		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url) },
@@ -614,30 +693,6 @@ class EndToEndTests {
 		return 0
 	}
 
-	private fun <T> pollArchiveUntilTimeout(url: String): Optional<T> {
-
-		val request = Request.Builder().url(url).get().build()
-
-		val startTime = System.currentTimeMillis()
-		val timeout = 10 * 1000
-
-		while (System.currentTimeMillis() < startTime + timeout) {
-			restClient.newCall(request).execute().use {
-
-				val responseBody = it.body
-
-				if (it.isSuccessful && responseBody != null) {
-					val body = responseBody.string()
-					if (body != "[]") {
-						val resp = objectMapper.readValue(body, object : TypeReference<T>() {})
-						return Optional.of(resp)
-					}
-				}
-				TimeUnit.MILLISECONDS.sleep(50)
-			}
-		}
-		return Optional.empty()
-	}
 
 	private fun sendFilesToFileStorage(uuid: String) {
 		println("fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'")

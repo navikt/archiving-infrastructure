@@ -19,6 +19,7 @@ class ArkivDbData(
 	override fun toString(): String {
 		val mapper = ObjectMapper()
 		mapper.enable(SerializationFeature.INDENT_OUTPUT)
+		mapper.findAndRegisterModules()
 		return mapper.writeValueAsString(this)
 	}
 }
