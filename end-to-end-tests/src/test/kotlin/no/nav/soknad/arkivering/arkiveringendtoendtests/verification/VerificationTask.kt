@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests.locks
+package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -93,11 +93,21 @@ class VerificationTask<T> private constructor(
 		fun build() = VerificationTask(channel, key, verifier, presence, timeout)
 
 		inner class VerificationSteps(private val builder: Builder<T>) {
-			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) = apply { verifier.add(Assertion(expected, function, message)) }
+
+			fun <R> verifyThat(
+				message: String,
+				expected: R,
+				actualFunction: (T) -> R,
+				evalFunction: (T) -> Boolean = { input -> actualFunction.invoke(input) == expected }
+			): VerificationSteps {
+
+				return apply { verifier.add(Assertion(expected, actualFunction, evalFunction, message)) }
+			}
+
 			fun build() = builder.build()
 		}
 	}
 
-	private data class Assertion<V, T>(val expected: V, val actualFunction: (T) -> V, val message: String)
+	private data class Assertion<V, T>(val expected: V, val actualFunction: (T) -> V, val evalFunction: (T) -> Boolean, val message: String)
 	private enum class Presence { PRESENCE, ABSENCE }
 }

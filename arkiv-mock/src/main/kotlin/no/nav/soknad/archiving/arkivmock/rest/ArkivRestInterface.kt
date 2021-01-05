@@ -17,7 +17,7 @@ class ArkivRestInterface(private val arkivMockService: ArkivMockService) {
 
 	@PostMapping(value = ["/journalpost"])
 	fun receiveMessage(@RequestBody arkivData: ArkivData): ResponseEntity<String> {
-		logger.info("Received message: '$arkivData'")
+		logger.info("Received message with id '${arkivData.eksternReferanseId}'")
 
 		val responseBody = arkivMockService.archive(arkivData)
 		return ResponseEntity(responseBody, HttpStatus.OK)
