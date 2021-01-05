@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
-import no.nav.soknad.arkivering.arkiveringendtoendtests.locks.VerificationTask
+import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.VerificationTask
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder

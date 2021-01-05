@@ -5,5 +5,6 @@ CREATE TABLE arkiv (
                        title VARCHAR(255),
                        tema VARCHAR(255),
                        timesaved TIMESTAMP,
-                       origtime TIMESTAMP
+                       origtime TIMESTAMP,
+                       timetaken INT
 );

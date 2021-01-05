@@ -6,5 +6,7 @@ data class ArkivDbData(
 	val id: String,
 	val title: String,
 	val tema: String,
-	val timesaved: LocalDateTime
+	val timesaved: LocalDateTime,
+	val origtime: LocalDateTime,
+	val timetaken: Long
 )

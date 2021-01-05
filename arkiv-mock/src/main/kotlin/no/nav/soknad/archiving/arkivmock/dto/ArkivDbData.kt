@@ -15,7 +15,8 @@ class ArkivDbData(
 	val title: String,
 	val tema: String,
 	val timesaved: LocalDateTime,
-	val origtime: LocalDateTime
+	val origtime: LocalDateTime,
+	val timetaken: Long
 ) {
 	override fun toString(): String {
 		val mapper = ObjectMapper()

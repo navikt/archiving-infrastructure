@@ -20,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -134,7 +135,7 @@ class BehaviourMockingTest {
 
 	private fun createRequestData(personId: String) =
 		ArkivData(
-			Bruker(personId, "FNR"), LocalDate.now().format(DateTimeFormatter.ISO_DATE_TIME), emptyList(),
+			Bruker(personId, "FNR"), LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME), emptyList(),
 			personId, "INNGAAENDE", "NAV_NO", "tema", "tittel"
 		)
 }
