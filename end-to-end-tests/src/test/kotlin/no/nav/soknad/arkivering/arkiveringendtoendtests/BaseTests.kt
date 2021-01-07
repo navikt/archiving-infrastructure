@@ -40,7 +40,7 @@ abstract class BaseTests {
 	private val kafkaBrokerPort = 9092
 	private val schemaRegistryPort = 8081
 
-	private val useTestcontainers = System.getProperty("useTestcontainers")?.toBoolean() ?: true
+	val useTestcontainers = System.getProperty("useTestcontainers")?.toBoolean() ?: true
 
 	val attemptsThanSoknadsarkivererWillPerform = 6
 
@@ -282,6 +282,17 @@ abstract class BaseTests {
 		eventTypes.forEach { eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
 	}
 
+
+	fun resetArchiveDatabase() {
+		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/reset"
+
+		val requestBody = object : RequestBody() {
+			override fun contentType() = "application/json".toMediaType()
+			override fun writeTo(sink: BufferedSink) {}
+		}
+		val request = Request.Builder().url(url).post(requestBody).build()
+		restClient.newCall(request).execute().close()
+	}
 
 	fun setNormalArchiveBehaviour(uuid: String) {
 		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"

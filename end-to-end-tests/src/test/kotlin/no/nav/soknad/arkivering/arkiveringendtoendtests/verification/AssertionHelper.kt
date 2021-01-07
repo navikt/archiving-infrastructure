@@ -32,7 +32,7 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 			.withManager(verificationTaskManager)
 			.withTimeout(timeout)
 			.verifyPresence()
-			.verifyThat("Assert correct number of entities in the Archive", expectedCount, { count -> count }, { input -> input >= expectedCount })
+			.verifyThat(expectedCount, { count -> count }, "Assert correct number of entities in the Archive")
 			.build()
 	}
 
@@ -73,9 +73,9 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 			.withManager(verificationTaskManager)
 			.forKey(dto.innsendingsId)
 			.verifyPresence()
-			.verifyThat("Assert correct number of entities in the Archive", dto.innsendingsId, { entity -> entity.id })
-			.verifyThat("Assert correct entity tema", dto.tema, { entity -> entity.tema })
-			.verifyThat("Assert correct entity title", dto.innsendteDokumenter[0].tittel, { entity -> entity.title })
+			.verifyThat(dto.innsendingsId, { entity -> entity.id }, "Assert correct number of entities in the Archive")
+			.verifyThat(dto.tema, { entity -> entity.tema }, "Assert correct entity tema")
+			.verifyThat(dto.innsendteDokumenter[0].tittel, { entity -> entity.title }, "Assert correct entity title")
 			.build()
 
 		return countVerifier to valueVerifier
@@ -86,7 +86,7 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 			.withManager(verificationTaskManager)
 			.forKey(key)
 			.verifyPresence()
-			.verifyThat("Assert correct number of attempts to save to the Archive", expectedCount, { count -> count })
+			.verifyThat(expectedCount, { count -> count }, "Assert correct number of attempts to save to the Archive")
 			.build()
 
 	private fun createVerificationTaskForAbsenceOfKey(key: String): Pair<VerificationTask<Int>, VerificationTask<ArkivDbData>> {
