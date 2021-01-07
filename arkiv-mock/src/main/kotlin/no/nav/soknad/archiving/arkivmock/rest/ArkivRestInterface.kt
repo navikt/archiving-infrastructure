@@ -22,4 +22,11 @@ class ArkivRestInterface(private val arkivMockService: ArkivMockService) {
 		val responseBody = arkivMockService.archive(arkivData)
 		return ResponseEntity(responseBody, HttpStatus.OK)
 	}
+
+	@PostMapping(value = ["/reset"])
+	fun reset() {
+		logger.info("Will reset local database")
+
+		arkivMockService.reset()
+	}
 }

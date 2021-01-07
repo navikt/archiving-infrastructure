@@ -30,7 +30,7 @@ class IntegrationTest {
 	private lateinit var behaviourMocking: BehaviourMocking
 
 	@Test
-	fun `Will save to database when receiving message`() {
+	fun `Will save to database when receiving message and can reset afterwards`() {
 		val timeWhenStarting = LocalDateTime.now().minusSeconds(1)
 		val id = UUID.randomUUID().toString()
 		behaviourMocking.setNormalResponseBehaviour(id)
@@ -45,6 +45,10 @@ class IntegrationTest {
 		assertEquals(title, result.title)
 		assertTrue(result.timesaved.isBefore(LocalDateTime.now().plusSeconds(1)))
 		assertTrue(result.timesaved.isAfter(timeWhenStarting))
+
+		arkivRestInterface.reset()
+
+		assertEquals(0, arkivRepository.count())
 	}
 
 	private fun createRequestData(personId: String) =

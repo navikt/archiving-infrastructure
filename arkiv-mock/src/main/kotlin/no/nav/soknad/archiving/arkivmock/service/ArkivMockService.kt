@@ -19,6 +19,10 @@ class ArkivMockService(private val arkivRepository: ArkivRepository,
 											 private val behaviourService: BehaviourService,
 											 private val kafkaPublisher: KafkaPublisher) {
 
+	fun reset() {
+		arkivRepository.deleteAll()
+	}
+
 	fun archive(arkivData: ArkivData): String? {
 		reactToArchiveRequest(arkivData)
 
@@ -35,7 +39,8 @@ class ArkivMockService(private val arkivRepository: ArkivRepository,
 		try {
 			behaviourService.reactToArchiveRequest(id)
 		} finally {
-			GlobalScope.launch { kafkaPublisher.putNumberOfCallsOnTopic(id, behaviourService.getNumberOfCallsThatHaveBeenMade(id)) }
+			val numberOfCalls = behaviourService.getNumberOfCallsThatHaveBeenMade(id)
+			GlobalScope.launch { kafkaPublisher.putNumberOfCallsOnTopic(id, if (numberOfCalls > 0) numberOfCalls else 1) }
 		}
 	}
 
