@@ -1,15 +1,24 @@
 package no.nav.soknad.archiving.arkivmock.dto
 
-data class ArkivData(val bruker: Bruker, val datoMottatt: String, val dokumenter: List<Dokument>,
-										 val eksternReferanseId: String, val journalpostType: String, val kanal: String,
-										 val tema: String, val tittel: String)
+data class ArkivData(
+	val bruker: Bruker, val datoMottatt: String, val dokumenter: List<Dokument>,
+	val eksternReferanseId: String, val journalpostType: String, val kanal: String,
+	val tema: String, val tittel: String
+)
 
 data class Bruker(val id: String, val idType: String)
 
-data class Dokument(val brevkode: String, val dokumentKategori: String, val dokumentvarianter: List<DokumentVariant>,
-										val tittel: String)
+data class Dokument(
+	val brevkode: String, val dokumentKategori: String, val dokumentvarianter: List<DokumentVariant>,
+	val tittel: String
+)
 
-data class DokumentVariant(val filnavn: String, val filtype: String, val fysiskDokument: ByteArray, val variantformat: String) {
+data class DokumentVariant(
+	val filnavn: String,
+	val filtype: String,
+	val fysiskDokument: ByteArray,
+	val variantformat: String
+) {
 	override fun equals(other: Any?): Boolean {
 		if (this === other) return true
 		if (javaClass != other?.javaClass) return false

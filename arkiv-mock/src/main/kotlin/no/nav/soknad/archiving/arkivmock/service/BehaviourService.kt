@@ -73,7 +73,9 @@ class BehaviourService(val objectMapper: ObjectMapper) {
 	fun getNumberOfCallsThatHaveBeenMade(uuid: String) = behaviours[uuid]?.calls ?: -1
 }
 
-data class BehaviourDto(var behaviour: BEHAVIOUR = BEHAVIOUR.NORMAL, var mockedException: Exception? = null,
-												var forAttempts: Int = -1, var calls: Int = 0)
+data class BehaviourDto(
+	var behaviour: BEHAVIOUR = BEHAVIOUR.NORMAL, var mockedException: Exception? = null,
+	var forAttempts: Int = -1, var calls: Int = 0
+)
 
 enum class BEHAVIOUR { NORMAL, MOCK_EXCEPTION, RESPOND_WITH_ERRONEOUS_BODY }

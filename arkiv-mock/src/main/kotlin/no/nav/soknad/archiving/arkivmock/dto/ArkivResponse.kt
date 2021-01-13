@@ -7,4 +7,5 @@ data class OpprettJournalpostResponse(
 	val journalpostId: String,
 	val journalpostferdigstilt: Boolean,
 	val journalstatus: String,
-	val melding: String? = null)
+	val melding: String? = null
+)
