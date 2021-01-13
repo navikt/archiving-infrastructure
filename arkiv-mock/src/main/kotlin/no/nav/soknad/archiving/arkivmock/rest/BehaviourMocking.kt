@@ -12,9 +12,11 @@ class BehaviourMocking(val behaviourService: BehaviourService) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	@PutMapping("/mock-response/{uuid}/{statusCode}/{forAttempts}")
-	fun mockResponseBehaviour(@PathVariable("uuid") uuid: String,
-														@PathVariable("statusCode") statusCode: Int,
-														@PathVariable("forAttempts") forAttempts: Int): ResponseEntity<String> {
+	fun mockResponseBehaviour(
+		@PathVariable("uuid") uuid: String,
+		@PathVariable("statusCode") statusCode: Int,
+		@PathVariable("forAttempts") forAttempts: Int
+	): ResponseEntity<String> {
 		logger.info("For id=$uuid, http status code $statusCode will be returned $forAttempts times")
 
 		behaviourService.mockException(uuid, statusCode, forAttempts)
@@ -23,7 +25,10 @@ class BehaviourMocking(val behaviourService: BehaviourService) {
 	}
 
 	@PutMapping("/set-status-ok-with-erroneous-body/{uuid}/{forAttempts}")
-	fun mockOkResponseWithErroneousBody(@PathVariable("uuid") uuid: String, @PathVariable("forAttempts") forAttempts: Int): ResponseEntity<String> {
+	fun mockOkResponseWithErroneousBody(
+		@PathVariable("uuid") uuid: String,
+		@PathVariable("forAttempts") forAttempts: Int
+	): ResponseEntity<String> {
 		logger.info("For id=$uuid, http status code ${HttpStatus.OK}, but with erroneous body will be returned $forAttempts times")
 
 		behaviourService.mockResponseWithErroneousBody(uuid, forAttempts)
