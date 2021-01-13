@@ -7,7 +7,7 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.ArkivMockKafkaListener
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaProperties
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaPublisher
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.AssertionHelper
@@ -55,7 +55,7 @@ abstract class BaseTests {
 	private val restClient = OkHttpClient()
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
-	private lateinit var arkivMockKafkaListener: ArkivMockKafkaListener
+	private lateinit var kafkaListener: KafkaListener
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
@@ -86,7 +86,7 @@ abstract class BaseTests {
 			checkThatDependenciesAreUp()
 
 		kafkaPublisher = KafkaPublisher(getPortForKafkaBroker(), getPortForSchemaRegistry())
-		arkivMockKafkaListener = ArkivMockKafkaListener(getPortForKafkaBroker(), getPortForSchemaRegistry())
+		kafkaListener = KafkaListener(getPortForKafkaBroker(), getPortForSchemaRegistry())
 	}
 
 	private fun checkThatDependenciesAreUp() {
@@ -222,7 +222,7 @@ abstract class BaseTests {
 
 	@AfterAll
 	fun teardown() {
-		arkivMockKafkaListener.close()
+		kafkaListener.close()
 		if (useTestcontainers) {
 			println("\n\nLogs soknadsfillager:\n${soknadsfillagerContainer.logs}")
 			println("\n\nLogs soknadsmottaker:\n${soknadsmottakerContainer.logs}")
@@ -439,7 +439,7 @@ abstract class BaseTests {
 				fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "variantformat", "PDFA") })))
 
 
-	fun assertThatArkivMock() = AssertionHelper(arkivMockKafkaListener).assertThatArkivMock()
+	fun assertThatArkivMock() = AssertionHelper(kafkaListener).assertThatArkivMock()
 }
 
 

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.VerificationTask
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
@@ -16,14 +15,14 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.*
 
-class ArkivMockKafkaListener(private val kafkaPort: Int,
-														 private val schemaRegistryPort: Int) {
+class KafkaListener(private val kafkaPort: Int,
+										private val schemaRegistryPort: Int) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private val entityVerifiers = mutableListOf<VerificationTask<ArkivDbData>>()
-	private val numberOfCallsVerifiers = mutableListOf<VerificationTask<Int>>()
-	private val numberOfEntitiesVerifiers = mutableListOf<VerificationTask<Int>>()
+	private val entityConsumers = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
+	private val numberOfCallsConsumers = mutableListOf<KafkaEntityConsumer<Int>>()
+	private val numberOfEntitiesConsumers = mutableListOf<KafkaEntityConsumer<Int>>()
 
 	private val kafkaStreams: KafkaStreams
 	private val kafkaProperties = KafkaProperties()
@@ -55,15 +54,15 @@ class ArkivMockKafkaListener(private val kafkaPort: Int,
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
 			.peek { key, entity -> logger.info("Entities: $key  -  $entity") }
-			.foreach { key, entity -> entityVerifiers.forEach { it.verify(key, entity) } }
+			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		numberOfCallsStream
 			.peek { key, numberOfCalls -> logger.info("Number of Calls: $key  -  $numberOfCalls") }
-			.foreach { key, numberOfCalls -> numberOfCallsVerifiers.forEach { it.verify(key, numberOfCalls) } }
+			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
 		numberOfEntitiesStream
 			.peek { key, numberOfEntities -> logger.info("Number of Entities: $key  -  $numberOfEntities") }
-			.foreach { key, numberOfEntities -> numberOfEntitiesVerifiers.forEach { it.verify(key, numberOfEntities) } }
+			.foreach { key, numberOfEntities -> numberOfEntitiesConsumers.forEach { it.consume(key, numberOfEntities) } }
 	}
 
 	private fun kafkaConfig() = Properties().also {
@@ -81,13 +80,13 @@ class ArkivMockKafkaListener(private val kafkaPort: Int,
 	}
 
 
-	fun clearVerifiers() {
-		entityVerifiers.clear()
-		numberOfCallsVerifiers.clear()
-		numberOfEntitiesVerifiers.clear()
+	fun clearConsumers() {
+		entityConsumers.clear()
+		numberOfCallsConsumers.clear()
+		numberOfEntitiesConsumers.clear()
 	}
 
-	fun addVerifierForEntities(verifier: VerificationTask<ArkivDbData>) = entityVerifiers.add(verifier)
-	fun addVerifierForNumberOfCalls(verifier: VerificationTask<Int>) = numberOfCallsVerifiers.add(verifier)
-	fun addVerifierForNumberOfEntities(verifier: VerificationTask<Int>) = numberOfEntitiesVerifiers.add(verifier)
+	fun addConsumerForEntities(consumer: KafkaEntityConsumer<ArkivDbData>) = entityConsumers.add(consumer)
+	fun addConsumerForNumberOfCalls(consumer: KafkaEntityConsumer<Int>) = numberOfCallsConsumers.add(consumer)
+	fun addConsumerForNumberOfEntities(consumer: KafkaEntityConsumer<Int>) = numberOfEntitiesConsumers.add(consumer)
 }
