@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -31,7 +31,7 @@ class IntegrationTest {
 
 	@Test
 	fun `Will save to database when receiving message and can reset afterwards`() {
-		val timeWhenStarting = LocalDateTime.now().minusSeconds(1)
+		val timeWhenStarting = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
 		val id = UUID.randomUUID().toString()
 		behaviourMocking.setNormalResponseBehaviour(id)
 
@@ -43,8 +43,8 @@ class IntegrationTest {
 		assertEquals(id, result.id)
 		assertEquals(tema, result.tema)
 		assertEquals(title, result.title)
-		assertTrue(result.timesaved.isBefore(LocalDateTime.now().plusSeconds(1)))
-		assertTrue(result.timesaved.isAfter(timeWhenStarting))
+		assertTrue(result.timesaved >= timeWhenStarting)
+		assertTrue(result.timesaved <= LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli())
 
 		arkivRestInterface.reset()
 
