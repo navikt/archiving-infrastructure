@@ -5,10 +5,7 @@ import no.nav.soknad.archiving.arkivmock.service.ArkivMockService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/rest/journalpostapi/v1")
@@ -23,7 +20,7 @@ class ArkivRestInterface(private val arkivMockService: ArkivMockService) {
 		return ResponseEntity(responseBody, HttpStatus.OK)
 	}
 
-	@PostMapping(value = ["/reset"])
+	@DeleteMapping(value = ["/reset"])
 	fun reset() {
 		logger.info("Will reset local database")
 

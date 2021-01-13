@@ -131,6 +131,7 @@ abstract class BaseTests {
 		createTopic(kafkaProperties.entitiesTopic)
 		createTopic(kafkaProperties.numberOfCallsTopic)
 		createTopic(kafkaProperties.numberOfEntitiesTopic)
+		createTopic(kafkaProperties.metricsTopic)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
@@ -290,7 +291,7 @@ abstract class BaseTests {
 			override fun contentType() = "application/json".toMediaType()
 			override fun writeTo(sink: BufferedSink) {}
 		}
-		val request = Request.Builder().url(url).post(requestBody).build()
+		val request = Request.Builder().url(url).delete(requestBody).build()
 		restClient.newCall(request).execute().close()
 	}
 
@@ -375,9 +376,8 @@ abstract class BaseTests {
 
 		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
 
-		val date = soknadInnsendtDto.innsendtDato ?: LocalDateTime.now()
 		return Soknadarkivschema(innsendingsId, soknadInnsendtDto.personId, soknadInnsendtDto.tema,
-			date.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+			soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 
 	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean = false, verbose: Boolean = true) {
@@ -429,12 +429,12 @@ abstract class BaseTests {
 	}
 
 	fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
-		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", null,
+		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
 			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
 				listOf(InnsendtVariantDto(fileId, null, "filnavn", "1024", "variantformat", "PDFA")))))
 
 	fun createDto(fileIds: List<String>) =
-		SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", null,
+		SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
 			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
 				fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "variantformat", "PDFA") })))
 

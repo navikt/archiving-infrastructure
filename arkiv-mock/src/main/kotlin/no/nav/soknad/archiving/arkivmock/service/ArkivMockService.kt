@@ -10,14 +10,15 @@ import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
 import no.nav.soknad.archiving.arkivmock.service.kafka.KafkaPublisher
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
-import java.time.temporal.ChronoUnit
+import java.time.ZoneOffset
 import java.util.*
 
 @Service
-class ArkivMockService(private val arkivRepository: ArkivRepository,
-											 private val behaviourService: BehaviourService,
-											 private val kafkaPublisher: KafkaPublisher) {
+class ArkivMockService(
+	private val arkivRepository: ArkivRepository,
+	private val behaviourService: BehaviourService,
+	private val kafkaPublisher: KafkaPublisher
+) {
 
 	fun reset() {
 		arkivRepository.deleteAll()
@@ -50,11 +51,12 @@ class ArkivMockService(private val arkivRepository: ArkivRepository,
 	}
 
 	private fun createArkivDbData(arkivData: ArkivData): ArkivDbData {
-		val timesaved = LocalDateTime.now()
-		val origtime = LocalDateTime.parse(arkivData.datoMottatt, ISO_LOCAL_DATE_TIME)
 		return ArkivDbData(
-			arkivData.eksternReferanseId, arkivData.tittel, arkivData.tema, timesaved,
-			origtime, origtime.until(timesaved, ChronoUnit.MILLIS))
+			arkivData.eksternReferanseId,
+			arkivData.tittel,
+			arkivData.tema,
+			LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli()
+		)
 	}
 
 	private fun saveToDatabaseAndAlertOnKafka(data: ArkivDbData) {

@@ -3,7 +3,7 @@ package no.nav.soknad.arkivering.arkiveringendtoendtests.dto
 import java.time.LocalDateTime
 
 data class SoknadInnsendtDto(val innsendingsId: String, val ettersendelse: Boolean, val personId: String, val tema: String,
-														 val innsendtDato: LocalDateTime?, val innsendteDokumenter: List<InnsendtDokumentDto>)
+														 val innsendtDato: LocalDateTime, val innsendteDokumenter: List<InnsendtDokumentDto>)
 
 data class InnsendtDokumentDto(val skjemaNummer: String, val erHovedSkjema: Boolean?,
 															 val tittel: String?, val varianter: List<InnsendtVariantDto>)

@@ -8,4 +8,6 @@ class KafkaProperties {
 	val entitiesTopic = "privat-endToEndTests-entities"
 	val numberOfCallsTopic = "privat-endToEndTests-numberOfCalls"
 	val numberOfEntitiesTopic = "privat-endToEndTests-numberOfEntities"
+
+	val metricsTopic = "privat-soknadInnsendt-metrics-v1-default"
 }
