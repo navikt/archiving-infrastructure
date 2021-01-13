@@ -2,14 +2,14 @@ package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
 
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.ArkivMockKafkaListener
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
 
-class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener) {
+class AssertionHelper(private val kafkaListener: KafkaListener) {
 
 	private val verificationTaskManager = VerificationTaskManager()
 
 	fun assertThatArkivMock(): AssertionHelper {
-		arkivMockKafkaListener.clearVerifiers()
+		kafkaListener.clearConsumers()
 		return this
 	}
 
@@ -22,7 +22,7 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 	fun hasNumberOfEntities(countAndTimeout: Pair<Int, Long>): AssertionHelper {
 		val countVerifier = createVerificationTaskForEntityCount(countAndTimeout)
 		verificationTaskManager.registerTasks(listOf(countVerifier))
-		arkivMockKafkaListener.addVerifierForNumberOfEntities(countVerifier)
+		kafkaListener.addConsumerForNumberOfEntities(countVerifier)
 		return this
 	}
 
@@ -40,7 +40,7 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 		val (key, expectedCount) = keyAndExpectedCount
 		val countVerifier = createVerificationTaskForCount(key, expectedCount)
 		verificationTaskManager.registerTasks(listOf(countVerifier))
-		arkivMockKafkaListener.addVerifierForNumberOfCalls(countVerifier)
+		kafkaListener.addConsumerForNumberOfCalls(countVerifier)
 		return this
 	}
 
@@ -52,8 +52,8 @@ class AssertionHelper(private val arkivMockKafkaListener: ArkivMockKafkaListener
 	private fun registerVerificationTasks(countVerifier: VerificationTask<Int>, valueVerifier: VerificationTask<ArkivDbData>): AssertionHelper {
 
 		verificationTaskManager.registerTasks(listOf(countVerifier, valueVerifier))
-		arkivMockKafkaListener.addVerifierForEntities(valueVerifier)
-		arkivMockKafkaListener.addVerifierForNumberOfCalls(countVerifier)
+		kafkaListener.addConsumerForEntities(valueVerifier)
+		kafkaListener.addConsumerForNumberOfCalls(countVerifier)
 		return this
 	}
 

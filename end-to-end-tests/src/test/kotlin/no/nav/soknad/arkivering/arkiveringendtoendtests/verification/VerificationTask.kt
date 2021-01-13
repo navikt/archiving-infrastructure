@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaEntityConsumer
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
@@ -12,7 +13,7 @@ class VerificationTask<T> private constructor(
 	private val verifier: MutableList<Assertion<*, T>>,
 	private val presence: Presence,
 	timeout: Long
-) {
+): KafkaEntityConsumer<T> {
 
 	private var hasSent = AtomicBoolean(false)
 	private val observedValues = mutableListOf<T>()
@@ -31,7 +32,11 @@ class VerificationTask<T> private constructor(
 		}
 	}
 
-	fun verify(key: String, value: T) {
+	override fun consume(key: String, value: T) {
+		verifyEntity(key, value)
+	}
+
+	private fun verifyEntity(key: String, value: T) {
 		observedValues.add(value)
 		if (presence == Presence.ABSENCE && this.key == key) {
 			sendDissatisfiedSignal()
