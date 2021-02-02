@@ -3,6 +3,7 @@ package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaEntityConsumer
+import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaTimestampedEntity
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
@@ -22,18 +23,20 @@ class VerificationTask<T> private constructor(
 		Timer("VerificationTaskTimer", false).schedule(timeout) {
 			if (presence == Presence.ABSENCE) {
 				// Verify absence - send satisfied signal after timeout.
+				println("Verifying absence - sending Satisfied signal")
 				sendSatisfiedSignal()
 			} else {
 				// Verify presence - send dissatisfied signal after timeout.
 				if (hasSent.get().not()) {
+					println("Verifying presence - sending Dissatisfied signal")
 					sendDissatisfiedSignal()
 				}
 			}
 		}
 	}
 
-	override fun consume(key: String, value: T) {
-		verifyEntity(key, value)
+	override fun consume(key: String, timestampedEntity: KafkaTimestampedEntity<T>) {
+		verifyEntity(key, timestampedEntity.entity)
 	}
 
 	private fun verifyEntity(key: String, value: T) {
