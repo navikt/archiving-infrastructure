@@ -54,7 +54,7 @@ class KafkaPublisher {
 		headers.add("MESSAGE_ID", UUID.randomUUID().toString().toByteArray())
 		headers.forEach { h -> producerRecord.headers().add(h) }
 
-		logger.info("Publishing to topic $topic: '$value'")
+		logger.info("Publishing to topic '$topic' with key $key: '$value'")
 
 		return kafkaProducer
 			.send(producerRecord)
