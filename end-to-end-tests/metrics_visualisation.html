@@ -212,10 +212,7 @@
             .text("UTC Epoch time in millis");
 
 
-        // Three function that change the tooltip when user hover / move / leave a cell
         const mouseover = d => {
-//            const detailsDiv = document.getElementById("details");
-//            detailsDiv.style.display = "block";
             removeFromDom("expandedTimelineMainGroup");
 
             const k = d.key;
@@ -251,11 +248,7 @@
                 insertCell(row, point.action);
                 insertCell(row, startTime);
                 insertCell(row, point.duration <= 0 ? 0 : point.duration, "durationColumn");
-
-                /*                insertCell(row, point.application, "legendcolour", "background: " + rowData.colour);
-                                insertCell(row, rowData.name, (rowData.amount == "" ? "legendheader" : "legendtext"), "padding-left: " + rowData.depth + "em");
-                                insertCell(row, rowData.amount, "legendamount");
-                */            });
+            });
 
             const x = d3.scaleLinear()
                 .domain([datapoints[0].startTime - 100, 100 + datapoints[datapoints.length - 1].startTime + datapoints[datapoints.length - 1].duration])
@@ -285,13 +278,6 @@
                     pos = expandedTimelineWidth - tooltipWidth;
                 tooltip.style.left = pos + "px";
 
-/*
-                const ruler = document.getElementById("ruler");
-                ruler.style.left = xpos + 'px';
-                ruler.style.zIndex = "100";
-//                ruler.style.display = "block";
-                document.getElementById("expandedTimelineMainGroup").append(ruler);
-*/
                 removeFromDom("ruler");
                 expandedTimelineMainGroup
                     .append("line")
@@ -317,40 +303,12 @@
                 });
 
 
-            /*
-                        overflow: hidden;
-                        height: 100px;
-                        position: absolute;
-                        border-right: 1px dotted #000;
-                        text-align: right;
-            */
-
             const expandedTimelineGroup = expandedTimelineMainGroup
                 .selectAll("rect")
                 .data(datapoints)
                 .enter()
                 .append("g")
-                .on('mousemove', expandedTimelineMove)
-//                .on('mouseout', () => {
-//                    document.getElementById("ruler").style.display = "none";
-//                    document.getElementById("expandedtimelinetooltip").style.display = "none";
-//                });
-
-/*
-            expandedTimelineGroup
-                .append('rect')
-                .attr('x', () => {
-                    console.log("apa");return d3.event.pageX;})
-                .attr("y", 0)
-                .attr("width", "1px")
-                .attr("height", "100%")
-                .attr("class", "ruler")
-                .attr("stroke", "#000")
-                .on('mousemove', () => {
-                    console.log(this);
-                    document.getElementsByClassName("ruler").forEach(e => e.style.left = d3.event.pageX);
-                    this.left = d3.event.pageX});
-*/
+                .on('mousemove', expandedTimelineMove);
 
             expandedTimelineGroup
                 .append("rect")
@@ -359,8 +317,7 @@
                 .attr("width",  d => { if (d.duration <= 0) return 1; else return x(d.startTime + d.duration) - x(d.startTime); } )
                 .attr("height", d => { if (isPoint(d)) return expandedTimelineHeight; else return expandedTimelineHeight - (expandedTimelineHeight * 0.1 * 2); })
                 .attr("stroke", d => { if (isPoint(d)) return "#000"; else return "none"; })
-                .style("fill",  d => colour(d.action))
-//                .on('mouseout', () => document.getElementById("expandedtimelinetooltip").style.display = "none")
+                .style("fill",  d => colour(d.action));
 
 
 
@@ -378,7 +335,6 @@
             document.getElementById("details").innerHTML =
                 "<span class='detailslabel'>Key:</span><span class='detailskey'>" + k + "</span>" + timeText;
         };
-//        const mouseleave = () => document.getElementById("details").style.display = "none";
 
         const isPoint = d => d.value.duration < 0
         const g = svg
@@ -401,7 +357,6 @@
 
 
         g.append("rect")
-//            .attr("class", "hoverable")
             .attr("x",     d => x(getSeriesStartTime(d)))
             .attr("y",     d => y(d.key))
             .attr("width", d => x(getSeriesEndTime(d)) - x(getSeriesStartTime(d)))
@@ -409,11 +364,8 @@
             .attr("stroke", "black")
             .style("fill", d => { if (seriesIsFinished(d)) return "url(#lightgreen-stripe)"; else return "url(#orange-stripe)"; })
             .style("opacity", 0.5);
-//            .on("click", mouseover)
-//            .on("mouseleave", mouseleave);
 
-        g
-            .selectAll(null)
+        g.selectAll(null)
             .data(d => {
                 const entries = d3.entries(d.datapoints);
                 entries.forEach(p => p["innsendingKey"] = d.key);
@@ -428,42 +380,5 @@
             .attr("stroke", d => { if (isPoint(d)) return "black"; else return "none"; })
             .style("fill",  d => colour(d.value.action))
             .style("opacity", 1);
-//            .on("click", mouseover)
-//            .on("mouseleave", mouseleave);
-
-
-/*
-        svg
-            .selectAll("boxes")
-            .data(flattenedData)
-            .enter()
-            .append("rect")
-//            .attr("class", "hoverable")
-            .attr("x", d => x(d.datapoint.startTime))
-            .attr("width", d => { if (isPoint(d)) return 1; else return x(d.datapoint.startTime + d.datapoint.duration) - x(d.datapoint.startTime); } )
-            .attr("y", d => { if (isPoint(d)) return y(d.key) - 3; else return y(d.key); })
-            .attr("height", d => { if (isPoint(d)) return y.bandwidth() + 6; else return y.bandwidth(); })
-            .attr("stroke", d => { if (isPoint(d)) return "black"; else return "none"; })
-            .style("fill", d => colour(d.datapoint.action))
-            .style("opacity", 1)
-            .on("click", mouseover)
-//            .on("mouseleave", mouseleave);
-*/
-/*
-        svg
-            .selectAll("bgboxes")
-            .data(data)
-            .enter()
-            .append("rect")
-            .attr("class", "hoverable backgroundbox")
-            .attr("x", 0)
-            .attr("width", width)
-            .attr("y", d => y(d.key))
-            .attr("height", y.bandwidth())
-            .on("click", function(d) {
-                asdf(this);
-                mouseover(d);
-            });
-*/
     })
 </script>
