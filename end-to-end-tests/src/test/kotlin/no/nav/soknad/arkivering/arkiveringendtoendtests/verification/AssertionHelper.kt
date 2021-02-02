@@ -1,16 +1,29 @@
 package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
+import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.Metrics
+import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.MetricsConsumer
+import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.ProcessingEventConverter
+import java.io.File
 
 class AssertionHelper(private val kafkaListener: KafkaListener) {
 
 	private val verificationTaskManager = VerificationTaskManager()
+	private val metricsConsumer = MetricsConsumer()
+	private val processingEventConverter = ProcessingEventConverter(metricsConsumer)
 
-	fun assertThatArkivMock(): AssertionHelper {
+	fun setup(): AssertionHelper {
 		kafkaListener.clearConsumers()
+		addMetricsConsumers()
 		return this
+	}
+
+	private fun addMetricsConsumers() {
+		kafkaListener.addConsumerForMetrics(metricsConsumer)
+		kafkaListener.addConsumerForProcessingEvents(processingEventConverter)
 	}
 
 	fun containsData(entityAndExpectedCount: Pair<SoknadInnsendtDto, Int>): AssertionHelper {
@@ -24,6 +37,33 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		verificationTaskManager.registerTasks(listOf(countVerifier))
 		kafkaListener.addConsumerForNumberOfEntities(countVerifier)
 		return this
+	}
+
+	fun hasNumberOfFinishedEvents(countAndTimeout: Pair<Int, Long>): AssertionHelper {
+		val countVerifier = createVerificationTaskForFinishedCount(countAndTimeout)
+		verificationTaskManager.registerTasks(listOf(countVerifier))
+		kafkaListener.addConsumerForMetrics(countVerifier)
+		return this
+	}
+
+	private fun createVerificationTaskForFinishedCount(countAndTimeout: Pair<Int, Long>): VerificationTask<Metrics> {
+		val (expectedCount, timeout) = countAndTimeout
+
+		val verificationFunction: (Metrics) -> Int = {
+			metricsConsumer.getMetrics()
+				.flatMap { it.value }
+				.filter { it.action == "FINISHED" }
+				.count()
+		}
+		val verificationTask = VerificationTask.Builder<Metrics>()
+			.withManager(verificationTaskManager)
+			.withTimeout(timeout)
+			.verifyPresence()
+			.verifyThat(expectedCount, verificationFunction, "Assert correct number of Finished Processing Events")
+			.build()
+
+		metricsConsumer.addVerificationTask(verificationTask)
+		return verificationTask
 	}
 
 	private fun createVerificationTaskForEntityCount(countAndTimeout: Pair<Int, Long>): VerificationTask<Int> {
@@ -57,8 +97,26 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
-	fun verify() {
+	fun verify(saveMetrics: Boolean = true) {
 		verificationTaskManager.assertAllTasksSucceeds()
+
+		if (saveMetrics)
+			saveMetrics()
+	}
+
+	private fun saveMetrics() {
+		data class MetricsObject(val key: String, val datapoints: List<Metrics>)
+
+		val objectMapper = ObjectMapper().also { it.findAndRegisterModules(); it.writerWithDefaultPrettyPrinter() }
+		val metrics = metricsConsumer.getMetrics().entries.map { MetricsObject(it.key, it.value) }
+		val json = objectMapper.writeValueAsString(metrics)
+
+		val testName = Thread.currentThread().stackTrace[5].methodName
+		val outputDir = "target/metrics"
+		File(outputDir).mkdirs()
+		val file = File("$outputDir/$testName").also { it.createNewFile() }
+		file.writeText(json)
+		println("Wrote metrics to '$outputDir/$testName'")
 	}
 
 
@@ -73,7 +131,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.withManager(verificationTaskManager)
 			.forKey(dto.innsendingsId)
 			.verifyPresence()
-			.verifyThat(dto.innsendingsId, { entity -> entity.id }, "Assert correct number of entities in the Archive")
+			.verifyThat(dto.innsendingsId, { entity -> entity.id }, "Assert correct entity id")
 			.verifyThat(dto.tema, { entity -> entity.tema }, "Assert correct entity tema")
 			.verifyThat(dto.innsendteDokumenter[0].tittel, { entity -> entity.title }, "Assert correct entity title")
 			.build()

@@ -349,12 +349,12 @@ abstract class BaseTests {
 
 
 	fun sendFilesToFileStorage(uuid: String) {
-		println("fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendFilesToFileStorageAndVerify(uuid, "apabepa".toByteArray())
+		val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
+		sendFilesToFileStorage(uuid, "apabepa".toByteArray(), message)
 	}
 
-	fun sendFilesToFileStorage(uuid: String, payload: ByteArray) {
-		println("fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'")
+	fun sendFilesToFileStorage(uuid: String, payload: ByteArray, message: String) {
+		println(message)
 		sendFilesToFileStorageAndVerify(uuid, payload)
 	}
 
@@ -439,7 +439,14 @@ abstract class BaseTests {
 				fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "variantformat", "PDFA") })))
 
 
-	fun assertThatArkivMock() = AssertionHelper(kafkaListener).assertThatArkivMock()
+	fun assertThatArkivMock() = AssertionHelper(kafkaListener).setup()
+
+	fun assertThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>) {
+		AssertionHelper(kafkaListener)
+			.setup()
+			.hasNumberOfFinishedEvents(countAndTimeout)
+			.verify()
+	}
 }
 
 

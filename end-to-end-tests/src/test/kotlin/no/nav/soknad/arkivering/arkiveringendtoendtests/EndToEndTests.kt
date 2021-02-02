@@ -4,6 +4,7 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.andWasCalled
+import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.times
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.timesForKey
 import no.nav.soknad.arkivering.avroschemas.EventTypes
@@ -165,12 +166,14 @@ class EndToEndTests : BaseTests() {
 		val dto = createDto(fileId)
 		val moreAttemptsThanSoknadsarkivererWillPerform = attemptsThanSoknadsarkivererWillPerform + 1
 
+		resetArchiveDatabase()
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToMottaker(dto)
 
 		assertThatArkivMock()
 			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform))
+			.hasNumberOfEntities(1 inMinutes 1)
 			.verify()
 		pollAndVerifyDataInFileStorage(fileId, 1)
 	}

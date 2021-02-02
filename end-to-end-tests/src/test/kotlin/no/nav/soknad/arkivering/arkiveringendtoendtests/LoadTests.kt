@@ -5,9 +5,9 @@ import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.times
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
@@ -22,6 +22,7 @@ import kotlin.system.measureTimeMillis
  * Load Tests.
  */
 @DisplayName("Kjellman Load Tests")
+@EnabledIfSystemProperty(named = "runLoadtests", matches = "true")
 class LoadTests : BaseTests() {
 	/*
 	Nils-Arne, 2020-12-11:
@@ -41,32 +42,22 @@ class LoadTests : BaseTests() {
 		preloadDatabase(numberOfEntities)
 		warmupArchivingChain()
 
-		sendDataToMottakerAsync2(numberOfEntities, numberOfFilesPerEntity)
+		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
-		assertThatArkivMock()
-			.hasNumberOfEntities(numberOfEntities inMinutes 30)
-			.verify()
+		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 30)
 	}
 
-	@Disabled
 	@Test
-	fun `10 simultaneous entities, 7 times 46 MB each`() {
-		val numberOfEntities = 1
-		val numberOfFilesPerEntity = 7
-		val file = fileOfSize46mb
+	fun `10 simultaneous entities, 8 times 38 MB each`() {
+		val numberOfEntities = 10
+		val numberOfFilesPerEntity = 8
+		val file = fileOfSize38mb
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
 		warmupArchivingChain()
 
-		sendDataToMottakerAsync2(numberOfEntities, numberOfFilesPerEntity)
+		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
-		assertThatArkivMock()
-			.hasNumberOfEntities(numberOfEntities inMinutes 3)
-			.verify()
-	}
-
-	@Test
-	fun `100 simultaneous entities, 50 MB each`() {
-
+		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 	}
 
 	@Test
@@ -77,11 +68,9 @@ class LoadTests : BaseTests() {
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
 		warmupArchivingChain()
 
-		sendDataToMottakerAsync2(numberOfEntities, numberOfFilesPerEntity)
+		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
-		assertThatArkivMock()
-			.hasNumberOfEntities(numberOfEntities inMinutes 3)
-			.verify()
+		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 	}
 
 	@Test
@@ -92,21 +81,27 @@ class LoadTests : BaseTests() {
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
 		warmupArchivingChain()
 
-		sendDataToMottakerAsync2(numberOfEntities, numberOfFilesPerEntity)
+		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
-		assertThatArkivMock()
-			.hasNumberOfEntities(numberOfEntities inMinutes 3)
-			.verify()
+		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 	}
 
 
 	private fun uploadImages(numberOfImages: Int, filename: String) {
 		val fileContent = LoadTests::class.java.getResource(filename).readBytes()
-		uploadData(numberOfImages, fileContent)
+		uploadData(numberOfImages, fileContent, Thread.currentThread().stackTrace[2].methodName)
 	}
 
-	private fun uploadData(numberOfImages: Int, fileContent: ByteArray) {
-		(0..numberOfImages).forEach { sendFilesToFileStorage(it.toString(), fileContent) }
+	private fun uploadData(numberOfImages: Int, fileContent: ByteArray, testName: String) {
+		(0 until numberOfImages)
+			.chunked(2)
+			.forEach { ids ->
+				val deferredUploads = ids.map { id -> GlobalScope.async { sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'") } }
+				runBlocking { deferredUploads.awaitAll() }
+			}
+//			.forEach { sendFilesToFileStorage(it.toString(), fileContent) }
+//		val deferredUploads = (0..numberOfImages).map { GlobalScope.async { sendFilesToFileStorage(it.toString(), fileContent) } }
+//		runBlocking { deferredUploads.awaitAll() }
 	}
 
 
@@ -144,7 +139,7 @@ class LoadTests : BaseTests() {
 						println("$i of $numberOfBatches (${100 * i / numberOfBatches}%)")
 				}
 			} else {
-				uploadData(numberOfEntities, "0".toByteArray())
+				uploadData(numberOfEntities, "0".toByteArray(), Thread.currentThread().stackTrace[2].methodName)
 			}
 		}
 		println("Preloading database took $timeTaken ms")
@@ -162,45 +157,25 @@ class LoadTests : BaseTests() {
 
 		assertThatArkivMock()
 			.containsData(dto andWasCalled times(1))
-			.verify()
+			.hasNumberOfFinishedEvents(1 inMinutes 1)
+			.verify(false)
 
 		resetArchiveDatabase()
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
 
-	private fun sendDataToMottakerAsync(numberOfEntities: Int): List<SoknadInnsendtDto> {
-		val startTimeSendingToMottaker = System.currentTimeMillis()
-		println("About to send $numberOfEntities entities to Mottaker")
-
-		val deferredDtos = (0 until (numberOfEntities)).map { sendDataToMottakerAsync2(listOf(it.toString())) }
-		val dtos = runBlocking { deferredDtos.awaitAll() }
-
-		val finishTimeSendingToMottaker = System.currentTimeMillis()
-		println("Sent $numberOfEntities entities to Mottaker in ${finishTimeSendingToMottaker - startTimeSendingToMottaker} ms")
-		return dtos
-	}
-
-	private fun sendDataToMottakerAsync(atomicInteger: AtomicInteger): Deferred<SoknadInnsendtDto> {
-		return GlobalScope.async {
-
-			val dto = createDto(atomicInteger.getAndIncrement().toString())
-
-			sendDataToMottaker(dto, async = true, verbose = false)
-			dto
-		}
-	}
 
 	/**
 	 * This assumes that the file storage is already populated with files with ids ranging from 0 up to numberOfEntities * numberOfFilesPerEntity
 	 */
-	private fun sendDataToMottakerAsync2(numberOfEntities: Int, numberOfFilesPerEntity: Int): List<SoknadInnsendtDto> { // TODO: Name of function
+	private fun sendDataToMottakerAsync(numberOfEntities: Int, numberOfFilesPerEntity: Int): List<SoknadInnsendtDto> {
 		val startTimeSendingToMottaker = System.currentTimeMillis()
 		println("About to send $numberOfEntities entities to Mottaker")
 
 		val atomicInteger = AtomicInteger()
 		val deferredDtos = (0 until (numberOfEntities)).map {
 			val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
-			sendDataToMottakerAsync2(fileIds)
+			sendDataToMottakerAsync(fileIds)
 		}
 		val dtos = runBlocking { deferredDtos.awaitAll() }
 
@@ -209,7 +184,7 @@ class LoadTests : BaseTests() {
 		return dtos
 	}
 
-	private fun sendDataToMottakerAsync2(fileIds: List<String>): Deferred<SoknadInnsendtDto> { // TODO: Name of function
+	private fun sendDataToMottakerAsync(fileIds: List<String>): Deferred<SoknadInnsendtDto> {
 		return GlobalScope.async {
 
 			val dto = createDto(fileIds)
@@ -220,7 +195,6 @@ class LoadTests : BaseTests() {
 	}
 }
 
-private const val fileOfSize81mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"
-private const val fileOfSize46mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_2.png"
+private const val fileOfSize38mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"
 private const val fileOfSize2mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.png"
 private const val fileOfSize1mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.jpg"
