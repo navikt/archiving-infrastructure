@@ -78,6 +78,9 @@
 	.durationColumn {
 		text-align: right;
 	}
+	.tableHeader {
+		font-weight: bold;
+	}
 	#details {
 		text-align: center;
 	}
@@ -94,12 +97,10 @@
 
 <script>
 
-	// From https://www.d3-graph-gallery.com/graph/boxplot_horizontal.html
-
 	let oldSelectedElem = null;
-	function asdf(elem) {
+	function changeRowSelection(elem) {
 		if (oldSelectedElem)
-			d3.select(oldSelectedElem).style("fill", "white");
+			d3.select(oldSelectedElem).style("fill", "");
 		d3.select(elem).style("fill", "#ccc");
 		oldSelectedElem = elem;
 	}
@@ -145,6 +146,8 @@
 			.append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+
+		// append pattern for idle time
 		// https://stackoverflow.com/questions/17776641/fill-rect-with-pattern
 		const defs = svg.append('defs');
 		const addPattern = colour => defs
@@ -161,7 +164,6 @@
 		addPattern("orange");
 
 
-
 		// append the expanded svg object to the body of the details div
 		const expandedTimeline = d3.select("#expandedtimeline")
 			.append("svg")
@@ -171,7 +173,7 @@
 
 		const getSeriesStartTime = d => Math.min(... d.datapoints.map(datapoint => datapoint.startTime));
 		const getSeriesEndTime   = d => Math.max(... d.datapoints.map(datapoint => datapoint.startTime + datapoint.duration));
-		const seriesIsFinished   = d => d.datapoints.map(datapoint => datapoint.action).includes("FINISHED");
+		const seriesIsFinished = datapoints => datapoints.map(datapoint => datapoint.action).includes("FINISHED");
 
 		const minTime = Math.min(... data.map(d => getSeriesStartTime(d)));
 		const maxTime = Math.max(... data.map(d => getSeriesEndTime(d)));
@@ -212,11 +214,14 @@
 			.text("UTC Epoch time in millis");
 
 
-		const mouseover = d => {
+		const showRowDetails = d => {
 			removeFromDom("expandedTimelineMainGroup");
 
 			const k = d.key;
-			const datapoints = flattenedData.filter(o => o.key === k).map(o => o.datapoint);
+			const datapoints = flattenedData
+				.filter(o => o.key === k)
+				.map(o => o.datapoint)
+				.sort((a, b) => (a.startTime > b.startTime) ? 1 : (b.startTime > a.startTime) ? -1 : 0);
 
 
 			const table = document.getElementById("timeseriestable");
@@ -230,11 +235,11 @@
 			};
 
 			const row = table.insertRow(-1);
-			insertCell(row, "Application");
-			insertCell(row, "");
-			insertCell(row, "Action");
-			insertCell(row, "Start time");
-			insertCell(row, "Duration (ms)");
+			insertCell(row, "Application", "tableHeader");
+			insertCell(row, "", "tableHeader");
+			insertCell(row, "Action", "tableHeader");
+			insertCell(row, "Start time", "tableHeader");
+			insertCell(row, "Duration (ms)", "tableHeader");
 
 			datapoints.forEach(point => {
 				const row = table.insertRow(-1);
@@ -321,9 +326,8 @@
 
 
 
-			const isFinished = datapoints.map(o => o.action).includes("FINISHED");
 			let timeText;
-			if (isFinished) {
+			if (seriesIsFinished(datapoints)) {
 				let duration = datapoints[datapoints.length - 1].duration;
 				const timeTaken = (datapoints[datapoints.length - 1].startTime + (duration >= 0 ? duration : 0)) - datapoints[0].startTime;
 				timeText = "Finished in " + timeTaken + "ms (" + timeConversion(timeTaken) + ")";
@@ -337,18 +341,19 @@
 		};
 
 		const isPoint = d => d.value.duration < 0
+		// Append group in order to make rows hoverable and clickable
 		const g = svg
 			.selectAll("boxes")
 			.data(data)
 			.enter()
 			.append("g")
 			.attr("class", "hoverable")
-			.attr("height", y.bandwidth())
 			.on("click", function(d) {
-				asdf(this);
-				mouseover(d);
+				changeRowSelection(this);
+				showRowDetails(d);
 			});
 
+		// Append background for row
 		g.append("rect")
 			.attr("x", 0)
 			.attr("y", d => y(d.key))
@@ -356,15 +361,17 @@
 			.attr("height", y.bandwidth());
 
 
+		// Append striped background under boxes
 		g.append("rect")
 			.attr("x",     d => x(getSeriesStartTime(d)))
 			.attr("y",     d => y(d.key))
 			.attr("width", d => x(getSeriesEndTime(d)) - x(getSeriesStartTime(d)))
 			.attr("height", y.bandwidth())
 			.attr("stroke", "black")
-			.style("fill", d => { if (seriesIsFinished(d)) return "url(#lightgreen-stripe)"; else return "url(#orange-stripe)"; })
+			.style("fill", d => { if (seriesIsFinished(d.datapoints)) return "url(#lightgreen-stripe)"; else return "url(#orange-stripe)"; })
 			.style("opacity", 0.5);
 
+		// Append boxes for time consumption
 		g.selectAll(null)
 			.data(d => {
 				const entries = d3.entries(d.datapoints);
