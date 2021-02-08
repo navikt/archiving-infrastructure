@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
-import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.Metrics
+import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.common.serialization.Serdes
@@ -21,17 +21,16 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.*
 
-class KafkaListener(private val kafkaPort: Int,
-										private val schemaRegistryPort: Int) {
+class KafkaListener(private val kafkaBootstrapServersUrl: String, private val schemaRegistryUrl: String) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 	private val verbose = true
 
-	private val entityConsumers = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
-	private val metricsConsumers = mutableListOf<KafkaEntityConsumer<Metrics>>()
-	private val numberOfCallsConsumers = mutableListOf<KafkaEntityConsumer<Int>>()
+	private val entityConsumers           = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
+	private val metricsConsumers          = mutableListOf<KafkaEntityConsumer<InnsendingMetrics>>()
+	private val numberOfCallsConsumers    = mutableListOf<KafkaEntityConsumer<Int>>()
 	private val numberOfEntitiesConsumers = mutableListOf<KafkaEntityConsumer<Int>>()
-	private val processingEventConsumers = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
+	private val processingEventConsumers  = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
 
 	private val kafkaStreams: KafkaStreams
 	private val kafkaProperties = KafkaProperties()
@@ -55,9 +54,8 @@ class KafkaListener(private val kafkaPort: Int,
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-
 		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,           Consumed.with(stringSerde, stringSerde))
-		val metricsStream              = streamsBuilder.stream(kafkaProperties.metricsTopic,            Consumed.with(stringSerde, stringSerde))
+		val metricsStream              = streamsBuilder.stream(kafkaProperties.metricsTopic,            Consumed.with(stringSerde, createInnsendingMetricsSerde()))
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,      Consumed.with(stringSerde, intSerde))
 		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,   Consumed.with(stringSerde, intSerde))
 		val processingEventTopicStream = streamsBuilder.stream(kafkaProperties.processingEventLogTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
@@ -69,7 +67,6 @@ class KafkaListener(private val kafkaPort: Int,
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
-			.mapValues { json -> mapper.readValue<Metrics>(json) }
 			.peek { key, entity -> log("Metrics received  : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
@@ -96,8 +93,8 @@ class KafkaListener(private val kafkaPort: Int,
 	}
 
 	private fun kafkaConfig() = Properties().also {
-		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = "http://localhost:$schemaRegistryPort"
-		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:$kafkaPort"
+		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = schemaRegistryUrl
+		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaBootstrapServersUrl
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = "end-to-end-tests"
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
@@ -105,9 +102,10 @@ class KafkaListener(private val kafkaPort: Int,
 	}
 
 	private fun createProcessingEventSerde(): SpecificAvroSerde<ProcessingEvent> = createAvroSerde()
+	private fun createInnsendingMetricsSerde(): SpecificAvroSerde<InnsendingMetrics> = createAvroSerde()
 
 	private fun <T : SpecificRecord> createAvroSerde(): SpecificAvroSerde<T> {
-		val serdeConfig = hashMapOf(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to "http://localhost:$schemaRegistryPort")
+		val serdeConfig = hashMapOf(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to schemaRegistryUrl)
 		return SpecificAvroSerde<T>().also { it.configure(serdeConfig, false) }
 	}
 
@@ -143,9 +141,9 @@ class KafkaListener(private val kafkaPort: Int,
 		processingEventConsumers.clear()
 	}
 
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)     = entityConsumers          .add(consumer)
-	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<Metrics>)         = metricsConsumers         .add(consumer)
-	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)             = numberOfCallsConsumers   .add(consumer)
-	fun addConsumerForNumberOfEntities(consumer: KafkaEntityConsumer<Int>)             = numberOfEntitiesConsumers.add(consumer)
-	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>) = processingEventConsumers .add(consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers          .add(consumer)
+	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers         .add(consumer)
+	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers   .add(consumer)
+	fun addConsumerForNumberOfEntities(consumer: KafkaEntityConsumer<Int>)               = numberOfEntitiesConsumers.add(consumer)
+	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers .add(consumer)
 }

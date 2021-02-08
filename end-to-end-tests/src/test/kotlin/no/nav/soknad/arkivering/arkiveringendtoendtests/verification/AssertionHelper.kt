@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
 import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
-import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.Metrics
 import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.MetricsConsumer
 import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.ProcessingEventConverter
+import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import java.io.File
 
 class AssertionHelper(private val kafkaListener: KafkaListener) {
@@ -46,16 +46,16 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
-	private fun createVerificationTaskForFinishedCount(countAndTimeout: Pair<Int, Long>): VerificationTask<Metrics> {
+	private fun createVerificationTaskForFinishedCount(countAndTimeout: Pair<Int, Long>): VerificationTask<InnsendingMetrics> {
 		val (expectedCount, timeout) = countAndTimeout
 
-		val verificationFunction: (Metrics) -> Int = {
+		val verificationFunction: (InnsendingMetrics) -> Int = {
 			metricsConsumer.getMetrics()
 				.flatMap { it.value }
 				.filter { it.action == "FINISHED" }
 				.count()
 		}
-		val verificationTask = VerificationTask.Builder<Metrics>()
+		val verificationTask = VerificationTask.Builder<InnsendingMetrics>()
 			.withManager(verificationTaskManager)
 			.withTimeout(timeout)
 			.verifyPresence()
@@ -105,10 +105,15 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	}
 
 	private fun saveMetrics() {
+		data class Metrics(val application: String, val action: String, val startTime: Long, val duration: Long)
 		data class MetricsObject(val key: String, val datapoints: List<Metrics>)
 
-		val objectMapper = ObjectMapper().also { it.findAndRegisterModules(); it.writerWithDefaultPrettyPrinter() }
-		val metrics = metricsConsumer.getMetrics().entries.map { MetricsObject(it.key, it.value) }
+		val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
+		val metrics = metricsConsumer.getMetrics()
+			.entries.map {
+				MetricsObject(it.key, it.value
+					.map { m -> Metrics(m.application, m.action, m.startTime, m.duration) }
+				) }
 		val json = objectMapper.writeValueAsString(metrics)
 
 		val testName = Thread.currentThread().stackTrace[5].methodName

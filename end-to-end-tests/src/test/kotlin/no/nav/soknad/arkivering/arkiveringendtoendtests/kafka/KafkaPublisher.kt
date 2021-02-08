@@ -15,7 +15,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 
-class KafkaPublisher(private val kafkaPort: Int, private val schemaRegistryPort: Int) {
+class KafkaPublisher(private val kafkaBootstrapServersUrl: String, private val schemaRegistryUrl: String) {
 
 	private val kafkaProperties = KafkaProperties()
 	private val kafkaInputProducer = KafkaProducer<String, Soknadarkivschema>(kafkaConfigMap())
@@ -53,8 +53,8 @@ class KafkaPublisher(private val kafkaPort: Int, private val schemaRegistryPort:
 	}
 
 	private fun kafkaConfigMap() = HashMap<String, Any>().also {
-		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = "http://localhost:$schemaRegistryPort"
-		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:$kafkaPort"
+		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = schemaRegistryUrl
+		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaBootstrapServersUrl
 		it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = SpecificAvroSerializer::class.java
 	}

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import org.testcontainers.containers.*
 import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.utility.DockerImageName
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -85,8 +86,8 @@ abstract class BaseTests {
 		else
 			checkThatDependenciesAreUp()
 
-		kafkaPublisher = KafkaPublisher(getPortForKafkaBroker(), getPortForSchemaRegistry())
-		kafkaListener = KafkaListener(getPortForKafkaBroker(), getPortForSchemaRegistry())
+		kafkaPublisher = KafkaPublisher(getUrlForKafkaBroker(), getUrlForSchemaRegistry())
+		kafkaListener = KafkaListener(getUrlForKafkaBroker(), getUrlForSchemaRegistry())
 	}
 
 	private fun checkThatDependenciesAreUp() {
@@ -118,7 +119,7 @@ abstract class BaseTests {
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
 
-		kafkaContainer = KafkaContainer()
+		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
@@ -243,12 +244,18 @@ abstract class BaseTests {
 	fun executeQueryInPostgres(query: String): Container.ExecResult = postgresContainer.execInContainer("psql", "-h", "localhost", "-U", postgresUsername, "-d", databaseName, "--command", query)
 
 
-	private fun getPortForSoknadsfillager() = if (useTestcontainers) soknadsfillagerContainer.firstMappedPort else dependencies["soknadsfillager"]
-	private fun getPortForArkivMock() = if (useTestcontainers) arkivMockContainer.firstMappedPort else dependencies["arkiv-mock"]
+	private fun getPortForSoknadsfillager()  = if (useTestcontainers) soknadsfillagerContainer .firstMappedPort else dependencies["soknadsfillager"]
+	private fun getPortForArkivMock()        = if (useTestcontainers) arkivMockContainer       .firstMappedPort else dependencies["arkiv-mock"]
 	private fun getPortForSoknadsarkiverer() = if (useTestcontainers) soknadsarkivererContainer.firstMappedPort else dependencies["soknadsarkiverer"]
-	private fun getPortForSoknadsmottaker() = if (useTestcontainers) soknadsmottakerContainer.firstMappedPort else dependencies["soknadsmottaker"]
-	private fun getPortForKafkaBroker() = if (useTestcontainers) kafkaContainer.firstMappedPort else kafkaBrokerPort
-	private fun getPortForSchemaRegistry() = if (useTestcontainers) schemaRegistryContainer.firstMappedPort else schemaRegistryPort
+	private fun getPortForSoknadsmottaker()  = if (useTestcontainers) soknadsmottakerContainer .firstMappedPort else dependencies["soknadsmottaker"]
+	private fun getPortForKafkaBroker()      = if (useTestcontainers) kafkaContainer           .firstMappedPort else kafkaBrokerPort
+	private fun getPortForSchemaRegistry()   = if (useTestcontainers) schemaRegistryContainer  .firstMappedPort else schemaRegistryPort
+	private fun getUrlForSoknadsfillager()   = "http://localhost:" + getPortForSoknadsfillager()
+	private fun getUrlForArkivMock()         = "http://localhost:" + getPortForArkivMock()
+	private fun getUrlForSoknadsarkiverer()  = "http://localhost:" + getPortForSoknadsarkiverer()
+	private fun getUrlForSoknadsmottaker()   = "http://localhost:" + getPortForSoknadsmottaker()
+	private fun getUrlForKafkaBroker()       = "localhost:" + getPortForKafkaBroker()
+	private fun getUrlForSchemaRegistry()    = "http://localhost:" + getPortForSchemaRegistry()
 
 
 	fun shutDownSoknadsarkiverer() {
@@ -259,7 +266,7 @@ abstract class BaseTests {
 	fun startUpSoknadsarkiverer() {
 		soknadsarkivererContainer.start()
 
-		val url = "http://localhost:${getPortForSoknadsarkiverer()}/internal/health"
+		val url = getUrlForSoknadsarkiverer() + "/internal/health"
 		val healthStatusCode = {
 			val request = Request.Builder().url(url).get().build()
 			restClient.newCall(request).execute().use { response -> response.code }
@@ -285,7 +292,7 @@ abstract class BaseTests {
 
 
 	fun resetArchiveDatabase() {
-		val url = "http://localhost:${getPortForArkivMock()}/rest/journalpostapi/v1/reset"
+		val url = getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"
 
 		val requestBody = object : RequestBody() {
 			override fun contentType() = "application/json".toMediaType()
@@ -296,17 +303,17 @@ abstract class BaseTests {
 	}
 
 	fun setNormalArchiveBehaviour(uuid: String) {
-		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
+		val url = getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
 		performPutCall(url)
 	}
 
 	fun mockArchiveRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
-		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+		val url = getUrlForArkivMock() + "/arkiv-mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
 		performPutCall(url)
 	}
 
 	fun mockArchiveRespondsWithErroneousBodyForXAttempts(uuid: String, forAttempts: Int) {
-		val url = "http://localhost:${getPortForArkivMock()}/arkiv-mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
+		val url = getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
 		performPutCall(url)
 	}
 
@@ -325,7 +332,7 @@ abstract class BaseTests {
 	}
 
 	fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
-		val url = "http://localhost:${getPortForSoknadsfillager()}/filer?ids=$uuid"
+		val url = getUrlForSoknadsfillager() + "/filer?ids=$uuid"
 		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url) },
 			{ assertEquals(expectedNumberOfHits, getNumberOfFiles(url), "Expected $expectedNumberOfHits files in File Storage") })
 	}
@@ -360,7 +367,7 @@ abstract class BaseTests {
 
 	private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray) {
 		val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
-		val url = "http://localhost:${getPortForSoknadsfillager()}/filer"
+		val url = getUrlForSoknadsfillager() + "/filer"
 
 		performPostRequest(files, url, createHeaders(filleserUsername, filleserPassword), false)
 		pollAndVerifyDataInFileStorage(uuid, 1)
@@ -383,7 +390,7 @@ abstract class BaseTests {
 	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean = false, verbose: Boolean = true) {
 		if (verbose)
 			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		val url = "http://localhost:${getPortForSoknadsmottaker()}/save"
+		val url = getUrlForSoknadsmottaker() + "/save"
 		performPostRequest(dto, url, createHeaders(mottakerUsername, mottakerPassword), async)
 	}
 
@@ -452,7 +459,7 @@ abstract class BaseTests {
 
 class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
-class KPostgreSQLContainer : PostgreSQLContainer<KPostgreSQLContainer>()
+class KPostgreSQLContainer : PostgreSQLContainer<KPostgreSQLContainer>(DockerImageName.parse("postgres"))
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class Health {
