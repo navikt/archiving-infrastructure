@@ -1,10 +1,10 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests
+package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import kotlinx.coroutines.*
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.andWasCalled
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.inMinutes
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.times
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
@@ -23,7 +23,7 @@ import kotlin.system.measureTimeMillis
  */
 @DisplayName("Kjellman Load Tests")
 @EnabledIfSystemProperty(named = "runLoadtests", matches = "true")
-class LoadTests : BaseTests() {
+class LoadTests : SystemTestBase() {
 	/*
 	Nils-Arne, 2020-12-11:
 	Har sjekket på filstørrelser og antall på innsendte søknader siste 100 dager i arkivet.

@@ -1,7 +1,7 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests.metrics
+package no.nav.soknad.arkivering.arkiveringsystemtests.metrics
 
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaEntityConsumer
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaTimestampedEntity
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaEntityConsumer
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaTimestampedEntity
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 

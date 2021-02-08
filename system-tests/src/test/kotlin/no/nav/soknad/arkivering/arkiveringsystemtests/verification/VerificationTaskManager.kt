@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
+package no.nav.soknad.arkivering.arkiveringsystemtests.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking

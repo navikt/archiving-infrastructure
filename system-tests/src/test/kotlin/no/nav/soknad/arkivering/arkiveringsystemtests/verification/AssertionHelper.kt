@@ -1,11 +1,11 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests.verification
+package no.nav.soknad.arkivering.arkiveringsystemtests.verification
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
-import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.MetricsConsumer
-import no.nav.soknad.arkivering.arkiveringendtoendtests.metrics.ProcessingEventConverter
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.ArkivDbData
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaListener
+import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.MetricsConsumer
+import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.ProcessingEventConverter
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import java.io.File
 
