@@ -1,16 +1,16 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests
+package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.FilElementDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaListener
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaProperties
-import no.nav.soknad.arkivering.arkiveringendtoendtests.kafka.KafkaPublisher
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.AssertionHelper
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.FilElementDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtDokumentDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtVariantDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaListener
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaProperties
+import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.AssertionHelper
 import no.nav.soknad.arkivering.avroschemas.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -30,7 +30,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class BaseTests {
+abstract class SystemTestBase {
 
 	private val dependencies = HashMap<String, Int>().also {
 		it["soknadsmottaker"] = 8090

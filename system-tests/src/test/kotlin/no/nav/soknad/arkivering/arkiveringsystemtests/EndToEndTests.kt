@@ -1,12 +1,12 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests
+package no.nav.soknad.arkivering.arkiveringsystemtests
 
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.andWasCalled
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.inMinutes
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.times
-import no.nav.soknad.arkivering.arkiveringendtoendtests.verification.timesForKey
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtDokumentDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtVariantDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.timesForKey
 import no.nav.soknad.arkivering.avroschemas.EventTypes
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class EndToEndTests : BaseTests() {
+class EndToEndTests : SystemTestBase() {
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {

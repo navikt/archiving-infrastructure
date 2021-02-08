@@ -1,11 +1,11 @@
-package no.nav.soknad.arkivering.arkiveringendtoendtests.kafka
+package no.nav.soknad.arkivering.arkiveringsystemtests.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
-import no.nav.soknad.arkivering.arkiveringendtoendtests.dto.ArkivDbData
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.ArkivDbData
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import org.apache.avro.specific.SpecificRecord
@@ -95,7 +95,7 @@ class KafkaListener(private val kafkaBootstrapServersUrl: String, private val sc
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = schemaRegistryUrl
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaBootstrapServersUrl
-		it[StreamsConfig.APPLICATION_ID_CONFIG] = "end-to-end-tests"
+		it[StreamsConfig.APPLICATION_ID_CONFIG] = "system-tests"
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
 		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 1000

@@ -4,10 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>no.nav.soknad.arkivering</groupId>
-	<artifactId>end-to-end-tests</artifactId>
+	<artifactId>system-tests</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
-	<name>End-to-end-tests</name>
-	<description>End-to-end-tests</description>
+	<name>System-tests</name>
+	<description>End-to-end-tests and Load-tests</description>
 
 	<properties>
 		<arkivering-schemas.version>d1943667</arkivering-schemas.version>
