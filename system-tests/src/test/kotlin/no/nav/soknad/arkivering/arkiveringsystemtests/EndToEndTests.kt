@@ -1,275 +1,54 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.timesForKey
-import no.nav.soknad.arkivering.avroschemas.EventTypes
+import com.fasterxml.jackson.databind.ObjectMapper
+import no.nav.soknad.arkivering.arkiveringsystemtests.dto.FilElementDto
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okio.BufferedSink
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import java.time.LocalDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
 
-class EndToEndTests : SystemTestBase() {
+class EndToEndTests {
+	private val restClient = OkHttpClient()
+	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 
 	@Test
-	fun `Happy case - one file ends up in the archive`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-		setNormalArchiveBehaviour(dto.innsendingsId)
+	fun `Can ping soknadsfillager`() {
+		val url = "https://soknadsfillager-q0.dev.adeo.no/filer"
+		val username = "srvHenvendelse"
+		val password = System.getenv("SRVHENVENDELSE_PASSWORD")
+		println("pw len ${password.length}: '$password'")
 
-		sendFilesToFileStorage(fileId)
-		sendDataToMottaker(dto)
+		val headers = createHeaders(username, password)
 
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
+		val payload = listOf(FilElementDto("apa", "bepa".toByteArray(), LocalDateTime.now()))
+		performPostRequest(payload, url, headers)
 	}
 
-	@Test
-	fun `Poison pill followed by proper message - one file ends up in the archive`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-		setNormalArchiveBehaviour(dto.innsendingsId)
+	private fun performPostRequest(payload: Any, url: String, headers: Headers) {
+		val requestBody = object : RequestBody() {
+			override fun contentType() = "application/json".toMediaType()
+			override fun writeTo(sink: BufferedSink) {
+				sink.writeUtf8(objectMapper.writeValueAsString(payload))
+			}
+		}
 
-		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
-		sendFilesToFileStorage(fileId)
-		sendDataToMottaker(dto)
+		val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
 
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
+		val response = restClient.newCall(request).execute()
+		val body = response.body
+		response.close()
+
+		println(body)
 	}
 
-	@Test
-	fun `Happy case - several files in file storage - one file ends up in the archive`() {
-		val fileId0 = UUID.randomUUID().toString()
-		val fileId1 = UUID.randomUUID().toString()
-		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
-			listOf(
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
-
-				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
-			))
-		setNormalArchiveBehaviour(dto.innsendingsId)
-
-		sendFilesToFileStorage(fileId0)
-		sendFilesToFileStorage(fileId1)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId0, 0)
-		pollAndVerifyDataInFileStorage(fileId1, 0)
-	}
-
-	@Test
-	fun `No files in file storage - Nothing is sent to the archive`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-		setNormalArchiveBehaviour(dto.innsendingsId)
-
-		pollAndVerifyDataInFileStorage(fileId, 0)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.doesNotContainKey(dto.innsendingsId)
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@Test
-	fun `Several Hovedskjemas - Nothing is sent to the archive`() {
-		val fileId0 = UUID.randomUUID().toString()
-		val fileId1 = UUID.randomUUID().toString()
-		val dto = SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
-			listOf(
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
-
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
-			))
-		setNormalArchiveBehaviour(dto.innsendingsId)
-
-		sendFilesToFileStorage(fileId0)
-		sendFilesToFileStorage(fileId1)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.doesNotContainKey(dto.innsendingsId)
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId0, 1)
-		pollAndVerifyDataInFileStorage(fileId1, 1)
-	}
-
-	@Test
-	fun `Archive responds 404 on first two attempts - Works on third attempt`() {
-		val erroneousAttempts = 2
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, erroneousAttempts)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(erroneousAttempts + 1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@Test
-	fun `Archive responds 500 on first attempt - Works on second attempt`() {
-		val erroneousAttempts = 1
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, erroneousAttempts)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(erroneousAttempts + 1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@Test
-	fun `Archive responds 200 but has wrong response body - Will retry`() {
-		val erroneousAttempts = 3
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, erroneousAttempts)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(erroneousAttempts + 1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@Test
-	fun `Archive responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-		val moreAttemptsThanSoknadsarkivererWillPerform = attemptsThanSoknadsarkivererWillPerform + 1
-
-		resetArchiveDatabase()
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithErroneousBodyForXAttempts(dto.innsendingsId, moreAttemptsThanSoknadsarkivererWillPerform)
-		sendDataToMottaker(dto)
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform))
-			.hasNumberOfEntities(1 inMinutes 1)
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 1)
-	}
-
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
-	@Test
-	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
-		val key = UUID.randomUUID().toString()
-		val fileId = UUID.randomUUID().toString()
-		val innsendingsId = UUID.randomUUID().toString()
-		setNormalArchiveBehaviour(innsendingsId)
-
-		sendFilesToFileStorage(fileId)
-
-		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
-			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
-	@Test
-	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
-		val key = UUID.randomUUID().toString()
-		val fileId = UUID.randomUUID().toString()
-		val innsendingsId = UUID.randomUUID().toString()
-		setNormalArchiveBehaviour(innsendingsId)
-
-		sendFilesToFileStorage(fileId)
-
-		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
-		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
-			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
-	@Test
-	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
-		sendDataToMottaker(dto)
-		assertThatArkivMock()
-			.hasBeenCalled(attemptsThanSoknadsarkivererWillPerform timesForKey dto.innsendingsId)
-			.verify()
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
-		TimeUnit.SECONDS.sleep(1)
-
-		shutDownSoknadsarkiverer()
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform + 1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
-	@Test
-	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in the archive`() {
-		val finishedKey = UUID.randomUUID().toString()
-		val finishedFileId = UUID.randomUUID().toString()
-		val newFileId = UUID.randomUUID().toString()
-		val finishedInnsendingsId = UUID.randomUUID().toString()
-		val newInnsendingsId = UUID.randomUUID().toString()
-
-		val newDto = createDto(newFileId, newInnsendingsId)
-		setNormalArchiveBehaviour(finishedInnsendingsId)
-		setNormalArchiveBehaviour(newInnsendingsId)
-
-		sendFilesToFileStorage(finishedFileId)
-		sendFilesToFileStorage(newFileId)
-
-		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(finishedKey, finishedInnsendingsId, finishedFileId)
-		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.FINISHED)
-		sendDataToMottaker(newDto)
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
-			.containsData(newDto andWasCalled times(1))
-			.doesNotContainKey(finishedInnsendingsId)
-			.verify()
-		pollAndVerifyDataInFileStorage(finishedFileId, 1)
-		pollAndVerifyDataInFileStorage(newFileId, 0)
+	private fun createHeaders(username: String, password: String): Headers {
+		val auth = "$username:$password"
+		val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+		return Headers.headersOf(
+			"Authorization", authHeader,
+			"Content-Type", "application/json"
+		)
 	}
 }
