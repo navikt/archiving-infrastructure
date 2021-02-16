@@ -2,11 +2,15 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import kotlinx.coroutines.*
 import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -33,8 +37,29 @@ class LoadTests : SystemTestBase() {
 	* Gjennomsnitt sum på filstørrelse pr journalpost er 1,6MB
 	* Gjennomsnitt antall filer pr journalpost 2,5
 	* Gjennomsnitt filstørrelse 0,67MB
-	 */
+	*/
+	private val embeddedDockerImages = EmbeddedDockerImages()
 
+	@BeforeAll
+	fun setup() {
+		if (targetEnvironment == "embedded") {
+			env.addEmbeddedDockerImages(embeddedDockerImages)
+			embeddedDockerImages.startContainers()
+		}
+
+		setUp()
+	}
+
+	@AfterAll
+	fun teardown() {
+		tearDown()
+		if (targetEnvironment == "embedded") {
+			embeddedDockerImages.stopContainers()
+		}
+	}
+
+
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = "docker") // This takes too long to run locally
 	@Test
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
 		val numberOfEntities = 10_000
@@ -109,28 +134,12 @@ class LoadTests : SystemTestBase() {
 		println("Preloading database...")
 		val timeTaken = measureTimeMillis {
 
-			if (useTestcontainers) {
-				/*
-				val baseId = UUID.randomUUID().toString()
-				sendFilesToFileStorage(baseId, "0".toByteArray())
-
-				val result = executeQueryInPostgres("DROP TABLE IF EXISTS documents;" +
-					"CREATE TABLE documents \n" +
-					"(\n" +
-					"    id        VARCHAR(255) NOT NULL,\n" +
-					"    document  BYTEA,\n" +
-					"    created   TIMESTAMP WITH TIME ZONE NOT NULL default (now() at time zone 'UTC'),\n" +
-					"    PRIMARY KEY (id)\n" +
-					");")
-				if (result.exitCode != 0)
-					println("Error when preloading database!\n${result.exitCode}\n${result.stdout}\n${result.stderr}")
-				 */
-
+			if (!isExternalEnvironment) {
 				val batchSize = 1000
 				val numberOfBatches = numberOfEntities / batchSize
 				// This will insert numberOfBatches * batchSize documents into the database.
 				for (i in 0 until numberOfBatches) {
-					val res = executeQueryInPostgres("INSERT INTO documents(id, document) VALUES " +
+					val res = embeddedDockerImages.executeQueryInPostgres("INSERT INTO documents(id, document) VALUES " +
 						((i * batchSize) until ((i + 1) * batchSize)).joinToString(",") { "('$it','0')" } + ";")
 
 					if (res.exitCode != 0)
@@ -151,7 +160,8 @@ class LoadTests : SystemTestBase() {
 
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		setNormalArchiveBehaviour(dto.innsendingsId)
+		if (targetEnvironment == "embedded" || targetEnvironment == "docker")
+			setNormalArchiveBehaviour(dto.innsendingsId)
 		sendFilesToFileStorage(fileId)
 		sendDataToMottaker(dto)
 
@@ -160,7 +170,8 @@ class LoadTests : SystemTestBase() {
 			.hasNumberOfFinishedEvents(1 inMinutes 1)
 			.verify(false)
 
-		resetArchiveDatabase()
+		if (targetEnvironment == "embedded" || targetEnvironment == "docker")
+			resetArchiveDatabase()
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
 
@@ -192,6 +203,16 @@ class LoadTests : SystemTestBase() {
 			sendDataToMottaker(dto, async = true, verbose = false)
 			dto
 		}
+	}
+
+	private fun resetArchiveDatabase() {
+		val url = env.getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"
+		performDeleteCall(url)
+	}
+
+	private fun setNormalArchiveBehaviour(uuid: String) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
+		performPutCall(url)
 	}
 }
 

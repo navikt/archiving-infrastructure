@@ -127,7 +127,7 @@
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
 					<systemPropertyVariables>
-						<useTestcontainers>true</useTestcontainers>
+						<targetEnvironment>embedded</targetEnvironment>
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>

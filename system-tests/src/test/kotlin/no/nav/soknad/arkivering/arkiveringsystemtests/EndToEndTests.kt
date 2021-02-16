@@ -3,11 +3,14 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.timesForKey
 import no.nav.soknad.arkivering.avroschemas.EventTypes
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import java.time.LocalDateTime
@@ -15,6 +18,28 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 class EndToEndTests : SystemTestBase() {
+
+	private val embeddedDockerImages = EmbeddedDockerImages()
+
+	@BeforeAll
+	fun setup() {
+		if (!isExternalEnvironment) {
+			env.addEmbeddedDockerImages(embeddedDockerImages)
+			embeddedDockerImages.startContainers()
+		}
+
+		setUp()
+	}
+
+	@AfterAll
+	fun teardown() {
+		tearDown()
+
+		if (!isExternalEnvironment) {
+			embeddedDockerImages.stopContainers()
+		}
+	}
+
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {
@@ -178,7 +203,7 @@ class EndToEndTests : SystemTestBase() {
 		pollAndVerifyDataInFileStorage(fileId, 1)
 	}
 
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
 	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
@@ -198,7 +223,7 @@ class EndToEndTests : SystemTestBase() {
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
 	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
@@ -219,7 +244,7 @@ class EndToEndTests : SystemTestBase() {
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
 	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
 		val fileId = UUID.randomUUID().toString()
@@ -243,7 +268,7 @@ class EndToEndTests : SystemTestBase() {
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
-	@DisabledIfSystemProperty(named = "useTestcontainers", matches = "false")
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
 	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in the archive`() {
 		val finishedKey = UUID.randomUUID().toString()
@@ -271,5 +296,37 @@ class EndToEndTests : SystemTestBase() {
 			.verify()
 		pollAndVerifyDataInFileStorage(finishedFileId, 1)
 		pollAndVerifyDataInFileStorage(newFileId, 0)
+	}
+
+
+	private fun shutDownSoknadsarkiverer() {
+		embeddedDockerImages.shutDownSoknadsarkiverer()
+	}
+
+	private fun startUpSoknadsarkiverer() {
+		embeddedDockerImages.startUpSoknadsarkiverer()
+		val url = env.getUrlForSoknadsarkiverer() + "/internal/health"
+		verifyComponentIsUp(url, "soknadsarkiverer")
+	}
+
+
+	private fun resetArchiveDatabase() {
+		val url = env.getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"
+		performDeleteCall(url)
+	}
+
+	private fun setNormalArchiveBehaviour(uuid: String) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
+		performPutCall(url)
+	}
+
+	private fun mockArchiveRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
+		performPutCall(url)
+	}
+
+	private fun mockArchiveRespondsWithErroneousBodyForXAttempts(uuid: String, forAttempts: Int) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
+		performPutCall(url)
 	}
 }
