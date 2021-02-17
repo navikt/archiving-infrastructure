@@ -163,7 +163,7 @@ class LoadTests : SystemTestBase() {
 		if (targetEnvironment == "embedded" || targetEnvironment == "docker")
 			setNormalArchiveBehaviour(dto.innsendingsId)
 		sendFilesToFileStorage(fileId)
-		sendDataToMottaker(dto)
+		sendDataToMottaker(dto, async = false, verbose = true)
 
 		assertThatArkivMock()
 			.containsData(dto andWasCalled times(1))
@@ -204,6 +204,13 @@ class LoadTests : SystemTestBase() {
 			dto
 		}
 	}
+
+	private fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
+		if (verbose)
+			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		sendDataToMottaker(dto, async)
+	}
+
 
 	private fun resetArchiveDatabase() {
 		val url = env.getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"

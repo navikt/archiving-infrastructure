@@ -31,7 +31,7 @@ abstract class SystemTestBase {
 
 	val targetEnvironment: String? = System.getProperty("targetEnvironment")
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
-	val env = EnvironmentConfig()
+	val env = EnvironmentConfig(targetEnvironment)
 	private val restClient = OkHttpClient()
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
@@ -49,6 +49,8 @@ abstract class SystemTestBase {
 
 	fun setUp() {
 		println("Target Environment: $targetEnvironment")
+		if (isExternalEnvironment)
+			checkThatDependenciesAreUp()
 
 		kafkaPublisher = KafkaPublisher(env.getUrlForKafkaBroker(), env.getUrlForSchemaRegistry())
 		kafkaListener = KafkaListener(env.getUrlForKafkaBroker(), env.getUrlForSchemaRegistry())
@@ -163,9 +165,7 @@ abstract class SystemTestBase {
 			soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 
-	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean = false, verbose: Boolean = true) {
-		if (verbose)
-			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
+	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean) {
 		val url = env.getUrlForSoknadsmottaker() + "/save"
 		performPostCall(dto, url, createHeaders(env.getSoknadsmottakerUsername(), env.getSoknadsmottakerPassword()), async)
 	}

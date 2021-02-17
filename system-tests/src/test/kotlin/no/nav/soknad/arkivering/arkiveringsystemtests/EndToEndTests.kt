@@ -299,6 +299,11 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 
+	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
+		println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		sendDataToMottaker(dto, false)
+	}
+
 	private fun shutDownSoknadsarkiverer() {
 		embeddedDockerImages.shutDownSoknadsarkiverer()
 	}

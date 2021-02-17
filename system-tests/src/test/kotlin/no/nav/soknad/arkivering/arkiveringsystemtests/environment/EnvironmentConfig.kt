@@ -1,11 +1,15 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
+import org.junit.jupiter.api.fail
+
 
 private val defaultProperties = mapOf(
 	"soknadsfillager.url"      to "http://localhost:9042",
 	"soknadsmottaker.url"      to "http://localhost:8090",
 	"soknadsarkiverer.url"     to "http://localhost:8091",
 	"arkiv-mock.url"           to "http://localhost:8092",
+	"schemaregistry.url"       to "http://localhost:8081",
+	"kafkabroker.url"          to "localhost:9092",
 	"soknadsfillager.username" to "arkiverer",
 	"soknadsfillager.password" to "password",
 	"soknadsmottaker.username" to "avsender",
@@ -35,7 +39,7 @@ enum class Profile {
 	Q1 // Running towards q1 environment in the cloud
 }
 
-class EnvironmentConfig {
+class EnvironmentConfig(environmentToTarget: String? = null) {
 
 	private var embeddedDockerImages: EmbeddedDockerImages? = null
 
@@ -44,7 +48,7 @@ class EnvironmentConfig {
 		return this
 	}
 
-	private val targetEnvironment = when (System.getProperty("targetEnvironment")) {
+	private val targetEnvironment = when (environmentToTarget) {
 		"docker" -> Profile.DOCKER
 		"q0"     -> Profile.Q0
 		"q1"     -> Profile.Q1
@@ -53,19 +57,28 @@ class EnvironmentConfig {
 
 	private fun getAttribute(attribute: String): String {
 		val result = when (targetEnvironment) {
-			Profile.DOCKER   -> defaultProperties[attribute]
-			Profile.Q0       -> q0Properties[attribute]
-			Profile.Q1       -> q1Properties[attribute]
-			Profile.EMBEDDED -> {
-				when (attribute) {
-					"soknadsfillager.url"  -> embeddedDockerImages?.getUrlForSoknadsfillager()
-					"soknadsmottaker.url"  -> embeddedDockerImages?.getUrlForSoknadsmottaker()
-					"soknadsarkiverer.url" -> embeddedDockerImages?.getUrlForSoknadsarkiverer()
-					"arkiv-mock.url"       -> embeddedDockerImages?.getUrlForArkivMock()
-					"kafkabroker.url"      -> embeddedDockerImages?.getUrlForKafkaBroker()
-					"schemaregistry.url"   -> embeddedDockerImages?.getUrlForSchemaRegistry()
-					else                   -> defaultProperties[attribute]
-				}
+			Profile.DOCKER -> defaultProperties[attribute]
+
+			Profile.Q0 -> when (attribute) {
+				"soknadsfillager.password" -> getEnvironmentVariable(attribute)
+				"soknadsmottaker.password" -> getEnvironmentVariable(attribute)
+				else -> q0Properties[attribute]
+			}
+
+			Profile.Q1 -> when (attribute) {
+				"soknadsfillager.password" -> getEnvironmentVariable(attribute)
+				"soknadsmottaker.password" -> getEnvironmentVariable(attribute)
+				else -> q1Properties[attribute]
+			}
+
+			Profile.EMBEDDED -> when (attribute) {
+				"soknadsfillager.url"  -> embeddedDockerImages?.getUrlForSoknadsfillager()
+				"soknadsmottaker.url"  -> embeddedDockerImages?.getUrlForSoknadsmottaker()
+				"soknadsarkiverer.url" -> embeddedDockerImages?.getUrlForSoknadsarkiverer()
+				"arkiv-mock.url"       -> embeddedDockerImages?.getUrlForArkivMock()
+				"kafkabroker.url"      -> embeddedDockerImages?.getUrlForKafkaBroker()
+				"schemaregistry.url"   -> embeddedDockerImages?.getUrlForSchemaRegistry()
+				else                   -> defaultProperties[attribute]
 			}
 		}
 		if (result != null)
@@ -73,6 +86,18 @@ class EnvironmentConfig {
 		else
 			throw NotImplementedError("There is no $attribute for environment $targetEnvironment")
 	}
+
+	private fun getEnvironmentVariable(attribute: String): String {
+		val value = System.getenv(attribute)
+		if (value == null) {
+			val message = "No value found for environment-variable '$attribute'. " +
+				"If you run this locally from the terminal, try running 'export $attribute=VALUE' " +
+				"and then running the tests again."
+			fail(message)
+		}
+		return value
+	}
+
 
 	fun getUrlForSoknadsfillager()   = getAttribute("soknadsfillager.url")
 	fun getUrlForSoknadsmottaker()   = getAttribute("soknadsmottaker.url")
