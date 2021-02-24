@@ -1,15 +1,25 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import org.junit.jupiter.api.fail
+import java.util.HashMap
 
+val defaultPorts = HashMap<String, Int>().also {
+	it["soknadsfillager"]  = 9042
+	it["soknadsmottaker"]  = 8090
+	it["soknadsarkiverer"] = 8091
+	it["arkiv-mock"]       = 8092
+	it["kafka-broker"]     = 9092
+	it["schema-registry"]  = 8081
+	it["database"]         = 5432
+}
 
 private val defaultProperties = mapOf(
-	"soknadsfillager.url"      to "http://localhost:9042",
-	"soknadsmottaker.url"      to "http://localhost:8090",
-	"soknadsarkiverer.url"     to "http://localhost:8091",
-	"arkiv-mock.url"           to "http://localhost:8092",
-	"schemaregistry.url"       to "http://localhost:8081",
-	"kafkabroker.url"          to "localhost:9092",
+	"soknadsfillager.url"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
+	"soknadsmottaker.url"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
+	"soknadsarkiverer.url"     to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
+	"arkiv-mock.url"           to "http://localhost:${defaultPorts["arkiv-mock"]}",
+	"schema-registry.url"      to "http://localhost:${defaultPorts["schema-registry"]}",
+	"kafka-broker.url"         to "localhost:${defaultPorts["kafka-broker"]}",
 	"soknadsfillager.username" to "arkiverer",
 	"soknadsfillager.password" to "password",
 	"soknadsmottaker.username" to "avsender",
@@ -76,8 +86,8 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 				"soknadsmottaker.url"  -> embeddedDockerImages?.getUrlForSoknadsmottaker()
 				"soknadsarkiverer.url" -> embeddedDockerImages?.getUrlForSoknadsarkiverer()
 				"arkiv-mock.url"       -> embeddedDockerImages?.getUrlForArkivMock()
-				"kafkabroker.url"      -> embeddedDockerImages?.getUrlForKafkaBroker()
-				"schemaregistry.url"   -> embeddedDockerImages?.getUrlForSchemaRegistry()
+				"kafka-broker.url"     -> embeddedDockerImages?.getUrlForKafkaBroker()
+				"schema-registry.url"  -> embeddedDockerImages?.getUrlForSchemaRegistry()
 				else                   -> defaultProperties[attribute]
 			}
 		}
@@ -103,8 +113,8 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 	fun getUrlForSoknadsmottaker()   = getAttribute("soknadsmottaker.url")
 	fun getUrlForSoknadsarkiverer()  = getAttribute("soknadsarkiverer.url")
 	fun getUrlForArkivMock()         = getAttribute("arkiv-mock.url")
-	fun getUrlForKafkaBroker()       = getAttribute("kafkabroker.url")
-	fun getUrlForSchemaRegistry()    = getAttribute("schemaregistry.url")
+	fun getUrlForKafkaBroker()       = getAttribute("kafka-broker.url")
+	fun getUrlForSchemaRegistry()    = getAttribute("schema-registry.url")
 	fun getSoknadsfillagerUsername() = getAttribute("soknadsfillager.username")
 	fun getSoknadsfillagerPassword() = getAttribute("soknadsfillager.password")
 	fun getSoknadsmottakerUsername() = getAttribute("soknadsmottaker.username")
