@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.kafka
+package no.nav.soknad.arkivering.kafka
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer

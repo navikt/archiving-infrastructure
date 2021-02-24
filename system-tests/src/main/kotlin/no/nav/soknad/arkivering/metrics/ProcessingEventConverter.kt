@@ -1,9 +1,9 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.metrics
+package no.nav.soknad.arkivering.metrics
 
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaEntityConsumer
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaTimestampedEntity
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
+import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
+import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
 
 /**
  * This class converts a [ProcessingEvent] to a [InnsendingMetrics] object, and feeds it to the [MetricsConsumer].

@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.kafka
+package no.nav.soknad.arkivering.kafka
 
 class KafkaProperties {
 	val inputTopic = "privat-soknadInnsendt-v1-default"

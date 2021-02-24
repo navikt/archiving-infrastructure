@@ -1,6 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaProperties
+import no.nav.soknad.arkivering.kafka.KafkaProperties
 import org.junit.jupiter.api.fail
 import org.testcontainers.containers.*
 import org.testcontainers.containers.wait.strategy.Wait

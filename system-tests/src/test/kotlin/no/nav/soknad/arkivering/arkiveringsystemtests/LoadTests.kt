@@ -1,11 +1,11 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import kotlinx.coroutines.*
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
+import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName

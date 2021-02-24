@@ -1,14 +1,14 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.timesForKey
 import no.nav.soknad.arkivering.avroschemas.EventTypes
+import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
+import no.nav.soknad.arkivering.dto.InnsendtVariantDto
+import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test

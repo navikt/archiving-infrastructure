@@ -1,13 +1,13 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.verification
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.ArkivDbData
-import no.nav.soknad.arkivering.arkiveringsystemtests.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaListener
-import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.MetricsConsumer
-import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.ProcessingEventConverter
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
+import no.nav.soknad.arkivering.dto.ArkivDbData
+import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.kafka.KafkaListener
+import no.nav.soknad.arkivering.metrics.MetricsConsumer
+import no.nav.soknad.arkivering.metrics.ProcessingEventConverter
 import java.io.File
 
 /**
@@ -82,7 +82,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.verifyThat(expectedCount, verificationFunction, "Assert correct number of Finished Processing Events")
 			.build()
 
-		metricsConsumer.addVerificationTask(verificationTask)
+		metricsConsumer.addExternalConsumer(verificationTask)
 		return verificationTask
 	}
 

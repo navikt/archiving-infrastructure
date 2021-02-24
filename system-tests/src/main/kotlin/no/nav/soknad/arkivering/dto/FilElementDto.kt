@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.dto
+package no.nav.soknad.arkivering.dto
 
 import java.time.LocalDateTime
 

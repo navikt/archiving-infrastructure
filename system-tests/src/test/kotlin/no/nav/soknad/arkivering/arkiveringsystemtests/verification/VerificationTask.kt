@@ -2,8 +2,9 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaEntityConsumer
-import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaTimestampedEntity
+import no.nav.soknad.arkivering.arkiveringsystemtests.verification.VerificationTask.Presence
+import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
+import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule

@@ -1,7 +1,7 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import org.junit.jupiter.api.fail
-import java.util.HashMap
+import java.util.*
 
 val defaultPorts = HashMap<String, Int>().also {
 	it["soknadsfillager"]  = 9042
