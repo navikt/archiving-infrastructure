@@ -244,11 +244,10 @@ abstract class SystemTestBase {
 				fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "variantformat", "PDFA") })))
 
 
-	fun assertThatArkivMock() = AssertionHelper(kafkaListener).setup()
+	fun assertThatArkivMock() = AssertionHelper(kafkaListener)
 
 	fun assertThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>) {
 		AssertionHelper(kafkaListener)
-			.setup()
 			.hasNumberOfFinishedEvents(countAndTimeout)
 			.verify()
 	}

@@ -11,8 +11,18 @@ import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
  */
 class ProcessingEventConverter(private val metricsConsumer: MetricsConsumer) : KafkaEntityConsumer<ProcessingEvent> {
 
+	/**
+	 * Consume a [ProcessingEvent], turn it into a [InnsendingMetrics] and pass it to the [metricsConsumer] so that it
+	 * can consume it as well.
+	 */
 	override fun consume(key: String, timestampedEntity: KafkaTimestampedEntity<ProcessingEvent>) {
-		val metrics = InnsendingMetrics("soknadsarkiverer", timestampedEntity.entity.type.name, timestampedEntity.timestamp, -1)
+
+		val metrics = InnsendingMetrics(
+			"soknadsarkiverer",
+			timestampedEntity.entity.type.name,
+			timestampedEntity.timestamp,
+			-1)
+
 		val value = KafkaTimestampedEntity(metrics, timestampedEntity.timestamp)
 
 		metricsConsumer.consume(key, value)

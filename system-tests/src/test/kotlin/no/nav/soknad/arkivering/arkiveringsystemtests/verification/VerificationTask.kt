@@ -8,10 +8,29 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
 
+/**
+ * This class consumes messages from a Kafka topic (since the class is a [KafkaEntityConsumer]), and on every
+ * consumed message, it will verify the message through its [verifiers].
+ * The [VerificationTask] is quite customisable, and the [verifiers] be used to verify for example:
+ * - that a Kafka message contains certain values
+ * - that no messages arrive before the given timeout
+ * - that a certain number of messages with a given [key] has arrived before the given timeout
+ *
+ * Upon each consumed Kafka message, all [verifiers] will be checked. If every one succeeds, then the [VerificationTask]
+ * will be satisfied. Also, if [presence] is set to [Presence.ABSENCE], then the [VerificationTask] will be satisfied
+ * if no Kafka messages with the given [key] are observed before the given timeout.
+ * Likewise, if the consumed Kafka messages don't satisfy all the [verifiers], or if [presence] is set to
+ * [Presence.PRESENCE] and there were no Kafka messages consumed before the given timeout, then the [VerificationTask]
+ * will be dissatisfied.
+ *
+ * When the [VerificationTask] is satisfied or dissatisfied, it will communicate that through the [channel], by sending
+ * a Message and a Boolean status. The status will be true if the [VerificationTask] is satisfied, and false otherwise.
+ * The Message will contain details about why the status is set the way it is.
+ */
 class VerificationTask<T> private constructor(
 	private val channel: Channel<Pair<String, Boolean>>,
 	private val key: String?,
-	private val verifier: MutableList<Assertion<*, T>>,
+	private val verifiers: MutableList<Assertion<*, T>>,
 	private val presence: Presence,
 	timeout: Long
 ): KafkaEntityConsumer<T> {
@@ -47,7 +66,7 @@ class VerificationTask<T> private constructor(
 		}
 
 		if (this.key == null || this.key == key) {
-			if (verifier.all { it.expected == it.actualFunction.invoke(value) }) {
+			if (verifiers.all { it.expected == it.actualFunction.invoke(value) }) {
 				sendSatisfiedSignal()
 			}
 		}
@@ -61,7 +80,7 @@ class VerificationTask<T> private constructor(
 			observedValues.isEmpty() -> "Verification failed - Expected to see value but saw none"
 			else -> try {
 				val lastSeenValue = observedValues.last()
-				val firstFailingVerification = verifier.first { it.expected != it.actualFunction.invoke(lastSeenValue) }
+				val firstFailingVerification = verifiers.first { it.expected != it.actualFunction.invoke(lastSeenValue) }
 				"Verification failed for assertion '${firstFailingVerification.message}'!\n" +
 					"Expected: '${firstFailingVerification.expected}'\n" +
 					"But found '${firstFailingVerification.actualFunction.invoke(lastSeenValue)}'"
@@ -101,7 +120,8 @@ class VerificationTask<T> private constructor(
 		fun build() = VerificationTask(channel, key, verifier, presence, timeout)
 
 		inner class VerificationSteps(private val builder: Builder<T>) {
-			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) = apply { verifier.add(Assertion(expected, function, message)) }
+			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) =
+				apply { verifier.add(Assertion(expected, function, message)) }
 			fun build() = builder.build()
 		}
 	}

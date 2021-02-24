@@ -7,18 +7,38 @@ import no.nav.soknad.arkivering.arkiveringsystemtests.kafka.KafkaListener
 import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.MetricsConsumer
 import no.nav.soknad.arkivering.arkiveringsystemtests.metrics.ProcessingEventConverter
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
+import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import java.io.File
 
+/**
+ * This is a helper class for setting up asynchronous assertions of Kafka messages that will appear at some
+ * point in the future. This class has various functions for adding a multitude of different checks to be performed.
+ * However, it only perform the checks when the [verify] function (which is a blocking function) is called.
+ *
+ * Note that most if not all functions of the [AssertionHelper] has a side effect: the given [kafkaListener] will have
+ * its consumers modified. By creating an [AssertionHelper], the consumers of the [kafkaListener] will be cleared.
+ */
 class AssertionHelper(private val kafkaListener: KafkaListener) {
 
+	/**
+	 * The [VerificationTaskManager] is a manager for blocking and awaiting for all verifications to finish.
+	 */
 	private val verificationTaskManager = VerificationTaskManager()
+
+	/**
+	 * The [MetricsConsumer] will consume any and all [InnsendingMetrics] that appear on the appropriate Kafka topics
+	 */
 	private val metricsConsumer = MetricsConsumer()
+
+	/**
+	 * The [ProcessingEventConverter] is a helper class to convert [ProcessingEvent]'s to [InnsendingMetrics], so that
+	 * they can be consumed by the [MetricsConsumer].
+	 */
 	private val processingEventConverter = ProcessingEventConverter(metricsConsumer)
 
-	fun setup(): AssertionHelper {
+	init {
 		kafkaListener.clearConsumers()
 		addMetricsConsumers()
-		return this
 	}
 
 	private fun addMetricsConsumers() {
@@ -89,7 +109,8 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return registerVerificationTasks(countVerifier, valueVerifier)
 	}
 
-	private fun registerVerificationTasks(countVerifier: VerificationTask<Int>, valueVerifier: VerificationTask<ArkivDbData>): AssertionHelper {
+	private fun registerVerificationTasks(countVerifier: VerificationTask<Int>,
+																				valueVerifier: VerificationTask<ArkivDbData>): AssertionHelper {
 
 		verificationTaskManager.registerTasks(listOf(countVerifier, valueVerifier))
 		kafkaListener.addConsumerForEntities(valueVerifier)
@@ -116,7 +137,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 				) }
 		val json = objectMapper.writeValueAsString(metrics)
 
-		val testName = Thread.currentThread().stackTrace[5].methodName
+		val testName = Thread.currentThread().stackTrace[4].methodName
 		val outputDir = "target/metrics"
 		File(outputDir).mkdirs()
 		val file = File("$outputDir/$testName").also { it.createNewFile() }
@@ -152,7 +173,8 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.verifyThat(expectedCount, { count -> count }, "Assert correct number of attempts to save to the Archive")
 			.build()
 
-	private fun createVerificationTaskForAbsenceOfKey(key: String): Pair<VerificationTask<Int>, VerificationTask<ArkivDbData>> {
+	private fun createVerificationTaskForAbsenceOfKey(key: String):
+		Pair<VerificationTask<Int>, VerificationTask<ArkivDbData>> {
 
 		val countVerifier = VerificationTask.Builder<Int>()
 			.withManager(verificationTaskManager)
