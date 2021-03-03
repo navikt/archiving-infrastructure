@@ -1,28 +1,25 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.AssertionHelper
 import no.nav.soknad.arkivering.avroschemas.*
-import no.nav.soknad.arkivering.dto.FilElementDto
 import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okio.BufferedSink
+import no.nav.soknad.arkivering.utils.loopAndVerify
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
-import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class SystemTestBase {
@@ -32,19 +29,11 @@ abstract class SystemTestBase {
 	val targetEnvironment: String? = System.getProperty("targetEnvironment")
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
+	lateinit var config: Configuration
 	private val restClient = OkHttpClient()
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	private lateinit var kafkaListener: KafkaListener
-
-
-	private val restRequestCallback = object : Callback {
-		override fun onResponse(call: Call, response: Response) { }
-
-		override fun onFailure(call: Call, e: IOException) {
-			fail("Failed to perform request", e)
-		}
-	}
 
 
 	fun setUp() {
@@ -52,8 +41,22 @@ abstract class SystemTestBase {
 		if (isExternalEnvironment)
 			checkThatDependenciesAreUp()
 
-		kafkaPublisher = KafkaPublisher(env.getUrlForKafkaBroker(), env.getUrlForSchemaRegistry())
-		kafkaListener = KafkaListener(env.getUrlForKafkaBroker(), env.getUrlForSchemaRegistry())
+		val dockerImages = env.embeddedDockerImages
+		config = if (dockerImages != null) {
+			val dockerUrls = mapOf(
+				"SOKNADSFILLAGER_URL"     to dockerImages.getUrlForSoknadsfillager(),
+				"SOKNADSMOTTAKER_URL"     to dockerImages.getUrlForSoknadsmottaker(),
+				"SOKNADSARKIVERER_URL"    to dockerImages.getUrlForSoknadsarkiverer(),
+				"ARKIV-MOCK_URL"          to dockerImages.getUrlForArkivMock(),
+				"SCHEMA_REGISTRY_URL"     to dockerImages.getUrlForSchemaRegistry(),
+				"KAFKA_BOOTSTRAP_SERVERS" to dockerImages.getUrlForKafkaBroker()
+			)
+			Configuration(dockerUrls)
+		} else {
+			Configuration()
+		}
+		kafkaPublisher = KafkaPublisher(config)
+		kafkaListener = KafkaListener(config)
 	}
 
 	private fun checkThatDependenciesAreUp() {
@@ -100,48 +103,6 @@ abstract class SystemTestBase {
 	}
 
 
-	fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
-		val url = env.getUrlForSoknadsfillager() + "/filer?ids=$uuid"
-		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url) },
-			{ assertEquals(expectedNumberOfHits, getNumberOfFiles(url), "Expected $expectedNumberOfHits files in File Storage") })
-	}
-
-
-	private fun getNumberOfFiles(url: String): Int {
-		val headers = createHeaders(env.getSoknadsfillagerUsername(), env.getSoknadsfillagerPassword())
-
-		val request = Request.Builder().url(url).headers(headers).get().build()
-
-		restClient.newCall(request).execute().use {
-			if (it.isSuccessful) {
-				val bytes = it.body?.bytes()
-				val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
-
-				return listOfFiles.filter { file -> file.fil != null }.size
-			}
-		}
-		return 0
-	}
-
-
-	fun sendFilesToFileStorage(uuid: String) {
-		val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
-		sendFilesToFileStorage(uuid, "apabepa".toByteArray(), message)
-	}
-
-	fun sendFilesToFileStorage(uuid: String, payload: ByteArray, message: String) {
-		println(message)
-		sendFilesToFileStorageAndVerify(uuid, payload)
-	}
-
-	private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray) {
-		val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
-		val url = env.getUrlForSoknadsfillager() + "/filer"
-
-		performPostCall(files, url, createHeaders(env.getSoknadsfillagerUsername(), env.getSoknadsfillagerPassword()), false)
-		pollAndVerifyDataInFileStorage(uuid, 1)
-	}
-
 	fun verifyComponentIsUp(url: String, componentName: String) {
 		val healthStatusCode = {
 			val request = Request.Builder().url(url).get().build()
@@ -165,73 +126,6 @@ abstract class SystemTestBase {
 			soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 
-	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean) {
-		val url = env.getUrlForSoknadsmottaker() + "/save"
-		performPostCall(dto, url, createHeaders(env.getSoknadsmottakerUsername(), env.getSoknadsmottakerPassword()), async)
-	}
-
-	private fun createHeaders(username: String, password: String): Headers {
-		val auth = "$username:$password"
-		val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
-		return Headers.headersOf("Authorization", authHeader)
-	}
-
-	private fun performPostCall(payload: Any, url: String, headers: Headers, async: Boolean) {
-		val requestBody = object : RequestBody() {
-			override fun contentType() = "application/json".toMediaType()
-			override fun writeTo(sink: BufferedSink) {
-				sink.writeUtf8(objectMapper.writeValueAsString(payload))
-			}
-		}
-
-		val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
-
-		val call = restClient.newCall(request)
-		if (async)
-			call.enqueue(restRequestCallback)
-		else
-			call.execute().close()
-	}
-
-	fun performPutCall(url: String) {
-		val requestBody = object : RequestBody() {
-			override fun contentType() = "application/json".toMediaType()
-			override fun writeTo(sink: BufferedSink) {}
-		}
-
-		val request = Request.Builder().url(url).put(requestBody).build()
-
-		restClient.newCall(request).execute().use { response ->
-			if (!response.isSuccessful)
-				throw IOException("Unexpected code $response")
-		}
-	}
-
-	fun performDeleteCall(url: String) {
-		val requestBody = object : RequestBody() {
-			override fun contentType() = "application/json".toMediaType()
-			override fun writeTo(sink: BufferedSink) {}
-		}
-		val request = Request.Builder().url(url).delete(requestBody).build()
-		restClient.newCall(request).execute().close()
-	}
-
-	private fun loopAndVerify(expectedCount: Int, getCount: () -> Int,
-														finalCheck: () -> Any = { assertEquals(expectedCount, getCount.invoke()) }) {
-
-		val startTime = System.currentTimeMillis()
-		val timeout = 30 * 1000
-
-		while (System.currentTimeMillis() < startTime + timeout) {
-			val matches = getCount.invoke()
-
-			if (matches == expectedCount) {
-				break
-			}
-			TimeUnit.MILLISECONDS.sleep(50)
-		}
-		finalCheck.invoke()
-	}
 
 	fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
 		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),

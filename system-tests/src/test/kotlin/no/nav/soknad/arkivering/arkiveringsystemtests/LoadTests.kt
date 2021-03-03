@@ -2,10 +2,12 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import kotlinx.coroutines.*
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.andWasCalled
 import no.nav.soknad.arkivering.arkiveringsystemtests.verification.inMinutes
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.times
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.innsending.performDeleteCall
+import no.nav.soknad.arkivering.innsending.performPutCall
+import no.nav.soknad.arkivering.innsending.sendDataToMottaker
+import no.nav.soknad.arkivering.innsending.sendFilesToFileStorage
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -121,7 +123,9 @@ class LoadTests : SystemTestBase() {
 		(0 until numberOfImages)
 			.chunked(2)
 			.forEach { ids ->
-				val deferredUploads = ids.map { id -> GlobalScope.async { sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'") } }
+				val deferredUploads = ids.map { id -> GlobalScope.async {
+					sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
+				} }
 				runBlocking { deferredUploads.awaitAll() }
 			}
 //			.forEach { sendFilesToFileStorage(it.toString(), fileContent) }
@@ -160,18 +164,11 @@ class LoadTests : SystemTestBase() {
 
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		if (targetEnvironment == "embedded" || targetEnvironment == "docker")
-			setNormalArchiveBehaviour(dto.innsendingsId)
-		sendFilesToFileStorage(fileId)
+		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)
 
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(1))
-			.hasNumberOfFinishedEvents(1 inMinutes 1)
-			.verify(false)
+		assertThatFinishedEventsAreCreated(1 inMinutes 1)
 
-		if (targetEnvironment == "embedded" || targetEnvironment == "docker")
-			resetArchiveDatabase()
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
 
@@ -208,7 +205,7 @@ class LoadTests : SystemTestBase() {
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
 		if (verbose)
 			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToMottaker(dto, async)
+		sendDataToMottaker(dto, async, config)
 	}
 
 

@@ -51,7 +51,7 @@ enum class Profile {
 
 class EnvironmentConfig(environmentToTarget: String? = null) {
 
-	private var embeddedDockerImages: EmbeddedDockerImages? = null
+	var embeddedDockerImages: EmbeddedDockerImages? = null
 
 	fun addEmbeddedDockerImages(embeddedDockerImages: EmbeddedDockerImages): EnvironmentConfig {
 		this.embeddedDockerImages = embeddedDockerImages

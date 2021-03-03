@@ -9,6 +9,7 @@ import no.nav.soknad.arkivering.avroschemas.EventTypes
 import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.innsending.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -299,9 +300,17 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 
+	private fun sendFilesToFileStorage(id: String) {
+		sendFilesToFileStorage(id, config)
+	}
+
+	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
+		pollAndVerifyDataInFileStorage(uuid, expectedNumberOfHits, config)
+	}
+
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToMottaker(dto, false)
+		sendDataToMottaker(dto, false, config)
 	}
 
 	private fun shutDownSoknadsarkiverer() {
