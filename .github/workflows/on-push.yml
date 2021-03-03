@@ -1,0 +1,15 @@
+name: Register load-tests cron-job on push
+on:
+  push:
+jobs:
+  deploy-load-tests-cron-job:
+    name: Deploy load-tests as a CronJob
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-fss
+          RESOURCE: system-tests/.nais/preprod-q0.yml
