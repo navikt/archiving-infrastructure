@@ -1,4 +1,4 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.verification
+package no.nav.soknad.arkivering.verification
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
@@ -32,7 +32,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 
 	/**
 	 * The [ProcessingEventConverter] is a helper class to convert [ProcessingEvent]'s to [InnsendingMetrics], so that
-	 * they can be consumed by the [MetricsConsumer].
+	 * they can be consumed by the [metricsConsumer].
 	 */
 	private val processingEventConverter = ProcessingEventConverter(metricsConsumer)
 

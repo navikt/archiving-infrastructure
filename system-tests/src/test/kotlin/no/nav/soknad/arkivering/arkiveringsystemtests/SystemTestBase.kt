@@ -4,20 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
-import no.nav.soknad.arkivering.arkiveringsystemtests.verification.AssertionHelper
 import no.nav.soknad.arkivering.avroschemas.*
-import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
+import no.nav.soknad.arkivering.verification.AssertionHelper
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
-import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
 
@@ -127,24 +124,7 @@ abstract class SystemTestBase {
 	}
 
 
-	fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
-		SoknadInnsendtDto(innsendingsId, false, "personId", "tema", LocalDateTime.now(),
-			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-				listOf(InnsendtVariantDto(fileId, null, "filnavn", "1024", "variantformat", "PDFA")))))
-
-	fun createDto(fileIds: List<String>) =
-		SoknadInnsendtDto(UUID.randomUUID().toString(), false, "personId", "tema", LocalDateTime.now(),
-			listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-				fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "variantformat", "PDFA") })))
-
-
 	fun assertThatArkivMock() = AssertionHelper(kafkaListener)
-
-	fun assertThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>) {
-		AssertionHelper(kafkaListener)
-			.hasNumberOfFinishedEvents(countAndTimeout)
-			.verify()
-	}
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

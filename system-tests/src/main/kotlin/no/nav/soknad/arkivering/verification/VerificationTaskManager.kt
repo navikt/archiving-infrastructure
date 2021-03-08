@@ -1,8 +1,7 @@
-package no.nav.soknad.arkivering.arkiveringsystemtests.verification
+package no.nav.soknad.arkivering.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.fail
 
 /**
  * This class is for asynchronously verifying [VerificationTask]s that complete at some point in the future.
@@ -34,7 +33,7 @@ class VerificationTaskManager {
 			repeat(tasks.size) {
 				val result = channel.receive()
 				if (!result.second) {
-					fail("Task failed with message:\n${result.first}")
+					throw Exception("Task failed with message:\n${result.first}")
 				}
 			}
 		}

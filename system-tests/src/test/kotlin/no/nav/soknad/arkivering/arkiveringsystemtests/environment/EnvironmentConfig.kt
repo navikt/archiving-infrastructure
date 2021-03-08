@@ -113,10 +113,4 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 	fun getUrlForSoknadsmottaker()   = getAttribute("soknadsmottaker.url")
 	fun getUrlForSoknadsarkiverer()  = getAttribute("soknadsarkiverer.url")
 	fun getUrlForArkivMock()         = getAttribute("arkiv-mock.url")
-	fun getUrlForKafkaBroker()       = getAttribute("kafka-broker.url")
-	fun getUrlForSchemaRegistry()    = getAttribute("schema-registry.url")
-	fun getSoknadsfillagerUsername() = getAttribute("soknadsfillager.username")
-	fun getSoknadsfillagerPassword() = getAttribute("soknadsfillager.password")
-	fun getSoknadsmottakerUsername() = getAttribute("soknadsmottaker.username")
-	fun getSoknadsmottakerPassword() = getAttribute("soknadsmottaker.password")
 }

@@ -165,15 +165,13 @@ class EmbeddedDockerImages {
 		soknadsarkivererContainer.start()
 	}
 
-	fun executeQueryInPostgres(query: String): Container.ExecResult = postgresContainer.execInContainer("psql", "-h", "localhost", "-U", postgresUsername, "-d", databaseName, "--command", query)
 
-
-	fun getUrlForSoknadsfillager()   = "http://localhost:" + soknadsfillagerContainer .firstMappedPort
-	fun getUrlForArkivMock()         = "http://localhost:" + arkivMockContainer       .firstMappedPort
-	fun getUrlForSoknadsarkiverer()  = "http://localhost:" + soknadsarkivererContainer.firstMappedPort
-	fun getUrlForSoknadsmottaker()   = "http://localhost:" + soknadsmottakerContainer .firstMappedPort
-	fun getUrlForSchemaRegistry()    = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
-	fun getUrlForKafkaBroker()       = "localhost:"        + kafkaContainer           .firstMappedPort
+	fun getUrlForSoknadsfillager()  = "http://localhost:" + soknadsfillagerContainer .firstMappedPort
+	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
+	fun getUrlForSoknadsarkiverer() = "http://localhost:" + soknadsarkivererContainer.firstMappedPort
+	fun getUrlForSoknadsmottaker()  = "http://localhost:" + soknadsmottakerContainer .firstMappedPort
+	fun getUrlForSchemaRegistry()   = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
+	fun getUrlForKafkaBroker()      = "localhost:"        + kafkaContainer           .firstMappedPort
 }
 
 
