@@ -3,15 +3,14 @@ kind: CronJob
 metadata:
   labels:
     team: team-soknad
-    app: innsending-system-tests
   name: innsending-system-tests
   namespace: team-soknad
-
 spec:
-  schedule: "25 * * * *"
-  ttlSecondsAfterFinished: 240
+  schedule: "26 * * * *"
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 43200
+      backoffLimit: 1
       template:
         spec:
           restartPolicy: OnFailure
@@ -32,42 +31,8 @@ spec:
               volumeMounts:
                 - mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/vault
-          initContainers:
-            - name: vks-init
-              image: navikt/vault-sidekick:v0.3.10-26ad67d
-              resources:
-                requests:
-                  memory: "64Mi"
-                  cpu: "100m"
-                limits:
-                  memory: "128Mi"
-                  cpu: "1000m"
-              volumeMounts:
-                - mountPath: /var/run/secrets/nais.io/vault
-                  name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/vault
-                - mountPath: /var/run/secrets/nais.io/kv
-                  name: vault-secrets
-                  kvPath: /kv/preprod/fss/soknadsarkiverer/default
-                - mountPath: /var/run/secrets/nais.io/service_user
-                  name: vault-secrets
-                  kvPath: /serviceuser/data/dev/srvsoknadarkiverer
-              args:
-                - -v=10
-                - -logtostderr
-                - -vault=https://vault.adeo.no
-                - -one-shot
-                - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:/var/run/secrets/nais.io/serviceuser:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
-                - -cn=secret:/var/run/secrets/nais.io/kv:dir=/var/run/secrets/nais.io/kv,fmt=flatten,retries=1
+                  subPath: subpath/var/run/secrets/nais.io/vault
               env:
-                - name: VAULT_AUTH_METHOD
-                  value: kubernetes
-                - name: VAULT_SIDEKICK_ROLE
-                  value: innsending-system-tests
-                - name: VAULT_K8S_LOGIN_PATH
-                  value: auth/kubernetes/preprod/fss/login
                 - name: APP_VERSION
                   value: {{ app_version }}
                 - name: KAFKA_BOOTSTRAP_SERVERS
@@ -94,6 +59,42 @@ spec:
                   value: https://soknadsfillager-q0.dev.adeo.no
                 - name: JOARK_HOST
                   value: https://dokarkiv-q0.dev.adeo.no
+          initContainers:
+            - name: vks-init
+              image: navikt/vault-sidekick:v0.3.10-26ad67d
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "1000m"
+              volumeMounts:
+                - mountPath: /var/run/secrets/nais.io/vault
+                  name: vault-secrets
+                  subPath: subpath/var/run/secrets/nais.io/vault
+                - mountPath: /var/run/secrets/nais.io/kv
+                  name: vault-secrets
+                  subPath: subpath/kv/preprod/fss/soknadsarkiverer/default
+                - mountPath: /var/run/secrets/nais.io/service_user
+                  name: vault-secrets
+                  subPath: subpath/serviceuser/data/dev/srvsoknadarkiverer
+              args:
+                - -v=10
+                - -logtostderr
+                - -vault=https://vault.adeo.no
+                - -one-shot
+                - -save-token=/var/run/secrets/nais.io/vault/vault_token
+                - -cn=secret:/var/run/secrets/nais.io/vault:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
+                - -cn=secret:/var/run/secrets/nais.io/serviceuser:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
+                - -cn=secret:/var/run/secrets/nais.io/kv:dir=/var/run/secrets/nais.io/kv,fmt=flatten,retries=1
+              env:
+                - name: VAULT_AUTH_METHOD
+                  value: kubernetes
+                - name: VAULT_SIDEKICK_ROLE
+                  value: innsending-system-tests
+                - name: VAULT_K8S_LOGIN_PATH
+                  value: auth/kubernetes/preprod/fss/login
           volumes:
             - name: vault-secrets
               emptyDir:
