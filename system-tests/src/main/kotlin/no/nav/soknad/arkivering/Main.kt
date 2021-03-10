@@ -1,7 +1,10 @@
 package no.nav.soknad.arkivering
 
 fun main() {
-	val loadTests = LoadTests(Configuration())
+	val config = Configuration()
+	println("apa  '${config.kafkaConfig.username}'")
+	println("bepa '${config.kafkaConfig.password}'")
+	val loadTests = LoadTests(config)
 	println("Starting the Load Tests")
 
 	loadTests.`10 simultaneous entities, 8 times 38 MB each`()

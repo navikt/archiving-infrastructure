@@ -6,11 +6,10 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "26 * * * *"
+  schedule: "00 * * * *"
+  ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
-      ttlSecondsAfterFinished: 43200
-      backoffLimit: 1
       template:
         spec:
           restartPolicy: OnFailure
@@ -31,8 +30,16 @@ spec:
               volumeMounts:
                 - mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
-                  subPath: subpath/var/run/secrets/nais.io/vault
+                  subPath: vault/var/run/secrets/nais.io/vault
+                - mountPath: /var/run/secrets/nais.io/kv
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/kv
+                - mountPath: /var/run/secrets/nais.io/service_user
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/service_user
               env:
+                - name: VAULT_TOKEN_PATH
+                  value: /var/run/secrets/nais.io/vault/vault_token
                 - name: APP_VERSION
                   value: {{ app_version }}
                 - name: KAFKA_BOOTSTRAP_SERVERS
@@ -72,22 +79,22 @@ spec:
               volumeMounts:
                 - mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
-                  subPath: subpath/var/run/secrets/nais.io/vault
+                  subPath: vault/var/run/secrets/nais.io/vault
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
-                  subPath: subpath/kv/preprod/fss/soknadsarkiverer/default
+                  subPath: vault/var/run/secrets/nais.io/kv
                 - mountPath: /var/run/secrets/nais.io/service_user
                   name: vault-secrets
-                  subPath: subpath/serviceuser/data/dev/srvsoknadarkiverer
+                  subPath: vault/var/run/secrets/nais.io/service_user
               args:
                 - -v=10
                 - -logtostderr
                 - -vault=https://vault.adeo.no
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:/var/run/secrets/nais.io/vault:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
-                - -cn=secret:/var/run/secrets/nais.io/serviceuser:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
-                - -cn=secret:/var/run/secrets/nais.io/kv:dir=/var/run/secrets/nais.io/kv,fmt=flatten,retries=1
+                - -cn=secret:/kv/preprod/fss/soknadsarkiverer/environment:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
+                - -cn=secret:/kv/preprod/fss/soknadsarkiverer/default:dir=/var/run/secrets/nais.io/kv,fmt=flatten,retries=1
+                - -cn=secret:/serviceuser/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes

@@ -64,9 +64,9 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val overridingProperties: Map<String, String>,
 
 		val version: String = "APP_VERSION".configProperty(overridingProperties),
-		val username: String = readFileAsText("/var/run/secrets/nais.io/serviceuser/username", "USERNAME".configProperty(overridingProperties)),
-		val password: String = readFileAsText("/var/run/secrets/nais.io/serviceuser/password", "PASSWORD".configProperty(overridingProperties)),
-		val servers: String = readFileAsText("/var/run/secrets/nais.io/kv/kafkaBootstrapServers", "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties)),
+		val username: String = readFileAsText("/var/run/secrets/nais.io/service_user/username", "USERNAME".configProperty(overridingProperties)),
+		val password: String = readFileAsText("/var/run/secrets/nais.io/service_user/password", "PASSWORD".configProperty(overridingProperties)),
+		val servers: String = readFileAsText("/var/run/secrets/nais.io/kv/kafkaBootstrapServer", "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties)),
 		val schemaRegistryUrl: String = "SCHEMA_REGISTRY_URL".configProperty(overridingProperties),
 		val secure: String = "KAFKA_SECURITY".configProperty(overridingProperties),
 		val protocol: String = "KAFKA_SECPROT".configProperty(overridingProperties),
