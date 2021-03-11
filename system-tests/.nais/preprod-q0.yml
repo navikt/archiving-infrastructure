@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "00 * * * *"
+  schedule: "08 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -92,9 +92,7 @@ spec:
                 - -vault=https://vault.adeo.no
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:/kv/preprod/fss/soknadsarkiverer/environment:dir=/var/run/secrets/nais.io/vault,fmt=flatten,retries=1
-                - -cn=secret:/kv/preprod/fss/soknadsarkiverer/default:dir=/var/run/secrets/nais.io/kv,fmt=flatten,retries=1
-                - -cn=secret:/serviceuser/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
+                - -cn=secret:/serviceuser/data/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes
