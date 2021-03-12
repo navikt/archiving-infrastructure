@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "08 * * * *"
+  schedule: "00 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -37,6 +37,9 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/service_user
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/service_user
+                - mountPath: /etc/ssl/certs/java/cacerts
+                  name: ca-bundle
+                  subPath: ca-bundle.jks
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
@@ -45,7 +48,7 @@ spec:
                 - name: KAFKA_BOOTSTRAP_SERVERS
                   value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
                 - name: SCHEMA_REGISTRY_URL
-                  value: https://kafka-schema-registry.nais.preprod.local
+                  value: https://kafka-schema-registry.dev.adeo.no
                 - name: KAFKA_SECURITY
                   value: 'TRUE'
                 - name: KAFKA_SECPROT
@@ -62,10 +65,16 @@ spec:
                   value: privat-soknadInnsendt-messages-v1-q0
                 - name: KAFKA_METRICS_TOPIC
                   value: privat-soknadInnsendt-metrics-v1-q0
-                - name: FILESTORAGE_HOST
+                - name: SOKNADSFILLAGER_URL
                   value: https://soknadsfillager-q0.dev.adeo.no
-                - name: JOARK_HOST
+                - name: ARKIV-MOCK_URL
                   value: https://dokarkiv-q0.dev.adeo.no
+                - name: SOKNADSMOTTAKER_URL
+                  value: https://soknadsmottaker-q0.dev.adeo.no
+                - name: KAFKA_TRUSTSTORE_PATH
+                  value: /etc/ssl/certs/java/cacerts
+                - name: KAFKA_TRUSTSTORE_PASSWORD
+                  value: changeme
           initContainers:
             - name: vks-init
               image: navikt/vault-sidekick:v0.3.10-26ad67d
@@ -104,3 +113,7 @@ spec:
             - name: vault-secrets
               emptyDir:
                 medium: Memory
+            - name: ca-bundle
+              configMap:
+                defaultMode: 420
+                name: ca-bundle-jks

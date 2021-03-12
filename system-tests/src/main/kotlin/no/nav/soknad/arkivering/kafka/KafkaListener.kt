@@ -51,7 +51,9 @@ class KafkaListener(private val appConfiguration: Configuration) {
 		kafkaStreams(streamsBuilder)
 		val topology = streamsBuilder.build()
 
-		kafkaStreams = KafkaStreams(topology, kafkaConfig())
+		val kafkaConfig = kafkaConfig()
+		logger.info(kafkaConfig.toString())
+		kafkaStreams = KafkaStreams(topology, kafkaConfig)
 		kafkaStreams.start()
 		Runtime.getRuntime().addShutdownHook(Thread(kafkaStreams::close))
 	}
