@@ -1,0 +1,23 @@
+@startuml
+actor       ExternalService
+participant Soknadsmottaker
+queue       Kafka
+participant Soknadsarkiverer
+queue       ProcessingEvents
+database    Soknadsfillager
+database    Joark
+ExternalService  ->             Soknadsfillager  : Upload File (POST)
+ExternalService  ->             Soknadsfillager  : Upload File (POST)
+ExternalService  ->             Soknadsmottaker  : Archive Request (POST)
+Soknadsmottaker  ->             Kafka            : Queue
+Kafka            ->             Soknadsarkiverer : Queue
+Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : RECEIVED
+Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : STARTED
+Soknadsarkiverer ->             Soknadsfillager  : Request Files (GET)
+Soknadsfillager  ->             Soknadsarkiverer : File Results
+Soknadsarkiverer ->             Joark            : Archive (POST)
+Joark            ->             Soknadsarkiverer : Archive Response
+Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : ARCHIVED
+Soknadsarkiverer ->             Soknadsfillager  : Remove Files (DELETE)
+Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : FINISHED
+@enduml
