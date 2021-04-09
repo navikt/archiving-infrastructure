@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "00 * * * *"
+  schedule: "44 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -28,6 +28,30 @@ spec:
                   memory: 4Gi
                   cpu: 3000m
               volumeMounts:
+                - mountPath: /etc/ssl/certs/ca-certificates.crt
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/tls/certs/ca-bundle.crt
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/ssl/ca-bundle.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/tls/cacert.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/ssl/certs/java/cacerts
+                  name: ca-bundle-jks
+                  readOnly: true
+                  subPath: ca-bundle.jks
                 - mountPath: /var/run/secrets/nais.io/vault
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/vault
@@ -37,9 +61,6 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/service_user
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/service_user
-                - mountPath: /etc/ssl/certs/java/cacerts
-                  name: ca-bundle
-                  subPath: ca-bundle.jks
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
@@ -113,7 +134,11 @@ spec:
             - name: vault-secrets
               emptyDir:
                 medium: Memory
-            - name: ca-bundle
+            - name: ca-bundle-jks
               configMap:
                 defaultMode: 420
                 name: ca-bundle-jks
+            - name: ca-bundle-pem
+              configMap:
+                defaultMode: 420
+                name: ca-bundle-pem
