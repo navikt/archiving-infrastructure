@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Profile
 @EnableOAuth2Client(cacheEnabled = true)
 @EnableJwtTokenValidation(ignore = [
 	"org.springframework",
-	"no.nav.soknad.arkivering.soknadsarkiverer.supervision.HealthCheck",
 	"io.swagger",
 	"org.springdoc",
 	"org.webjars.swagger-ui"

@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "00 * * * *"
+  schedule: "15 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
