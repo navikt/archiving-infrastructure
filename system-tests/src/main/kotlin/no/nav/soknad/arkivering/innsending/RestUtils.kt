@@ -1,7 +1,6 @@
 package no.nav.soknad.arkivering.innsending
 
 import no.nav.soknad.arkivering.dto.FilElementDto
-import org.apache.tomcat.util.codec.binary.Base64.encodeBase64
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -74,7 +73,7 @@ class RestUtils(private val webClient: WebClient) {
 
 	fun createHeaders(username: String, password: String): String {
 		val auth = "$username:$password"
-		val encodedAuth: ByteArray = encodeBase64(auth.toByteArray())
+		val encodedAuth: ByteArray = org.apache.tomcat.util.codec.binary.Base64.encodeBase64(auth.toByteArray())
 		return "Basic " + String(encodedAuth)
 	}
 
