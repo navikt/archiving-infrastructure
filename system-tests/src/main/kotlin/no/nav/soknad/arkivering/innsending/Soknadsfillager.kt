@@ -35,6 +35,7 @@ class Soknadsfillager(private val restUtils: RestUtils) {
 
 	private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int {
 		val headers = createHeaders(appConfiguration)
+		println("APABEPA Soknadsfillager: '$headers'")
 		val listOfFiles = restUtils.performGetCall(url, headers)
 
 		return listOfFiles?.filter { file -> file.fil != null }?.size ?: 0

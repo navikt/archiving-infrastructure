@@ -8,6 +8,7 @@ class Soknadsmottaker(private val restUtils: RestUtils) {
 	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, appConfiguration: Configuration) {
 		val url = appConfiguration.config.soknadsmottakerUrl + "/save"
 		val headers = restUtils.createHeaders(appConfiguration.config.soknadsmottakerUsername, appConfiguration.config.soknadsmottakerPassword)
+		println("APABEPA Soknadsmottaker: '$headers'")
 		restUtils.performPostCall(dto, url, headers, async)
 	}
 }
