@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "58 * * * *"
+  schedule: "15 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -58,9 +58,6 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/kv
-                - mountPath: /var/run/secrets/nais.io/environment
-                  name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/environment
                 - mountPath: /var/run/secrets/nais.io/service_user
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/service_user
