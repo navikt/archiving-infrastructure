@@ -2,7 +2,6 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.avroschemas.EventTypes
-import no.nav.soknad.arkivering.config.WebClientConfig
 import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
 import no.nav.soknad.arkivering.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
@@ -20,10 +19,6 @@ import java.util.concurrent.TimeUnit
 class EndToEndTests : SystemTestBase() {
 
 	private val embeddedDockerImages = EmbeddedDockerImages()
-	private lateinit var restUtils: RestUtils
-	private lateinit var soknadsfillager: Soknadsfillager
-	private lateinit var soknadsmottaker: Soknadsmottaker
-
 
 	@BeforeAll
 	fun setup() {
@@ -33,9 +28,6 @@ class EndToEndTests : SystemTestBase() {
 		}
 
 		setUp()
-		restUtils = RestUtils(WebClientConfig(config).archiveTestWebClient())
-		soknadsfillager = Soknadsfillager(restUtils)
-		soknadsmottaker = Soknadsmottaker(restUtils)
 	}
 
 	@AfterAll
@@ -307,16 +299,16 @@ class EndToEndTests : SystemTestBase() {
 
 
 	private fun sendFilesToFileStorage(id: String) {
-		soknadsfillager.sendFilesToFileStorage(id, config)
+		sendFilesToFileStorage(id, config)
 	}
 
 	private fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int) {
-		soknadsfillager.pollAndVerifyDataInFileStorage(uuid, expectedNumberOfHits, config)
+		pollAndVerifyDataInFileStorage(uuid, expectedNumberOfHits, config)
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
 		println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		soknadsmottaker.sendDataToMottaker(dto, false, config)
+		sendDataToMottaker(dto, false, config)
 	}
 
 	private fun shutDownSoknadsarkiverer() {
@@ -332,21 +324,21 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun resetArchiveDatabase() {
 		val url = env.getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"
-		restUtils.performDeleteCall(url)
+		performDeleteCall(url)
 	}
 
 	private fun setNormalArchiveBehaviour(uuid: String) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
-		restUtils.performPutCall(url)
+		performPutCall(url)
 	}
 
 	private fun mockArchiveRespondsWithCodeForXAttempts(uuid: String, status: Int, forAttempts: Int) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/mock-response/$uuid/$status/$forAttempts"
-		restUtils.performPutCall(url)
+		performPutCall(url)
 	}
 
 	private fun mockArchiveRespondsWithErroneousBodyForXAttempts(uuid: String, forAttempts: Int) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-status-ok-with-erroneous-body/$uuid/$forAttempts"
-		restUtils.performPutCall(url)
+		performPutCall(url)
 	}
 }

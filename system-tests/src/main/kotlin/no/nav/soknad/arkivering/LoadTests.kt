@@ -2,18 +2,16 @@ package no.nav.soknad.arkivering
 
 import kotlinx.coroutines.*
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
-import no.nav.soknad.arkivering.innsending.RestUtils
-import no.nav.soknad.arkivering.innsending.Soknadsfillager
-import no.nav.soknad.arkivering.innsending.Soknadsmottaker
+import no.nav.soknad.arkivering.innsending.sendDataToMottaker
+import no.nav.soknad.arkivering.innsending.sendFilesToFileStorage
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import no.nav.soknad.arkivering.verification.inMinutes
-import org.springframework.web.reactive.function.client.WebClient
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class LoadTests(private val config: Configuration, webClient: WebClient) {
+class LoadTests(private val config: Configuration) {
 	/*
 	Nils-Arne, 2020-12-11:
 	Har sjekket på filstørrelser og antall på innsendte søknader siste 100 dager i arkivet.
@@ -26,9 +24,6 @@ class LoadTests(private val config: Configuration, webClient: WebClient) {
 	*/
 
 	private val kafkaListener = KafkaListener(config)
-	private val restUtils = RestUtils(webClient)
-	private val soknadsfillager = Soknadsfillager(restUtils)
-	private val soknadsmottaker = Soknadsmottaker(restUtils)
 
 
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
@@ -89,7 +84,7 @@ class LoadTests(private val config: Configuration, webClient: WebClient) {
 			.chunked(2)
 			.forEach { ids ->
 				val deferredUploads = ids.map { id -> GlobalScope.async {
-					soknadsfillager.sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
+					sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
 				} }
 				runBlocking { deferredUploads.awaitAll() }
 			}
@@ -102,7 +97,7 @@ class LoadTests(private val config: Configuration, webClient: WebClient) {
 
 		val fileId = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
-		soknadsfillager.sendFilesToFileStorage(fileId, config)
+		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)
 
 		assertThatFinishedEventsAreCreated(1 inMinutes 1)
@@ -143,7 +138,7 @@ class LoadTests(private val config: Configuration, webClient: WebClient) {
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
 		if (verbose)
 			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		soknadsmottaker.sendDataToMottaker(dto, async, config)
+		sendDataToMottaker(dto, async, config)
 	}
 
 	private fun assertThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>) {

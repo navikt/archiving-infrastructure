@@ -1,6 +1,7 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.avroschemas.*
@@ -9,13 +10,11 @@ import no.nav.soknad.arkivering.kafka.KafkaPublisher
 import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import no.nav.soknad.arkivering.verification.AssertionHelper
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
-import org.springframework.http.HttpMethod
-import org.springframework.http.MediaType
-import org.springframework.web.reactive.function.client.WebClient
-import reactor.core.publisher.Mono
 import java.time.ZoneOffset
 import java.util.*
 
@@ -28,6 +27,8 @@ abstract class SystemTestBase {
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
 	lateinit var config: Configuration
+	private val restClient = OkHttpClient()
+	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	private lateinit var kafkaListener: KafkaListener
 
@@ -65,29 +66,18 @@ abstract class SystemTestBase {
 		for (dep in dependencies) {
 			try {
 				val url = "${dep.value}/internal/health"
-				val health = makeHealthRequest(url)
 
-				assertEquals("UP", health?.status, "Dependency '${dep.key}' seems to be down")
+				val request = Request.Builder().url(url).get().build()
+				val response = restClient.newCall(request).execute().use { response -> response.body?.string() ?: "" }
+				val health = objectMapper.readValue(response, Health::class.java)
+
+				assertEquals("UP", health.status, "Dependency '${dep.key}' seems to be down")
 			} catch (e: Exception) {
 				fail("Dependency '${dep.key}' seems to be down")
 			}
 		}
 	}
 
-	private fun makeHealthRequest(url: String) = WebClient.builder().build()
-		.method(HttpMethod.GET)
-		.uri(url)
-		.contentType(MediaType.APPLICATION_JSON)
-		.accept(MediaType.APPLICATION_JSON)
-		.retrieve()
-		.onStatus(
-			{ httpStatus -> httpStatus.is4xxClientError || httpStatus.is5xxServerError },
-			{ response ->
-				response.bodyToMono(String::class.java)
-					.map { Exception("Got ${response.statusCode()} when requesting GET $url - response body: '$it'") }
-			})
-		.bodyToMono(Health::class.java)
-		.block()
 
 	fun tearDown() {
 		kafkaListener.close()
@@ -112,12 +102,8 @@ abstract class SystemTestBase {
 
 	fun verifyComponentIsUp(url: String, componentName: String) {
 		val healthStatusCode = {
-			WebClient.builder().build()
-				.method(HttpMethod.GET)
-				.uri(url)
-				.exchangeToMono { Mono.just(it) }
-				.map { it.statusCode().value() }
-				.block()!!
+			val request = Request.Builder().url(url).get().build()
+			restClient.newCall(request).execute().use { response -> response.code }
 		}
 		loopAndVerify(200, healthStatusCode, {
 			assertEquals(200, healthStatusCode.invoke(), "$componentName does not seem to be up")

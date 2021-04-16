@@ -1,50 +1,46 @@
 package no.nav.soknad.arkivering.innsending
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.FilElementDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
-import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
-@Service
-class Soknadsfillager(private val restUtils: RestUtils) {
 
-	fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
-		val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
-		sendFilesToFileStorage(uuid, "apabepa".toByteArray(), message, appConfiguration)
-	}
+private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 
-	fun sendFilesToFileStorage(uuid: String, payload: ByteArray, message: String, appConfiguration: Configuration) {
-		println(message)
-		sendFilesToFileStorageAndVerify(uuid, payload, appConfiguration)
-	}
+fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
+	val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
+	sendFilesToFileStorage(uuid, "apabepa".toByteArray(), message, appConfiguration)
+}
 
-	private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, appConfiguration: Configuration) {
-		val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
-		val url = appConfiguration.config.soknadsfillagerUrl + "/filer"
+fun sendFilesToFileStorage(uuid: String, payload: ByteArray, message: String, appConfiguration: Configuration) {
+	println(message)
+	sendFilesToFileStorageAndVerify(uuid, payload, appConfiguration)
+}
 
-		val headers = createHeaders(appConfiguration)
-		restUtils.performPostCall(files, url, headers, false)
-		pollAndVerifyDataInFileStorage(uuid, 1, appConfiguration)
-	}
+private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, appConfiguration: Configuration) {
+	val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
+	val url = appConfiguration.config.soknadsfillagerUrl + "/filer"
 
-	fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appConfiguration: Configuration) {
-		val url = appConfiguration.config.soknadsfillagerUrl + "/filer?ids=$uuid"
-		loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url, appConfiguration) },
-			{ assert(expectedNumberOfHits == getNumberOfFiles(url, appConfiguration)) { "Expected $expectedNumberOfHits files in File Storage" } })
-	}
+	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
+	performPostCall(files, url, headers, false)
+	pollAndVerifyDataInFileStorage(uuid, 1, appConfiguration)
+}
+
+fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appConfiguration: Configuration) {
+	val url = appConfiguration.config.soknadsfillagerUrl + "/filer?ids=$uuid"
+	loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url, appConfiguration) },
+		{ assert(expectedNumberOfHits == getNumberOfFiles(url, appConfiguration)) { "Expected $expectedNumberOfHits files in File Storage" } })
+}
 
 
-	private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int {
-		val headers = createHeaders(appConfiguration)
-		val listOfFiles = restUtils.performGetCall(url, headers)
+private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int {
+	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
+	val bytes = performGetCall(url, headers)
 
-		return listOfFiles?.filter { file -> file.fil != null }?.size ?: 0
-	}
+	val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
 
-	private fun createHeaders(appConfiguration: Configuration) =
-		restUtils.createHeaders(
-			appConfiguration.config.soknadsfillagerUsername,
-			appConfiguration.config.soknadsfillagerPassword
-		)
+	return listOfFiles.filter { file -> file.fil != null }.size
 }

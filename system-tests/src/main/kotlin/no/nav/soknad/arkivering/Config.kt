@@ -2,11 +2,8 @@ package no.nav.soknad.arkivering
 
 import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan
-import org.springframework.context.annotation.Bean
 import java.io.File
-import java.util.*
-import javax.annotation.Priority
+import java.util.HashMap
 
 val defaultPorts = HashMap<String, Int>().also {
 	it["soknadsfillager"]  = 9042
@@ -19,7 +16,6 @@ val defaultPorts = HashMap<String, Int>().also {
 }
 
 private val defaultProperties = ConfigurationMap(mapOf(
-	"MAX_MESSAGE_SIZE"         to (1024 * 1024 * 300).toString(),
 	"APP_VERSION"              to "",
 	"USERNAME"                 to "arkiverer",
 	"PASSWORD"                 to "",
@@ -85,7 +81,6 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 	data class Config(
 		val overridingProperties: Map<String, String>,
 
-		val maxMessageSize: Int = "MAX_MESSAGE_SIZE".configProperty(overridingProperties).toInt(),
 		val soknadsmottakerUrl: String = "SOKNADSMOTTAKER_URL".configProperty(overridingProperties),
 		val soknadsmottakerUsername: String = "SOKNADSMOTTAKER_USERNAME".configProperty(overridingProperties),
 		val soknadsmottakerPassword: String = "SOKNADSMOTTAKER_PASSWORD".configProperty(overridingProperties),
@@ -104,13 +99,4 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val adminUserPassword: String = readFileAsText("/var/run/secrets/nais.io/kv/ADMIN_USER_PASSWORD", "ADMIN_USER_PASSWORD".configProperty()),
  */
 	)
-}
-
-@org.springframework.context.annotation.Configuration
-@ConfigurationPropertiesScan
-@Priority(-1)
-class ConfigConfig {
-
-	@Bean
-	fun appConfiguration() = Configuration()
 }

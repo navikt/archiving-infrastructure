@@ -2,7 +2,6 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
-import no.nav.soknad.arkivering.config.WebClientConfig
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -34,8 +33,7 @@ class KjellmanLoadTests : SystemTestBase() {
 		}
 
 		setUp()
-		val webClient = WebClientConfig(config).archiveTestWebClient()
-		loadTests = LoadTests(config, webClient)
+		loadTests = LoadTests(config)
 	}
 
 	@AfterAll
