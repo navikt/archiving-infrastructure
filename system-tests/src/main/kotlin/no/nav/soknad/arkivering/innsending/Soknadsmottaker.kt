@@ -2,7 +2,9 @@ package no.nav.soknad.arkivering.innsending
 
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import org.springframework.stereotype.Service
 
+@Service
 class Soknadsmottaker(private val restUtils: RestUtils) {
 
 	fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, appConfiguration: Configuration) {

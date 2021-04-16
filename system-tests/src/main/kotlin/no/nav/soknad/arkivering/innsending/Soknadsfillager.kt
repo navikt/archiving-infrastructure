@@ -3,8 +3,10 @@ package no.nav.soknad.arkivering.innsending
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.FilElementDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
+import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
+@Service
 class Soknadsfillager(private val restUtils: RestUtils) {
 
 	fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {

@@ -3,9 +3,11 @@ package no.nav.soknad.arkivering.innsending
 import no.nav.soknad.arkivering.dto.FilElementDto
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 
+@Service
 class RestUtils(private val webClient: WebClient) {
 
 	fun performGetCall(uri: String, headers: String): MutableList<FilElementDto>? {
