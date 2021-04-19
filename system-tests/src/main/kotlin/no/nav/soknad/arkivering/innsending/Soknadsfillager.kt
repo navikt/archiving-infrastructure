@@ -24,8 +24,8 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 	val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
 	val url = appConfiguration.config.soknadsfillagerUrl + "/filer"
 
+	println("APABEPA Soknadsfillager")
 	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
-	println("APABEPA Soknadsfillager - '$headers'")
 	performPostCall(files, url, headers, false)
 	pollAndVerifyDataInFileStorage(uuid, 1, appConfiguration)
 }
@@ -38,8 +38,8 @@ fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appC
 
 
 private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int {
+	println("APABEPA Soknadsfillager")
 	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
-	println("APABEPA Soknadsfillager - '$headers'")
 	val bytes = performGetCall(url, headers)
 
 	val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})

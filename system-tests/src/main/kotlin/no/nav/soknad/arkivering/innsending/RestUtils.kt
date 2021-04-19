@@ -77,6 +77,7 @@ private val restRequestCallback = object : Callback {
 
 fun createHeaders(username: String, password: String): Headers {
 	val auth = "$username:$password"
+	println("APABEPA '$auth'")
 	val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
 	return Headers.headersOf("Authorization", authHeader)
 }
