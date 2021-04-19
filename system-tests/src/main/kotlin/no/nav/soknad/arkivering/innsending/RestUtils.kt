@@ -17,10 +17,12 @@ fun performGetCall(url: String, headers: Headers): ByteArray? {
 	val request = Request.Builder().url(url).headers(headers).get().build()
 
 	restClient.newCall(request).execute().use {
-		if (it.isSuccessful) {
-			return it.body?.bytes()
+		return if (it.isSuccessful) {
+			it.body?.bytes()
+		} else {
+			println(it.networkResponse)
+			null
 		}
-		return null
 	}
 }
 
@@ -77,7 +79,6 @@ private val restRequestCallback = object : Callback {
 
 fun createHeaders(username: String, password: String): Headers {
 	val auth = "$username:$password"
-	println("APABEPA '$auth'")
 	val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
 	return Headers.headersOf("Authorization", authHeader)
 }

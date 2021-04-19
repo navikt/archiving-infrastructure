@@ -2,8 +2,6 @@ package no.nav.soknad.arkivering
 
 fun main() {
 	val config = Configuration()
-	println("apa  '${config.kafkaConfig.username}'")
-	println("bepa '${config.kafkaConfig.password}'")
 	val loadTests = LoadTests(config)
 	println("Starting the Load Tests")
 

@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "17 * * * *"
+  schedule: "45 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -58,12 +58,15 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/kv
-                - mountPath: /var/run/secrets/nais.io/henvendelse
+                - mountPath: /var/run/secrets/nais.io/soknadsfillager
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/henvendelse
-                - mountPath: /var/run/secrets/nais.io/service_user
+                  subPath: vault/var/run/secrets/nais.io/soknadsfillager
+                - mountPath: /var/run/secrets/nais.io/soknadsmottaker
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/service_user
+                  subPath: vault/var/run/secrets/nais.io/soknadsmottaker
+                - mountPath: /var/run/secrets/nais.io/soknadsarkiverer
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/soknadsarkiverer
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
@@ -116,20 +119,24 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/kv
-                - mountPath: /var/run/secrets/nais.io/henvendelse
+                - mountPath: /var/run/secrets/nais.io/soknadsfillager
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/henvendelse
-                - mountPath: /var/run/secrets/nais.io/service_user
+                  subPath: vault/var/run/secrets/nais.io/soknadsfillager
+                - mountPath: /var/run/secrets/nais.io/soknadsmottaker
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/service_user
+                  subPath: vault/var/run/secrets/nais.io/soknadsmottaker
+                - mountPath: /var/run/secrets/nais.io/soknadsarkiverer
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/soknadsarkiverer
               args:
                 - -v=10
                 - -logtostderr
                 - -vault=https://vault.adeo.no
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:/serviceuser/data/dev/srvhenvendelse:dir=/var/run/secrets/nais.io/henvendelse,fmt=flatten,retries=1
-                - -cn=secret:/serviceuser/data/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/service_user,fmt=flatten,retries=1
+                - -cn=secret:/kv/preprod/fss/soknadsfillager/q0:dir=/var/run/secrets/nais.io/soknadsfillager,fmt=flatten,retries=1
+                - -cn=secret:/kv/preprod/fss/soknadsmottaker/default:dir=/var/run/secrets/nais.io/soknadsmottaker,fmt=flatten,retries=1
+                - -cn=secret:/serviceuser/data/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/soknadsarkiverer,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes
