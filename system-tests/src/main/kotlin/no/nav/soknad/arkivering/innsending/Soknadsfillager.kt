@@ -1,14 +1,11 @@
 package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.FilElementDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import java.time.LocalDateTime
 
-
-private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 
 fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
 	val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"

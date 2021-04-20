@@ -1,6 +1,7 @@
 package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okio.BufferedSink
@@ -9,7 +10,10 @@ import java.util.*
 
 
 private val restClient = OkHttpClient()
-private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
+val objectMapper = ObjectMapper().also {
+	it.findAndRegisterModules()
+	it.registerModule(JavaTimeModule())
+}
 
 
 fun performGetCall(url: String, headers: Headers): ByteArray? {
