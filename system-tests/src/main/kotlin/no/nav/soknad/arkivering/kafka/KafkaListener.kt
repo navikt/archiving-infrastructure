@@ -60,23 +60,23 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,           Consumed.with(stringSerde, stringSerde))
+//		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,           Consumed.with(stringSerde, stringSerde))
 		val metricsStream              = streamsBuilder.stream(kafkaProperties.metricsTopic,            Consumed.with(stringSerde, createInnsendingMetricsSerde()))
-		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,      Consumed.with(stringSerde, intSerde))
-		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,   Consumed.with(stringSerde, intSerde))
+//		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,      Consumed.with(stringSerde, intSerde))
+//		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,   Consumed.with(stringSerde, intSerde))
 		val processingEventTopicStream = streamsBuilder.stream(kafkaProperties.processingEventLogTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
-
+/*
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
 			.peek { key, entity -> log("Joark Entities    : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
-
+*/
 		metricsStream
 			.peek { key, entity -> log("Metrics received  : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
-
+/*
 		numberOfCallsStream
 			.peek { key, numberOfCalls -> log("Number of Calls   : $key  -  $numberOfCalls") }
 			.transform({ TimestampExtractor() })
@@ -86,7 +86,7 @@ class KafkaListener(private val appConfiguration: Configuration) {
 			.peek { key, numberOfEntities -> log("Number of Entities: $key  -  $numberOfEntities") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfEntities -> numberOfEntitiesConsumers.forEach { it.consume(key, numberOfEntities) } }
-
+*/
 		processingEventTopicStream
 			.peek { key, entity -> log("Processing Events : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
