@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "08 * * * *"
+  schedule: "35 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -61,9 +61,9 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/innsending-system-tests
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/innsending-system-tests
-                - mountPath: /var/run/secrets/nais.io/soknadsarkiverer
+                - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/soknadsarkiverer
+                  subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
@@ -119,9 +119,9 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/innsending-system-tests
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/innsending-system-tests
-                - mountPath: /var/run/secrets/nais.io/soknadsarkiverer
+                - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/soknadsarkiverer
+                  subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
               args:
                 - -v=10
                 - -logtostderr
@@ -129,7 +129,7 @@ spec:
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
                 - -cn=secret:kv/preprod/fss/innsending-system-tests/team-soknad:dir=/var/run/secrets/nais.io/innsending-system-tests,fmt=flatten,retries=1
-                - -cn=secret:/serviceuser/data/dev/srvsoknadarkiverer:dir=/var/run/secrets/nais.io/soknadsarkiverer,fmt=flatten,retries=1
+                - -cn=secret:/serviceuser/data/dev/srvinnsendingtests:dir=/var/run/secrets/nais.io/srvinnsendingtests,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
                   value: kubernetes
