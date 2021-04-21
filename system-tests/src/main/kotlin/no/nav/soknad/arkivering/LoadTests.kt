@@ -100,7 +100,7 @@ class LoadTests(private val config: Configuration) {
 		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)
 
-		assertThatFinishedEventsAreCreated(1 inMinutes 1)
+		assertThatFinishedEventsAreCreated(1 inMinutes 10)
 
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
