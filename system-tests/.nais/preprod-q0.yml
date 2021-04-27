@@ -12,7 +12,7 @@ spec:
     spec:
       template:
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           imagePullSecrets:
             - name: gpr-credentials
           serviceAccount: default
