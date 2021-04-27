@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "35 * * * *"
+  schedule: "00 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -82,19 +82,19 @@ spec:
                 - name: SPRING_PROFILES_ACTIVE
                   value: dev
                 - name: KAFKA_INPUT_TOPIC
-                  value: privat-soknadInnsendt-v1-q0
+                  value: privat-soknadInnsendt-v1-default
                 - name: KAFKA_PROCESSING_TOPIC
-                  value: privat-soknadInnsendt-processingEventLog-v1-q0
+                  value: privat-soknadInnsendt-processingEventLog-v1-default
                 - name: KAFKA_MESSAGE_TOPIC
-                  value: privat-soknadInnsendt-messages-v1-q0
+                  value: privat-soknadInnsendt-messages-v1-default
                 - name: KAFKA_METRICS_TOPIC
-                  value: privat-soknadInnsendt-metrics-v1-q0
+                  value: privat-soknadInnsendt-metrics-v1-default
                 - name: SOKNADSFILLAGER_URL
-                  value: https://soknadsfillager-q0.dev.adeo.no
+                  value: https://soknadsfillager.dev.adeo.no
                 - name: ARKIV-MOCK_URL
                   value: https://dokarkiv-q0.dev.adeo.no
                 - name: SOKNADSMOTTAKER_URL
-                  value: https://soknadsmottaker-q0.dev.adeo.no
+                  value: https://soknadsmottaker.dev.adeo.no
                 - name: NAV_TRUSTSTORE_PATH
                   value: /etc/ssl/certs/java/cacerts
                 - name: NAV_TRUSTSTORE_PASSWORD
