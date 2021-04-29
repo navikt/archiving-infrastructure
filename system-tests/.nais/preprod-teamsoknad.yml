@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "00 * * * *"
+  schedule: "25 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -72,7 +72,7 @@ spec:
                 - name: KAFKA_BOOTSTRAP_SERVERS
                   value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
                 - name: SCHEMA_REGISTRY_URL
-                  value: https://kafka-schema-registry.dev.adeo.no
+                  value: https://kafka-schema-registry.nais.preprod.local
                 - name: KAFKA_SECURITY
                   value: 'TRUE'
                 - name: KAFKA_SECPROT
