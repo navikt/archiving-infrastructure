@@ -24,10 +24,10 @@ private val defaultProperties = ConfigurationMap(mapOf(
 	"KAFKA_SECURITY"           to "",
 	"KAFKA_SECPROT"            to "",
 	"KAFKA_SASLMEC"            to "",
-	"KAFKA_INPUT_TOPIC"        to "privat-soknadInnsendt-v1-default",
-	"KAFKA_PROCESSING_TOPIC"   to "privat-soknadInnsendt-processingEventLog-v1-default",
-	"KAFKA_MESSAGE_TOPIC"      to "privat-soknadInnsendt-messages-v1-default",
-	"KAFKA_METRICS_TOPIC"      to "privat-soknadInnsendt-metrics-v1-default",
+	"KAFKA_INPUT_TOPIC"        to "privat-soknadInnsendt-v1-teamsoknad",
+	"KAFKA_PROCESSING_TOPIC"   to "privat-soknadInnsendt-processingEventLog-v1-teamsoknad",
+	"KAFKA_MESSAGE_TOPIC"      to "privat-soknadInnsendt-messages-v1-teamsoknad",
+	"KAFKA_METRICS_TOPIC"      to "privat-soknadInnsendt-metrics-v1-teamsoknad",
 
 
 	"SOKNADSFILLAGER_URL"      to "http://localhost:${defaultPorts["soknadsfillager"]}",

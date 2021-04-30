@@ -37,7 +37,11 @@ private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int 
 	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
 	val bytes = performGetCall(url, headers)
 
-	val listOfFiles = objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
+	val listOfFiles = try {
+		objectMapper.readValue(bytes, object : TypeReference<List<FilElementDto>>() {})
+	} catch (e: Exception) {
+		emptyList()
+	}
 
 	return listOfFiles.filter { file -> file.fil != null }.size
 }
