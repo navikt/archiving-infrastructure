@@ -52,7 +52,6 @@ class KafkaListener(private val appConfiguration: Configuration) {
 		val topology = streamsBuilder.build()
 
 		val kafkaConfig = kafkaConfig()
-		logger.info(kafkaConfig.toString())
 		kafkaStreams = KafkaStreams(topology, kafkaConfig)
 		kafkaStreams.start()
 		Runtime.getRuntime().addShutdownHook(Thread(kafkaStreams::close))
@@ -60,23 +59,23 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-//		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,           Consumed.with(stringSerde, stringSerde))
-		val metricsStream              = streamsBuilder.stream(kafkaProperties.metricsTopic,            Consumed.with(stringSerde, createInnsendingMetricsSerde()))
-//		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,      Consumed.with(stringSerde, intSerde))
-//		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,   Consumed.with(stringSerde, intSerde))
-		val processingEventTopicStream = streamsBuilder.stream(kafkaProperties.processingEventLogTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
-/*
+		val metricsStream              = streamsBuilder.stream(appConfiguration.kafkaConfig.metricsTopic,    Consumed.with(stringSerde, createInnsendingMetricsSerde()))
+		val processingEventTopicStream = streamsBuilder.stream(appConfiguration.kafkaConfig.processingTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
+		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,                Consumed.with(stringSerde, stringSerde))
+		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,           Consumed.with(stringSerde, intSerde))
+		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,        Consumed.with(stringSerde, intSerde))
+
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
 			.peek { key, entity -> log("Joark Entities    : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
-*/
+
 		metricsStream
 			.peek { key, entity -> log("Metrics received  : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
-/*
+
 		numberOfCallsStream
 			.peek { key, numberOfCalls -> log("Number of Calls   : $key  -  $numberOfCalls") }
 			.transform({ TimestampExtractor() })
@@ -86,7 +85,7 @@ class KafkaListener(private val appConfiguration: Configuration) {
 			.peek { key, numberOfEntities -> log("Number of Entities: $key  -  $numberOfEntities") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfEntities -> numberOfEntitiesConsumers.forEach { it.consume(key, numberOfEntities) } }
-*/
+
 		processingEventTopicStream
 			.peek { key, entity -> log("Processing Events : $key  -  $entity") }
 			.transform({ TimestampExtractor() })
@@ -100,7 +99,7 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = appConfiguration.kafkaConfig.schemaRegistryUrl
-		it[StreamsConfig.APPLICATION_ID_CONFIG] = "system-tests"
+		it[StreamsConfig.APPLICATION_ID_CONFIG] = "innsending-system-tests"
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = appConfiguration.kafkaConfig.servers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
