@@ -38,7 +38,7 @@ class LoadTests(private val config: Configuration) {
 	}
 
 	fun `10 simultaneous entities, 8 times 38 MB each`() {
-		val numberOfEntities = 2
+		val numberOfEntities = 10
 		val numberOfFilesPerEntity = 8
 		val file = fileOfSize38mb
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
@@ -46,11 +46,11 @@ class LoadTests(private val config: Configuration) {
 
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
-		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 10)
+		assertThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 	}
 
 	fun `100 simultaneous entities, 2 times 2 MB each`() {
-		val numberOfEntities = 100
+		val numberOfEntities = 10
 		val numberOfFilesPerEntity = 2
 		val file = fileOfSize2mb
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
@@ -100,7 +100,7 @@ class LoadTests(private val config: Configuration) {
 		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)
 
-		assertThatFinishedEventsAreCreated(1 inMinutes 10)
+		assertThatFinishedEventsAreCreated(1 inMinutes 1)
 
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
