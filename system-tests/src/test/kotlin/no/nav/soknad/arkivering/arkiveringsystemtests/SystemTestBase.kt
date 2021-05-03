@@ -44,7 +44,6 @@ abstract class SystemTestBase {
 				"SOKNADSFILLAGER_URL"     to dockerImages.getUrlForSoknadsfillager(),
 				"SOKNADSMOTTAKER_URL"     to dockerImages.getUrlForSoknadsmottaker(),
 				"SOKNADSARKIVERER_URL"    to dockerImages.getUrlForSoknadsarkiverer(),
-				"ARKIV-MOCK_URL"          to dockerImages.getUrlForArkivMock(),
 				"SCHEMA_REGISTRY_URL"     to dockerImages.getUrlForSchemaRegistry(),
 				"KAFKA_BOOTSTRAP_SERVERS" to dockerImages.getUrlForKafkaBroker()
 			)

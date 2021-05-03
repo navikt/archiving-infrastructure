@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "0 2 * * 6"
+  schedule: "30 * * * *"
   ttlSecondsAfterFinished: 3600
   jobTemplate:
     spec:
@@ -91,8 +91,6 @@ spec:
                   value: privat-soknadInnsendt-metrics-v1-teamsoknad
                 - name: SOKNADSFILLAGER_URL
                   value: https://soknadsfillager.dev.adeo.no
-                - name: ARKIV-MOCK_URL
-                  value: https://dokarkiv-q0.dev.adeo.no
                 - name: SOKNADSMOTTAKER_URL
                   value: https://soknadsmottaker.dev.adeo.no
                 - name: NAV_TRUSTSTORE_PATH
