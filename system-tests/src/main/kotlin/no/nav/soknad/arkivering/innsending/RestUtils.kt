@@ -43,8 +43,11 @@ fun performPostCall(payload: Any, url: String, headers: Headers, async: Boolean)
 	val call = restClient.newCall(request)
 	if (async)
 		call.enqueue(restRequestCallback)
-	else
-		call.execute().close()
+	else {
+		val response = call.execute()
+		println("Received response $response" + if (url.contains("soknadsmottaker")) payload.toString() else "")
+		response.close()
+	}
 }
 
 fun performPutCall(url: String, headers: Headers? = null) {

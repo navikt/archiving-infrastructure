@@ -130,7 +130,7 @@ class LoadTests(private val config: Configuration) {
 
 			val dto = createDto(fileIds)
 
-			sendDataToMottaker(dto, async = true, verbose = false)
+			sendDataToMottaker(dto, async = false, verbose = false)
 			dto
 		}
 	}
