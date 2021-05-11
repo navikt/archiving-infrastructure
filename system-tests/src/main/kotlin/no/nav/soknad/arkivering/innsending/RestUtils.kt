@@ -2,90 +2,61 @@ package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okio.BufferedSink
-import java.io.IOException
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
-
-private val restClient = OkHttpClient()
+private val client = HttpClient {
+	expectSuccess = true
+}
 val objectMapper = ObjectMapper().also {
 	it.findAndRegisterModules()
 	it.registerModule(JavaTimeModule())
 }
 
 
-fun performGetCall(url: String, headers: Headers): ByteArray? {
-
-	val request = Request.Builder().url(url).headers(headers).get().build()
-
-	restClient.newCall(request).execute().use {
-		return if (it.isSuccessful) {
-			it.body?.bytes()
-		} else {
-			println(it.networkResponse)
-			null
+fun performGetCall(url: String, usernameAndPassword: Pair<String, String>): ByteArray? {
+	return runBlocking {
+		client.get(url) {
+			headers {
+				append("Authorization", createHeaders(usernameAndPassword))
+			}
 		}
 	}
 }
 
-fun performPostCall(payload: Any, url: String, headers: Headers, async: Boolean) {
-	val requestBody = object : RequestBody() {
-		override fun contentType() = "application/json".toMediaType()
-		override fun writeTo(sink: BufferedSink) {
-			sink.writeUtf8(objectMapper.writeValueAsString(payload))
+fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String, String>, async: Boolean) {
+	runBlocking {
+		client.post<Any>(url) {
+			contentType(ContentType.Application.Json)
+			body = objectMapper.writeValueAsString(payload)
+			headers {
+				append("Authorization", createHeaders(usernameAndPassword))
+			}
 		}
 	}
+}
 
-	val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
-
-	val call = restClient.newCall(request)
-	if (async)
-		call.enqueue(restRequestCallback)
-	else {
-		val response = call.execute()
-		println("Received response $response" + if (url.contains("soknadsmottaker")) payload.toString() else "")
-		response.close()
+fun performPutCall(url: String) {
+	runBlocking {
+		client.put<Any>(url) {
+			contentType(ContentType.Application.Json)
+		}
 	}
 }
 
-fun performPutCall(url: String, headers: Headers? = null) {
-	val requestBody = object : RequestBody() {
-		override fun contentType() = "application/json".toMediaType()
-		override fun writeTo(sink: BufferedSink) {}
-	}
-	val h = headers ?: Headers.Builder().build()
-
-	val request = Request.Builder().url(url).headers(h).put(requestBody).build()
-
-	restClient.newCall(request).execute().use { response ->
-		if (!response.isSuccessful)
-			throw IOException("Unexpected code $response")
+fun performDeleteCall(url: String) {
+	runBlocking {
+		client.delete<Any>(url) {
+			contentType(ContentType.Application.Json)
+		}
 	}
 }
 
-fun performDeleteCall(url: String, headers: Headers? = null) {
-	val requestBody = object : RequestBody() {
-		override fun contentType() = "application/json".toMediaType()
-		override fun writeTo(sink: BufferedSink) {}
-	}
-	val h = headers ?: Headers.Builder().build()
 
-	val request = Request.Builder().url(url).headers(h).delete(requestBody).build()
-	restClient.newCall(request).execute().close()
-}
-
-private val restRequestCallback = object : Callback {
-	override fun onResponse(call: Call, response: Response) { }
-
-	override fun onFailure(call: Call, e: IOException) {
-		throw e
-	}
-}
-
-fun createHeaders(username: String, password: String): Headers {
-	val auth = "$username:$password"
-	val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
-	return Headers.headersOf("Authorization", authHeader)
+private fun createHeaders(usernameAndPassword: Pair<String, String>): String {
+	val auth = "${usernameAndPassword.first}:${usernameAndPassword.second}"
+	return "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
 }

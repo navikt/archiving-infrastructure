@@ -21,7 +21,7 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 	val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
 	val url = appConfiguration.config.soknadsfillagerUrl + "/filer"
 
-	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
+	val headers = appConfiguration.config.soknadsfillagerUsername to appConfiguration.config.soknadsfillagerPassword
 	performPostCall(files, url, headers, false)
 	pollAndVerifyDataInFileStorage(uuid, 1, appConfiguration)
 }
@@ -34,7 +34,7 @@ fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appC
 
 
 private fun getNumberOfFiles(url: String, appConfiguration: Configuration): Int {
-	val headers = createHeaders(appConfiguration.config.soknadsfillagerUsername, appConfiguration.config.soknadsfillagerPassword)
+	val headers = appConfiguration.config.soknadsfillagerUsername to appConfiguration.config.soknadsfillagerPassword
 	val bytes = performGetCall(url, headers)
 
 	val listOfFiles = try {
