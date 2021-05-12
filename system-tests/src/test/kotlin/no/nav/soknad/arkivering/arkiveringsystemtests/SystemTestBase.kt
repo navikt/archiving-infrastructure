@@ -5,18 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.avroschemas.*
+import no.nav.soknad.arkivering.innsending.getStatusCodeForGetCall
+import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
 import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import no.nav.soknad.arkivering.verification.AssertionHelper
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import java.time.ZoneOffset
-import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class SystemTestBase {
@@ -27,7 +26,6 @@ abstract class SystemTestBase {
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
 	lateinit var config: Configuration
-	private val restClient = OkHttpClient()
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	private lateinit var kafkaListener: KafkaListener
@@ -66,9 +64,8 @@ abstract class SystemTestBase {
 			try {
 				val url = "${dep.value}/internal/health"
 
-				val request = Request.Builder().url(url).get().build()
-				val response = restClient.newCall(request).execute().use { response -> response.body?.string() ?: "" }
-				val health = objectMapper.readValue(response, Health::class.java)
+				val bytes = performGetCall(url)
+				val health = objectMapper.readValue(bytes, Health::class.java)
 
 				assertEquals("UP", health.status, "Dependency '${dep.key}' seems to be down")
 			} catch (e: Exception) {
@@ -101,12 +98,11 @@ abstract class SystemTestBase {
 
 	fun verifyComponentIsUp(url: String, componentName: String) {
 		val healthStatusCode = {
-			val request = Request.Builder().url(url).get().build()
-			restClient.newCall(request).execute().use { response -> response.code }
+			getStatusCodeForGetCall(url)
 		}
-		loopAndVerify(200, healthStatusCode, {
+		loopAndVerify(200, healthStatusCode) {
 			assertEquals(200, healthStatusCode.invoke(), "$componentName does not seem to be up")
-		})
+		}
 	}
 
 	private fun createSoknadarkivschema(innsendingsId: String, fileId: String): Soknadarkivschema {

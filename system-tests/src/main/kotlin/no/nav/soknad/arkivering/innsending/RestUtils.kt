@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.client.engine.apache.*
 import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
-private val client = HttpClient {
+private val client = HttpClient(Apache) {
 	expectSuccess = true
 }
 val objectMapper = ObjectMapper().also {
@@ -27,6 +29,13 @@ fun performGetCall(url: String, usernameAndPassword: Pair<String, String>): Byte
 	}
 }
 
+fun performGetCall(url: String): ByteArray = runBlocking {
+	client.get<HttpStatement>(url).execute().readBytes()
+}
+fun getStatusCodeForGetCall(url: String): Int = runBlocking {
+	client.get<HttpStatement>(url).execute().status.value
+}
+
 fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String, String>, async: Boolean) {
 	runBlocking {
 		client.post<Any>(url) {
@@ -41,17 +50,13 @@ fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String,
 
 fun performPutCall(url: String) {
 	runBlocking {
-		client.put<Any>(url) {
-			contentType(ContentType.Application.Json)
-		}
+		client.put<Any>(url)
 	}
 }
 
 fun performDeleteCall(url: String) {
 	runBlocking {
-		client.delete<Any>(url) {
-			contentType(ContentType.Application.Json)
-		}
+		client.delete<Any>(url)
 	}
 }
 
