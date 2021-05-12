@@ -67,27 +67,27 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
-			.peek { key, entity -> log("Joark Entities    : $key  -  $entity") }
+			.peek { key, entity -> log("Joark Entities    : $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
-			.peek { key, entity -> log("Metrics received  : $key  -  $entity") }
+			.peek { key, entity -> log("Metrics received  : $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
 
 		numberOfCallsStream
-			.peek { key, numberOfCalls -> log("Number of Calls   : $key  -  $numberOfCalls") }
+			.peek { key, numberOfCalls -> log("Number of Calls   : $key - $numberOfCalls") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
 		numberOfEntitiesStream
-			.peek { key, numberOfEntities -> log("Number of Entities: $key  -  $numberOfEntities") }
+			.peek { key, numberOfEntities -> log("Number of Entities: $key - $numberOfEntities") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfEntities -> numberOfEntitiesConsumers.forEach { it.consume(key, numberOfEntities) } }
 
 		processingEventTopicStream
-			.peek { key, entity -> log("Processing Events : $key  -  $entity") }
+			.peek { key, entity -> log("Processing Events : $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
 	}
