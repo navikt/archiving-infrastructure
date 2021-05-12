@@ -15,7 +15,7 @@ val defaultPorts = HashMap<String, Int>().also {
 	it["database"]         = 5432
 }
 
-private val defaultProperties = ConfigurationMap(mapOf(
+val defaultProperties = mapOf(
 	"APP_VERSION"              to "",
 	"USERNAME"                 to "arkiverer",
 	"PASSWORD"                 to "",
@@ -37,14 +37,14 @@ private val defaultProperties = ConfigurationMap(mapOf(
 	"SOKNADSFILLAGER_PASSWORD" to "password",
 	"SOKNADSMOTTAKER_USERNAME" to "avsender",
 	"SOKNADSMOTTAKER_PASSWORD" to "password"
-))
+)
 
 
 
 private val appConfig =
 	EnvironmentVariables() overriding
 		systemProperties() overriding
-		defaultProperties
+		ConfigurationMap(defaultProperties)
 
 private fun String.configProperty(overridingProperties: Map<String, String>): String =
 	overridingProperties[this] ?: appConfig[Key(this, stringType)]

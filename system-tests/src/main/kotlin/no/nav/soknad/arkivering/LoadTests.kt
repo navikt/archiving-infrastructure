@@ -95,7 +95,7 @@ class LoadTests(private val config: Configuration) {
 		val startTime = System.currentTimeMillis()
 		println("Warming up the archiving chain by sending a single message through the system")
 
-		val fileId = UUID.randomUUID().toString()
+		val fileId = "warmup_" + UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)

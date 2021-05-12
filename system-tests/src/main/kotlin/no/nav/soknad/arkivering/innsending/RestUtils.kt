@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 import java.util.*
 
 private val client = HttpClient(Apache) {
-	expectSuccess = true
+	expectSuccess = false
 }
 val objectMapper = ObjectMapper().also {
 	it.findAndRegisterModules()
