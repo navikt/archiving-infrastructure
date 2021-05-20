@@ -2,17 +2,14 @@ package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.client.engine.apache.*
-import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okio.BufferedSink
+import java.io.IOException
 import java.util.*
 
-private val client = HttpClient(Apache) {
-	expectSuccess = false
-}
+
+private val restClient = OkHttpClient()
 val objectMapper = ObjectMapper().also {
 	it.findAndRegisterModules()
 	it.registerModule(JavaTimeModule())
@@ -20,48 +17,87 @@ val objectMapper = ObjectMapper().also {
 
 
 fun performGetCall(url: String, usernameAndPassword: Pair<String, String>): ByteArray? {
-	return runBlocking {
-		client.get(url) {
-			headers {
-				append("Authorization", createHeaders(usernameAndPassword))
-			}
+
+	val headers = createHeaders(usernameAndPassword)
+	val request = Request.Builder().url(url).headers(headers).get().build()
+
+	restClient.newCall(request).execute().use {
+		return if (it.isSuccessful) {
+			it.body?.bytes()
+		} else {
+			println(it.networkResponse)
+			null
 		}
 	}
 }
 
-fun performGetCall(url: String): ByteArray = runBlocking {
-	client.get<HttpStatement>(url).execute().readBytes()
+fun performGetCall(url: String): ByteArray? {
+	val request = Request.Builder().url(url).get().build()
+	restClient.newCall(request).execute().use {
+		return it.body?.bytes()
+	}
 }
-fun getStatusCodeForGetCall(url: String): Int = runBlocking {
-	client.get<HttpStatement>(url).execute().status.value
+
+fun getStatusCodeForGetCall(url: String): Int {
+	val request = Request.Builder().url(url).get().build()
+	restClient.newCall(request).execute().use {
+		return it.code
+	}
 }
 
 fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String, String>, async: Boolean) {
-	runBlocking {
-		client.post<Any>(url) {
-			contentType(ContentType.Application.Json)
-			body = objectMapper.writeValueAsString(payload)
-			headers {
-				append("Authorization", createHeaders(usernameAndPassword))
-			}
+	val requestBody = object : RequestBody() {
+		override fun contentType() = "application/json".toMediaType()
+		override fun writeTo(sink: BufferedSink) {
+			sink.writeUtf8(objectMapper.writeValueAsString(payload))
 		}
+	}
+
+	val headers = createHeaders(usernameAndPassword)
+	val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
+
+	val call = restClient.newCall(request)
+	if (async)
+		call.enqueue(restRequestCallback)
+	else {
+		call.execute().close()
 	}
 }
 
 fun performPutCall(url: String) {
-	runBlocking {
-		client.put<Any>(url)
+	val requestBody = object : RequestBody() {
+		override fun contentType() = "application/json".toMediaType()
+		override fun writeTo(sink: BufferedSink) {}
+	}
+
+	val request = Request.Builder().url(url).put(requestBody).build()
+
+	restClient.newCall(request).execute().use { response ->
+		if (!response.isSuccessful)
+			throw IOException("Unexpected code $response")
 	}
 }
 
 fun performDeleteCall(url: String) {
-	runBlocking {
-		client.delete<Any>(url)
+	val requestBody = object : RequestBody() {
+		override fun contentType() = "application/json".toMediaType()
+		override fun writeTo(sink: BufferedSink) {}
+	}
+
+	val request = Request.Builder().url(url).delete(requestBody).build()
+	restClient.newCall(request).execute().close()
+}
+
+private val restRequestCallback = object : Callback {
+	override fun onResponse(call: Call, response: Response) { }
+
+	override fun onFailure(call: Call, e: IOException) {
+		throw e
 	}
 }
 
-
-private fun createHeaders(usernameAndPassword: Pair<String, String>): String {
+private fun createHeaders(usernameAndPassword: Pair<String, String>): Headers {
 	val auth = "${usernameAndPassword.first}:${usernameAndPassword.second}"
-	return "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+	val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
+	return Headers.headersOf("Authorization", authHeader)
 }
