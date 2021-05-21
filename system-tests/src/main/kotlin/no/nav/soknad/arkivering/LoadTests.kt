@@ -28,13 +28,13 @@ class LoadTests(private val config: Configuration) {
 
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
 		val testName = "10 000 simultaneous entities, 1 times 1 byte each"
-		println("\nStarting test: $testName")
 
 		val numberOfEntities = 10_000
 		val numberOfFilesPerEntity = 1
+		println("\nStarting test: $testName")
 		uploadData(numberOfEntities, "0".toByteArray(), testName)
 		warmupArchivingChain()
-		val verifier = setupVerifierThatFinishedEventsAreCreated(numberOfEntities inMinutes 30)
+		val verifier = setupVerificationThatFinishedEventsAreCreated(numberOfEntities inMinutes 30)
 
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
@@ -44,48 +44,37 @@ class LoadTests(private val config: Configuration) {
 
 	fun `10 simultaneous entities, 8 times 38 MB each`() {
 		val testName = "10 simultaneous entities, 8 times 38 MB each"
-		println("\nStarting test: $testName")
-
 		val numberOfEntities = 10
 		val numberOfFilesPerEntity = 8
 		val file = fileOfSize38mb
-		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
-		warmupArchivingChain()
-		val verifier = setupVerifierThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 
-		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
-
-		verifier.verify()
-		println("Finished test: $testName\n")
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 15)
 	}
 
 	fun `100 simultaneous entities, 2 times 2 MB each`() {
 		val testName = "100 simultaneous entities, 2 times 2 MB each"
-		println("\nStarting test: $testName")
-
 		val numberOfEntities = 100
 		val numberOfFilesPerEntity = 2
 		val file = fileOfSize2mb
-		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
-		warmupArchivingChain()
-		val verifier = setupVerifierThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
 
-		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
-
-		verifier.verify()
-		println("Finished test: $testName\n")
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
 
 	fun `100 simultaneous entities, 20 times 1 MB each`() {
 		val testName = "100 simultaneous entities, 20 times 1 MB each"
-		println("\nStarting test: $testName")
-
 		val numberOfEntities = 100
 		val numberOfFilesPerEntity = 20
 		val file = fileOfSize1mb
+
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
+	}
+
+	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 3) {
+		println("\nStarting test: $testName")
+
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
 		warmupArchivingChain()
-		val verifier = setupVerifierThatFinishedEventsAreCreated(numberOfEntities inMinutes 3)
+		val verifier = setupVerificationThatFinishedEventsAreCreated(numberOfEntities inMinutes timeout)
 
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
@@ -96,7 +85,7 @@ class LoadTests(private val config: Configuration) {
 
 	private fun uploadImages(numberOfImages: Int, filename: String) {
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
-		uploadData(numberOfImages, fileContent, Thread.currentThread().stackTrace[2].methodName)
+		uploadData(numberOfImages, fileContent, Thread.currentThread().stackTrace[3].methodName)
 	}
 
 	private fun uploadData(numberOfImages: Int, fileContent: ByteArray, testName: String) {
@@ -120,7 +109,7 @@ class LoadTests(private val config: Configuration) {
 		sendFilesToFileStorage(fileId, config)
 		sendDataToMottaker(dto, async = false, verbose = true)
 
-		setupVerifierThatFinishedEventsAreCreated(1 inMinutes 1).verify()
+		setupVerificationThatFinishedEventsAreCreated(1 inMinutes 1).verify()
 
 		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
@@ -150,7 +139,7 @@ class LoadTests(private val config: Configuration) {
 
 			val dto = createDto(fileIds)
 
-			sendDataToMottaker(dto, async = false, verbose = false)
+			sendDataToMottaker(dto, async = true, verbose = false)
 			dto
 		}
 	}
@@ -161,7 +150,7 @@ class LoadTests(private val config: Configuration) {
 		sendDataToMottaker(dto, async, config)
 	}
 
-	private fun setupVerifierThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>): AssertionHelper {
+	private fun setupVerificationThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>): AssertionHelper {
 		return AssertionHelper(kafkaListener)
 			.hasNumberOfFinishedEvents(countAndTimeout)
 	}

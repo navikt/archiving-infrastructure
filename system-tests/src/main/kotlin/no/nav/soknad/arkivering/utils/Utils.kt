@@ -30,6 +30,15 @@ private const val fnr = "10108000398" // Not a real fnr
 fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) = createDto(listOf(fileId), innsendingsId)
 
 fun createDto(fileIds: List<String>, innsendingsId: String = UUID.randomUUID().toString()) =
-	SoknadInnsendtDto(innsendingsId, false, fnr, "BIL", LocalDateTime.now(),
-		listOf(InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-			fileIds.map { InnsendtVariantDto(it, null, "filnavn", "1024", "ARKIV", "PDFA") })))
+	SoknadInnsendtDto(innsendingsId, false, fnr, "BIL", LocalDateTime.now(), createInnsendtDokumentDtos(fileIds))
+
+private fun createInnsendtDokumentDtos(fileIds: List<String>): List<InnsendtDokumentDto> =
+	mutableListOf(
+		createInnsendtDokumentDto(fileIds.first(), true)
+	).plus(
+		fileIds.drop(1).map { createInnsendtDokumentDto(it, false) }
+	)
+
+private fun createInnsendtDokumentDto(id: String, erHovedskjema: Boolean) =
+	InnsendtDokumentDto("NAV 10-07.17", erHovedskjema, "Søknad om refusjon av reiseutgifter - bil",
+		listOf(InnsendtVariantDto(id, null, "filnavn", "1024", "ARKIV", "PDFA")))
