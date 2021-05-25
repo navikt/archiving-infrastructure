@@ -42,9 +42,9 @@ class LoadTests(private val config: Configuration) {
 		println("Finished test: $testName\n")
 	}
 
-	fun `10 simultaneous entities, 8 times 38 MB each`() {
-		val testName = "10 simultaneous entities, 8 times 38 MB each"
-		val numberOfEntities = 10
+	fun `5 simultaneous entities, 8 times 38 MB each`() {
+		val testName = "5 simultaneous entities, 8 times 38 MB each"
+		val numberOfEntities = 5
 		val numberOfFilesPerEntity = 8
 		val file = fileOfSize38mb
 
@@ -72,7 +72,7 @@ class LoadTests(private val config: Configuration) {
 	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 3) {
 		println("\nStarting test: $testName")
 
-		uploadImages(numberOfEntities * numberOfFilesPerEntity, file)
+		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(numberOfEntities inMinutes timeout)
 
@@ -83,9 +83,9 @@ class LoadTests(private val config: Configuration) {
 	}
 
 
-	private fun uploadImages(numberOfImages: Int, filename: String) {
+	private fun uploadImages(numberOfImages: Int, filename: String, testName: String) {
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
-		uploadData(numberOfImages, fileContent, Thread.currentThread().stackTrace[3].methodName)
+		uploadData(numberOfImages, fileContent, testName)
 	}
 
 	private fun uploadData(numberOfImages: Int, fileContent: ByteArray, testName: String) {

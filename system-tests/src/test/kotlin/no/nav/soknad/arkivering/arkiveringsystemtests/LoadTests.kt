@@ -52,8 +52,8 @@ class KjellmanLoadTests : SystemTestBase() {
 	}
 
 	@Test
-	fun `10 simultaneous entities, 8 times 38 MB each`() {
-		loadTests.`10 simultaneous entities, 8 times 38 MB each`()
+	fun `5 simultaneous entities, 8 times 38 MB each`() {
+		loadTests.`5 simultaneous entities, 8 times 38 MB each`()
 	}
 
 	@Test
