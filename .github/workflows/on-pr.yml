@@ -46,6 +46,6 @@ jobs:
         with:
           component_name: archiving-infrastructure
           branch: ${GITHUB_HEAD_REF} # Branch of current PR
-          sub_directory: end-to-end-tests
+          sub_directory: system-tests
           skip_tests: false
           run_docker_build: false
