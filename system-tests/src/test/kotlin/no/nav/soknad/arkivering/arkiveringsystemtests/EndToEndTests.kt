@@ -245,30 +245,6 @@ class EndToEndTests : SystemTestBase() {
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
-	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
-		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-
-		sendFilesToFileStorage(fileId)
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
-		sendDataToMottaker(dto)
-		assertThatArkivMock()
-			.hasBeenCalled(attemptsThanSoknadsarkivererWillPerform timesForKey dto.innsendingsId)
-			.verify()
-		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 500, 1)
-		TimeUnit.SECONDS.sleep(1)
-
-		shutDownSoknadsarkiverer()
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
-			.containsData(dto andWasCalled times(attemptsThanSoknadsarkivererWillPerform + 1))
-			.verify()
-		pollAndVerifyDataInFileStorage(fileId, 0)
-	}
-
-	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
-	@Test
 	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in the archive`() {
 		val finishedKey = UUID.randomUUID().toString()
 		val finishedFileId = UUID.randomUUID().toString()
