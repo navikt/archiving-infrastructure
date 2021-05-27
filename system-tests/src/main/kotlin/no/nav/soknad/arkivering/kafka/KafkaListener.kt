@@ -140,7 +140,7 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 
 	fun close() {
-		kafkaStreams.close(Duration.ofSeconds(10))
+		kafkaStreams.close()
 		kafkaStreams.cleanUp()
 	}
 
