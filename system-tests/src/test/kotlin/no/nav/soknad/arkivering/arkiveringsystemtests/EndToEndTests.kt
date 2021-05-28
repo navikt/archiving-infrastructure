@@ -7,14 +7,15 @@ import no.nav.soknad.arkivering.dto.InnsendtVariantDto
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.utils.createDto
-import no.nav.soknad.arkivering.verification.*
+import no.nav.soknad.arkivering.verification.andWasCalled
+import no.nav.soknad.arkivering.verification.inMinutes
+import no.nav.soknad.arkivering.verification.times
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import java.time.LocalDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class EndToEndTests : SystemTestBase() {
 
@@ -261,7 +262,7 @@ class EndToEndTests : SystemTestBase() {
 
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(finishedKey, finishedInnsendingsId, finishedFileId)
-		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.FINISHED)
+		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.ARCHIVED, EventTypes.FINISHED)
 		sendDataToMottaker(newDto)
 		startUpSoknadsarkiverer()
 
