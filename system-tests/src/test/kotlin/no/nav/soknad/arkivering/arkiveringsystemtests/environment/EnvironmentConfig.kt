@@ -1,8 +1,5 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
-import org.junit.jupiter.api.fail
-import java.util.*
-
 val defaultPorts = HashMap<String, Int>().also {
 	it["soknadsfillager"]  = 9042
 	it["soknadsmottaker"]  = 8090
@@ -25,28 +22,10 @@ private val defaultProperties = mapOf(
 	"soknadsmottaker.username" to "avsender",
 	"soknadsmottaker.password" to "password"
 )
-private val q0Properties = mapOf(
-	"soknadsfillager.url"      to "https://soknadsfillager-q0.dev.adeo.no",
-	"soknadsmottaker.url"      to "https://soknadsmottaker-q0.dev.adeo.no",
-	"soknadsfillager.username" to "srvHenvendelse",
-	"soknadsfillager.password" to "password",
-	"soknadsmottaker.username" to "srvHenvendelse",
-	"soknadsmottaker.password" to "password"
-)
-private val q1Properties = mapOf(
-	"soknadsfillager.url"      to "https://soknadsfillager-q1.dev.adeo.no",
-	"soknadsmottaker.url"      to "https://soknadsmottaker-q1.dev.adeo.no",
-	"soknadsfillager.username" to "srvHenvendelse",
-	"soknadsfillager.password" to "password",
-	"soknadsmottaker.username" to "srvHenvendelse",
-	"soknadsmottaker.password" to "password"
-)
 
 enum class Profile {
 	EMBEDDED, // Running towards local machine, where application containers are managed by the test suite
 	DOCKER, // Running towards local machine, where application containers are managed externally by Docker
-	Q0, // Running towards q0 environment in the cloud
-	Q1 // Running towards q1 environment in the cloud
 }
 
 class EnvironmentConfig(environmentToTarget: String? = null) {
@@ -60,26 +39,12 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 
 	private val targetEnvironment = when (environmentToTarget) {
 		"docker" -> Profile.DOCKER
-		"q0"     -> Profile.Q0
-		"q1"     -> Profile.Q1
 		else     -> Profile.EMBEDDED
 	}
 
 	private fun getAttribute(attribute: String): String {
 		val result = when (targetEnvironment) {
 			Profile.DOCKER -> defaultProperties[attribute]
-
-			Profile.Q0 -> when (attribute) {
-				"soknadsfillager.password" -> getEnvironmentVariable(attribute)
-				"soknadsmottaker.password" -> getEnvironmentVariable(attribute)
-				else -> q0Properties[attribute]
-			}
-
-			Profile.Q1 -> when (attribute) {
-				"soknadsfillager.password" -> getEnvironmentVariable(attribute)
-				"soknadsmottaker.password" -> getEnvironmentVariable(attribute)
-				else -> q1Properties[attribute]
-			}
 
 			Profile.EMBEDDED -> when (attribute) {
 				"soknadsfillager.url"  -> embeddedDockerImages?.getUrlForSoknadsfillager()
@@ -95,17 +60,6 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 			return result
 		else
 			throw NotImplementedError("There is no $attribute for environment $targetEnvironment")
-	}
-
-	private fun getEnvironmentVariable(attribute: String): String {
-		val value = System.getenv(attribute)
-		if (value == null) {
-			val message = "No value found for environment-variable '$attribute'. " +
-				"If you run this locally from the terminal, try running 'export $attribute=VALUE' " +
-				"and then running the tests again."
-			fail(message)
-		}
-		return value
 	}
 
 
