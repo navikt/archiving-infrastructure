@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock.exceptions
+package no.nav.soknad.arkivering.arkivmock.exceptions
 
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus

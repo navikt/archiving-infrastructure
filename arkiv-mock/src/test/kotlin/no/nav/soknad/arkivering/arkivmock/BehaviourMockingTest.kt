@@ -1,14 +1,14 @@
-package no.nav.soknad.archiving.arkivmock
+package no.nav.soknad.arkivering.arkivmock
 
 import com.nhaarman.mockitokotlin2.*
-import no.nav.soknad.archiving.arkivmock.dto.ArkivData
-import no.nav.soknad.archiving.arkivmock.dto.Bruker
-import no.nav.soknad.archiving.arkivmock.exceptions.InternalServerErrorException
-import no.nav.soknad.archiving.arkivmock.exceptions.NotFoundException
-import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
-import no.nav.soknad.archiving.arkivmock.rest.ArkivRestInterface
-import no.nav.soknad.archiving.arkivmock.rest.BehaviourMocking
-import no.nav.soknad.archiving.arkivmock.service.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.arkivmock.dto.ArkivData
+import no.nav.soknad.arkivering.arkivmock.dto.Bruker
+import no.nav.soknad.arkivering.arkivmock.exceptions.InternalServerErrorException
+import no.nav.soknad.arkivering.arkivmock.exceptions.NotFoundException
+import no.nav.soknad.arkivering.arkivmock.repository.ArkivRepository
+import no.nav.soknad.arkivering.arkivmock.rest.ArkivRestInterface
+import no.nav.soknad.arkivering.arkivmock.rest.BehaviourMocking
+import no.nav.soknad.arkivering.arkivmock.service.kafka.KafkaPublisher
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

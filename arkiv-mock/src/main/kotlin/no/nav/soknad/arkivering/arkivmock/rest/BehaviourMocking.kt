@@ -1,6 +1,6 @@
-package no.nav.soknad.archiving.arkivmock.rest
+package no.nav.soknad.arkivering.arkivmock.rest
 
-import no.nav.soknad.archiving.arkivmock.service.BehaviourService
+import no.nav.soknad.arkivering.arkivmock.service.BehaviourService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

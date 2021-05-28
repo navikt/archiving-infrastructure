@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock.rest
+package no.nav.soknad.arkivering.arkivmock.rest
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus

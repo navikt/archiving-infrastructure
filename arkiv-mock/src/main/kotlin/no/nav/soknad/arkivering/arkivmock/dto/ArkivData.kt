@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock.dto
+package no.nav.soknad.arkivering.arkivmock.dto
 
 data class ArkivData(
 	val bruker: Bruker, val datoMottatt: String, val dokumenter: List<Dokument>,

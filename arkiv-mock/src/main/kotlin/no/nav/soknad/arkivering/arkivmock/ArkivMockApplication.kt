@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock
+package no.nav.soknad.arkivering.arkivmock
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

@@ -1,9 +1,9 @@
-package no.nav.soknad.archiving.arkivmock.service
+package no.nav.soknad.arkivering.arkivmock.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.archiving.arkivmock.dto.OpprettJournalpostResponse
-import no.nav.soknad.archiving.arkivmock.exceptions.InternalServerErrorException
-import no.nav.soknad.archiving.arkivmock.exceptions.NotFoundException
+import no.nav.soknad.arkivering.arkivmock.dto.OpprettJournalpostResponse
+import no.nav.soknad.arkivering.arkivmock.exceptions.InternalServerErrorException
+import no.nav.soknad.arkivering.arkivmock.exceptions.NotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

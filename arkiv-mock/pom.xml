@@ -5,21 +5,21 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.3.1.RELEASE</version>
+		<version>2.5.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<groupId>no.nav.soknad.archiving</groupId>
 	<artifactId>arkiv-mock</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>arkiv-mock</name>
 	<description>Mock replacement of the Joark Archive, used for end-to-end tests.</description>
 
 	<properties>
 		<mockito-kotlin.version>2.2.0</mockito-kotlin.version>
-		<coroutines.version>1.4.2</coroutines.version>
+		<coroutines.version>1.5.0</coroutines.version>
 		<java.version>11</java.version>
-		<kotlin.version>1.4.10</kotlin.version>
+		<kotlin.version>1.5.10</kotlin.version>
 	</properties>
 
 	<dependencies>

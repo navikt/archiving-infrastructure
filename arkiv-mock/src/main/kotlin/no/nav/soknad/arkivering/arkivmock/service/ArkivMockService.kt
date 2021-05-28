@@ -1,13 +1,13 @@
-package no.nav.soknad.archiving.arkivmock.service
+package no.nav.soknad.arkivering.arkivmock.service
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import no.nav.soknad.archiving.arkivmock.dto.ArkivData
-import no.nav.soknad.archiving.arkivmock.dto.ArkivDbData
-import no.nav.soknad.archiving.arkivmock.dto.Dokumenter
-import no.nav.soknad.archiving.arkivmock.dto.OpprettJournalpostResponse
-import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
-import no.nav.soknad.archiving.arkivmock.service.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.arkivmock.dto.ArkivData
+import no.nav.soknad.arkivering.arkivmock.dto.ArkivDbData
+import no.nav.soknad.arkivering.arkivmock.dto.Dokumenter
+import no.nav.soknad.arkivering.arkivmock.dto.OpprettJournalpostResponse
+import no.nav.soknad.arkivering.arkivmock.repository.ArkivRepository
+import no.nav.soknad.arkivering.arkivmock.service.kafka.KafkaPublisher
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.ZoneOffset

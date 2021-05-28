@@ -1,6 +1,6 @@
-package no.nav.soknad.archiving.arkivmock.service.kafka
+package no.nav.soknad.arkivering.arkivmock.service.kafka
 
-import no.nav.soknad.archiving.arkivmock.dto.ArkivDbData
+import no.nav.soknad.arkivering.arkivmock.dto.ArkivDbData
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord

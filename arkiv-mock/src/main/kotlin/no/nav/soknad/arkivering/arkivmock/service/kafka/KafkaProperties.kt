@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock.service.kafka
+package no.nav.soknad.arkivering.arkivmock.service.kafka
 
 class KafkaProperties {
 	val numberOfCallsTopic = "privat-soknadInnsendt-endToEndTests-numberOfCalls"

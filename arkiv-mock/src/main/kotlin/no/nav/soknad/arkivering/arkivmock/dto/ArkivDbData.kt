@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock.dto
+package no.nav.soknad.arkivering.arkivmock.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature

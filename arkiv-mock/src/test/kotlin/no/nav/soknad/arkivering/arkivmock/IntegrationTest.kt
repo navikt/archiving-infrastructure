@@ -1,10 +1,10 @@
-package no.nav.soknad.archiving.arkivmock
+package no.nav.soknad.arkivering.arkivmock
 
-import no.nav.soknad.archiving.arkivmock.dto.ArkivData
-import no.nav.soknad.archiving.arkivmock.dto.Bruker
-import no.nav.soknad.archiving.arkivmock.repository.ArkivRepository
-import no.nav.soknad.archiving.arkivmock.rest.ArkivRestInterface
-import no.nav.soknad.archiving.arkivmock.rest.BehaviourMocking
+import no.nav.soknad.arkivering.arkivmock.dto.ArkivData
+import no.nav.soknad.arkivering.arkivmock.dto.Bruker
+import no.nav.soknad.arkivering.arkivmock.repository.ArkivRepository
+import no.nav.soknad.arkivering.arkivmock.rest.ArkivRestInterface
+import no.nav.soknad.arkivering.arkivmock.rest.BehaviourMocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

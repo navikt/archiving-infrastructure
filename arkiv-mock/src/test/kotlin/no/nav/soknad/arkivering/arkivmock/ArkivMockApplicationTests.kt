@@ -1,4 +1,4 @@
-package no.nav.soknad.archiving.arkivmock
+package no.nav.soknad.arkivering.arkivmock
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
