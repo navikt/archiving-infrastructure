@@ -22,7 +22,6 @@ import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.Transformer
 import org.apache.kafka.streams.processor.ProcessorContext
 import org.slf4j.LoggerFactory
-import java.time.Duration
 import java.util.*
 
 class KafkaListener(private val appConfiguration: Configuration) {
