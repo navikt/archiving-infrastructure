@@ -154,11 +154,6 @@ class LoadTests(private val config: Configuration) {
 		return AssertionHelper(kafkaListener)
 			.hasNumberOfFinishedEvents(countAndTimeout)
 	}
-
-	fun tearDown() {
-		kafkaListener.clearConsumers()
-		kafkaListener.close()
-	}
 }
 
 private const val fileOfSize38mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"

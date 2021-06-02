@@ -1,8 +1,12 @@
 package no.nav.soknad.arkivering
 
+import kotlin.system.exitProcess
+
 fun main() {
 	val config = Configuration()
 	val loadTests = LoadTests(config)
+	var exitStatus = 0
+
 	try {
 		println("Starting the Load Tests")
 
@@ -14,7 +18,8 @@ fun main() {
 		println("Finished with the Load Tests")
 	} catch (t: Throwable) {
 		println("Load tests were erroneous: $t")
+		exitStatus = 1
 	} finally {
-		loadTests.tearDown()
+		exitProcess(exitStatus)
 	}
 }
