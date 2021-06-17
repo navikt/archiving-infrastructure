@@ -14,14 +14,12 @@ class BehaviourService(val objectMapper: ObjectMapper) {
 	private val behaviours: MutableMap<String, BehaviourDto> = mutableMapOf()
 
 	fun setNormalBehaviour(uuid: String) {
-		behaviours[uuid] = BehaviourDto(BEHAVIOUR.NORMAL, null, -1, 0)
+		val calls = behaviours[uuid]?.calls ?: 0
+		behaviours[uuid] = BehaviourDto(BEHAVIOUR.NORMAL, null, -1, calls)
 	}
 
 	fun mockException(uuid: String, statusCode: Int, forAttempts: Int) {
-		val calls = if (behaviours.containsKey(uuid))
-			behaviours[uuid]!!.calls
-		else
-			0
+		val calls = behaviours[uuid]?.calls ?: 0
 
 		val mockedException = when (statusCode) {
 			404 -> NotFoundException()
@@ -74,8 +72,10 @@ class BehaviourService(val objectMapper: ObjectMapper) {
 }
 
 data class BehaviourDto(
-	var behaviour: BEHAVIOUR = BEHAVIOUR.NORMAL, var mockedException: Exception? = null,
-	var forAttempts: Int = -1, var calls: Int = 0
+	var behaviour: BEHAVIOUR = BEHAVIOUR.NORMAL,
+	var mockedException: Exception? = null,
+	var forAttempts: Int = -1,
+	var calls: Int = 0
 )
 
 enum class BEHAVIOUR { NORMAL, MOCK_EXCEPTION, RESPOND_WITH_ERRONEOUS_BODY }
