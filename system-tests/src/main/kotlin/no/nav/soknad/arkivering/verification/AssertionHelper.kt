@@ -1,6 +1,5 @@
 package no.nav.soknad.arkivering.verification
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.dto.ArkivDbData
@@ -8,7 +7,6 @@ import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.metrics.MetricsConsumer
 import no.nav.soknad.arkivering.metrics.ProcessingEventConverter
-import java.io.File
 
 /**
  * This is a helper class for setting up asynchronous assertions of Kafka messages that will appear at some
@@ -118,31 +116,8 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
-	fun verify(saveMetrics: Boolean = true) {
+	fun verify() {
 		verificationTaskManager.assertAllTasksSucceeds()
-
-		if (saveMetrics)
-			saveMetrics()
-	}
-
-	private fun saveMetrics() {
-		data class Metrics(val application: String, val action: String, val startTime: Long, val duration: Long)
-		data class MetricsObject(val key: String, val datapoints: List<Metrics>)
-
-		val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
-		val metrics = metricsConsumer.getMetrics()
-			.entries.map {
-				MetricsObject(it.key, it.value
-					.map { m -> Metrics(m.application, m.action, m.startTime, m.duration) }
-				) }
-		val json = objectMapper.writeValueAsString(metrics)
-
-		val testName = Thread.currentThread().stackTrace[4].methodName
-		val outputDir = "target/metrics"
-		File(outputDir).mkdirs()
-		val file = File("$outputDir/$testName").also { it.createNewFile() }
-		file.writeText(json)
-		println("Wrote metrics to '$outputDir/$testName'")
 	}
 
 
