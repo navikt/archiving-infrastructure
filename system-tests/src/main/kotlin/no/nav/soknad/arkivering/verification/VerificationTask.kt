@@ -105,7 +105,7 @@ class VerificationTask<T> private constructor(
 	}
 
 
-	class Builder<T>(private var timeout: Long = 10_000) {
+	class Builder<T>(private var timeout: Long = verificationDefaultTimeout) {
 
 		private var channel: Channel<Pair<String, Boolean>> = Channel(0)
 		private var verifier: MutableList<Assertion<*, T>> = mutableListOf()
@@ -130,3 +130,5 @@ class VerificationTask<T> private constructor(
 	private data class Assertion<V, T>(val expected: V, val actualFunction: (T) -> V, val message: String)
 	private enum class Presence { PRESENCE, ABSENCE }
 }
+
+private val verificationDefaultTimeout = 30_000L

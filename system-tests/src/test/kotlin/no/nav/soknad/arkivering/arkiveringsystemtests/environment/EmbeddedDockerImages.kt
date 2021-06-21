@@ -5,6 +5,7 @@ import org.junit.jupiter.api.fail
 import org.testcontainers.containers.*
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
+import java.time.Duration
 
 class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
@@ -71,7 +72,7 @@ class EmbeddedDockerImages {
 				"APPLICATION_USERNAME" to postgresUsername,
 				"APPLICATION_PASSWORD" to postgresUsername))
 			.dependsOn(postgresContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(2)))
 
 		schemaRegistryContainer.start()
 		soknadsfillagerContainer.start()
@@ -106,12 +107,13 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(hashMapOf(
 				"SPRING_PROFILES_ACTIVE" to "test",
+				"BOOTSTRAPPING_TIMEOUT" to "10",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
 				"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
 				"JOARK_HOST" to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}"))
 			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
 		soknadsmottakerContainer.start()
 		soknadsarkivererContainer.start()

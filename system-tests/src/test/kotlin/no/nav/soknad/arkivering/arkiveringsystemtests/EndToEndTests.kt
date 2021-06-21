@@ -10,6 +10,7 @@ import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.verification.andWasCalled
 import no.nav.soknad.arkivering.verification.inMinutes
 import no.nav.soknad.arkivering.verification.times
+import no.nav.soknad.arkivering.verification.timesForKey
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -215,11 +216,11 @@ class EndToEndTests : SystemTestBase() {
 
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
+		val verifier = assertThatArkivMock()
+			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
 		startUpSoknadsarkiverer()
 
-		assertThatArkivMock()
-			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
-			.verify()
+		verifier.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -236,11 +237,34 @@ class EndToEndTests : SystemTestBase() {
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(key, innsendingsId, fileId)
 		putProcessingEventOnKafkaTopic(key, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.STARTED)
+		val verifier = assertThatArkivMock()
+			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
 		startUpSoknadsarkiverer()
 
+		verifier.verify()
+		pollAndVerifyDataInFileStorage(fileId, 0)
+	}
+
+	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
+	@Test
+	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
+		val fileId = UUID.randomUUID().toString()
+		val dto = createDto(fileId)
+
+		sendFilesToFileStorage(fileId)
+		mockArchiveRespondsWithCodeForXAttempts(dto.innsendingsId, 404, attemptsThanSoknadsarkivererWillPerform + 1)
+		sendDataToMottaker(dto)
 		assertThatArkivMock()
-			.containsData(createDto(fileId, innsendingsId) andWasCalled times(1))
+			.hasBeenCalled(1 timesForKey dto.innsendingsId)
 			.verify()
+
+		shutDownSoknadsarkiverer()
+		setNormalArchiveBehaviour(dto.innsendingsId)
+		val verifier = assertThatArkivMock()
+			.containsData(dto andWasCalled times(2))
+		startUpSoknadsarkiverer()
+
+		verifier.verify()
 		pollAndVerifyDataInFileStorage(fileId, 0)
 	}
 
@@ -264,12 +288,12 @@ class EndToEndTests : SystemTestBase() {
 		putInputEventOnKafkaTopic(finishedKey, finishedInnsendingsId, finishedFileId)
 		putProcessingEventOnKafkaTopic(finishedKey, EventTypes.RECEIVED, EventTypes.STARTED, EventTypes.ARCHIVED, EventTypes.FINISHED)
 		sendDataToMottaker(newDto)
-		startUpSoknadsarkiverer()
-
-		assertThatArkivMock()
+		val verifier = assertThatArkivMock()
 			.containsData(newDto andWasCalled times(1))
 			.doesNotContainKey(finishedInnsendingsId)
-			.verify()
+		startUpSoknadsarkiverer()
+
+		verifier.verify()
 		pollAndVerifyDataInFileStorage(finishedFileId, 1)
 		pollAndVerifyDataInFileStorage(newFileId, 0)
 	}
