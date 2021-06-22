@@ -89,14 +89,17 @@ class LoadTests(private val config: Configuration) {
 	}
 
 	private fun uploadData(numberOfImages: Int, fileContent: ByteArray, testName: String) {
-		(0 until numberOfImages)
-			.chunked(2)
-			.forEach { ids ->
-				val deferredUploads = ids.map { id -> GlobalScope.async {
-					sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
-				} }
-				runBlocking { deferredUploads.awaitAll() }
-			}
+		runBlocking {
+			(0 until numberOfImages)
+				.chunked(2)
+				.forEach { ids ->
+					ids.map { id ->
+						withContext(Dispatchers.Default) {
+							sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
+						}
+					}
+				}
+		}
 	}
 
 
@@ -123,19 +126,20 @@ class LoadTests(private val config: Configuration) {
 		println("About to send $numberOfEntities entities to Mottaker")
 
 		val atomicInteger = AtomicInteger()
-		val deferredDtos = (0 until (numberOfEntities)).map {
-			val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
-			sendDataToMottakerAsync(fileIds)
+		val dtos = runBlocking {
+			(0 until numberOfEntities).map {
+				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
+				sendDataToMottakerAsync(fileIds)
+			}
 		}
-		val dtos = runBlocking { deferredDtos.awaitAll() }
 
 		val finishTimeSendingToMottaker = System.currentTimeMillis()
 		println("Sent $numberOfEntities entities to Mottaker in ${finishTimeSendingToMottaker - startTimeSendingToMottaker} ms")
 		return dtos
 	}
 
-	private fun sendDataToMottakerAsync(fileIds: List<String>): Deferred<SoknadInnsendtDto> {
-		return GlobalScope.async {
+	private suspend fun sendDataToMottakerAsync(fileIds: List<String>): SoknadInnsendtDto {
+		return withContext(Dispatchers.Default) {
 
 			val dto = createDto(fileIds)
 
