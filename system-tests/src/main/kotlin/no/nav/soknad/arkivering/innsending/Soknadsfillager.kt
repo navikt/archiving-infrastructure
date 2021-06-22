@@ -21,15 +21,26 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 	val files = listOf(FilElementDto(uuid, payload, LocalDateTime.now()))
 	val url = appConfiguration.config.soknadsfillagerUrl + "/filer"
 
+	val numberOfAttempts = 10
 	val headers = appConfiguration.config.soknadsfillagerUsername to appConfiguration.config.soknadsfillagerPassword
-	performPostCall(files, url, headers, false)
-	pollAndVerifyDataInFileStorage(uuid, 1, appConfiguration)
+	for (i in 0 .. numberOfAttempts) {
+		performPostCall(files, url, headers, false)
+		if (verifyFileExists(uuid, appConfiguration))
+			return
+		println("Failed to verify file '$uuid' - reattempting")
+	}
+	println("Failed to send file '$uuid' to Filestorage after $numberOfAttempts attempts!!")
 }
 
 fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appConfiguration: Configuration) {
 	val url = appConfiguration.config.soknadsfillagerUrl + "/filer?ids=$uuid"
 	loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url, appConfiguration) },
 		{ assert(expectedNumberOfHits == getNumberOfFiles(url, appConfiguration)) { "Expected $expectedNumberOfHits files in File Storage" } })
+}
+
+private fun verifyFileExists(uuid: String, appConfiguration: Configuration): Boolean {
+	val url = appConfiguration.config.soknadsfillagerUrl + "/filer?ids=$uuid"
+	return getNumberOfFiles(url, appConfiguration) == 1
 }
 
 
