@@ -48,7 +48,7 @@ class LoadTests(private val config: Configuration) {
 		val numberOfFilesPerEntity = 8
 		val file = fileOfSize38mb
 
-		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 15)
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
 	fun `100 simultaneous entities, 2 times 2 MB each`() {
@@ -69,7 +69,7 @@ class LoadTests(private val config: Configuration) {
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
 
-	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 3) {
+	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 5) {
 		println("\nStarting test: $testName")
 
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
