@@ -1,7 +1,7 @@
 package no.nav.soknad.arkivering.arkivmock.service.kafka
 
-class KafkaProperties {
-	val numberOfCallsTopic = "privat-soknadInnsendt-endToEndTests-numberOfCalls"
-	val entitiesTopic = "privat-soknadInnsendt-endToEndTests-entities"
-	val numberOfEntitiesTopic = "privat-soknadInnsendt-endToEndTests-numberOfEntities"
-}
+const val numberOfCallsTopic = "privat-soknadInnsendt-endToEndTests-numberOfCalls"
+const val entitiesTopic = "privat-soknadInnsendt-endToEndTests-entities"
+const val numberOfEntitiesTopic = "privat-soknadInnsendt-endToEndTests-numberOfEntities"
+
+const val defaultKafkaBootstrapServers = "localhost:9092"

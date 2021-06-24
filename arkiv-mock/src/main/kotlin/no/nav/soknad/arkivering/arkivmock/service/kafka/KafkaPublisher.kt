@@ -19,27 +19,26 @@ import java.util.concurrent.TimeUnit
 class KafkaPublisher {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private val kafkaBootstrapServers = getEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+	private val kafkaBootstrapServers = getEnvironmentVariable("KAFKA_BOOTSTRAP_SERVERS", defaultKafkaBootstrapServers)
 
-	private val kafkaProperties = KafkaProperties()
 	private val kafkaStringProducer = KafkaProducer<String, String>(kafkaConfigMap(StringSerializer()))
 	private val kafkaIntProducer = KafkaProducer<String, Int>(kafkaConfigMap(IntegerSerializer()))
 
 
 	fun putDataOnTopic(key: String, value: ArkivDbData, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.entitiesTopic
+		val topic = entitiesTopic
 		val kafkaProducer = kafkaStringProducer
 		putDataOnTopic(key, value.toString(), headers, topic, kafkaProducer)
 	}
 
 	fun putNumberOfCallsOnTopic(key: String, value: Int, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.numberOfCallsTopic
+		val topic = numberOfCallsTopic
 		val kafkaProducer = kafkaIntProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
 	fun putNumberOfEntitiesOnTopic(key: String, value: Int, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.numberOfEntitiesTopic
+		val topic = numberOfEntitiesTopic
 		val kafkaProducer = kafkaIntProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
