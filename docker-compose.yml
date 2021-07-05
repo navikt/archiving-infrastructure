@@ -6,7 +6,7 @@ services:
     ports:
       - 9092:9092
     environment:
-      KAFKA_CREATE_TOPICS: "privat-soknadInnsendt-v1-default:1:1,privat-soknadInnsendt-processingEventLog-v1-default:1:1,privat-soknadInnsendt-messages-v1-default:1:1"
+      KAFKA_CREATE_TOPICS: "privat-soknadInnsendt-v1-teamsoknad:1:1,privat-soknadInnsendt-processingEventLog-v1-teamsoknad:1:1,privat-soknadInnsendt-messages-v1-teamsoknad:1:1,privat-soknadInnsendt-endToEndTests-entities:1:1,privat-soknadInnsendt-endToEndTests-numberOfCalls:1:1,privat-soknadInnsendt-endToEndTests-numberOfEntities:1:1,privat-soknadInnsendt-metrics-v1-teamsoknad:1:1"
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
       # For more details see https://rmoff.net/2018/08/02/kafka-listeners-explained/
       KAFKA_LISTENERS: INTERNAL://kafka-broker:29092,EXTERNAL://kafka-broker:9092
@@ -50,6 +50,7 @@ services:
       - 8092:8092
     environment:
      - SPRING_PROFILES_ACTIVE=docker
+     - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
 
   soknadsmottaker:
     build: ../soknadsmottaker

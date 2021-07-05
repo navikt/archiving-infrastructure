@@ -3,14 +3,14 @@
 if [ "$1" == "no-testcontainers" ]; then
   source start-components-in-docker.sh
 
-  cd end-to-end-tests || exit
-  mvn -DuseTestcontainers=false clean install
+  cd system-tests || exit
+  mvn -DtargetEnvironment=docker clean install
   cd ..
 
 else
   source build.sh
 
-  cd end-to-end-tests || exit
-  mvn clean install
+  cd system-tests || exit
+  mvn -DtargetEnvironment=embedded clean install
   cd ..
 fi

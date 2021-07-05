@@ -1,0 +1,152 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  labels:
+    team: team-soknad
+  name: innsending-system-tests
+  namespace: team-soknad
+spec:
+  schedule: "0 2 * * SUN"    # Every Sunday at 2 am
+#  schedule: "0 */2 * * *" # Every second hour
+#  schedule: "30 * * * *"  # Once an hour, at 30 past
+  startingDeadlineSeconds: 200
+  ttlSecondsAfterFinished: 3600
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: gpr-credentials
+          serviceAccount: default
+          serviceAccountName: default
+          containers:
+            - name: innsending-system-tests
+              image: {{image}}
+              resources:
+                requests:
+                  memory: 1024Mi
+                  cpu: 1000m
+                limits:
+                  memory: 4Gi
+                  cpu: 3000m
+              volumeMounts:
+                - mountPath: /etc/ssl/certs/ca-certificates.crt
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/tls/certs/ca-bundle.crt
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/ssl/ca-bundle.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/tls/cacert.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+                  name: ca-bundle-pem
+                  readOnly: true
+                  subPath: ca-bundle.pem
+                - mountPath: /etc/ssl/certs/java/cacerts
+                  name: ca-bundle-jks
+                  readOnly: true
+                  subPath: ca-bundle.jks
+                - mountPath: /var/run/secrets/nais.io/vault
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/vault
+                - mountPath: /var/run/secrets/nais.io/kv
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/kv
+                - mountPath: /var/run/secrets/nais.io/innsending-system-tests
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/innsending-system-tests
+                - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
+              env:
+                - name: VAULT_TOKEN_PATH
+                  value: /var/run/secrets/nais.io/vault/vault_token
+                - name: APP_VERSION
+                  value: {{ app_version }}
+                - name: KAFKA_BOOTSTRAP_SERVERS
+                  value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
+                - name: SCHEMA_REGISTRY_URL
+                  value: https://kafka-schema-registry.nais.preprod.local
+                - name: KAFKA_SECURITY
+                  value: 'TRUE'
+                - name: KAFKA_SECPROT
+                  value: SASL_SSL
+                - name: KAFKA_SASLMEC
+                  value: PLAIN
+                - name: SPRING_PROFILES_ACTIVE
+                  value: dev
+                - name: KAFKA_INPUT_TOPIC
+                  value: privat-soknadInnsendt-v1-teamsoknad
+                - name: KAFKA_PROCESSING_TOPIC
+                  value: privat-soknadInnsendt-processingEventLog-v1-teamsoknad
+                - name: KAFKA_MESSAGE_TOPIC
+                  value: privat-soknadInnsendt-messages-v1-teamsoknad
+                - name: KAFKA_METRICS_TOPIC
+                  value: privat-soknadInnsendt-metrics-v1-teamsoknad
+                - name: SOKNADSFILLAGER_URL
+                  value: https://soknadsfillager.dev.adeo.no
+                - name: SOKNADSMOTTAKER_URL
+                  value: https://soknadsmottaker.dev.adeo.no
+                - name: NAV_TRUSTSTORE_PATH
+                  value: /etc/ssl/certs/java/cacerts
+                - name: NAV_TRUSTSTORE_PASSWORD
+                  value: changeme
+          initContainers:
+            - name: vks-init
+              image: navikt/vault-sidekick:v0.3.10-26ad67d
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "1000m"
+              volumeMounts:
+                - mountPath: /var/run/secrets/nais.io/vault
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/vault
+                - mountPath: /var/run/secrets/nais.io/kv
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/kv
+                - mountPath: /var/run/secrets/nais.io/innsending-system-tests
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/innsending-system-tests
+                - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
+                  name: vault-secrets
+                  subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
+              args:
+                - -v=10
+                - -logtostderr
+                - -vault=https://vault.adeo.no
+                - -one-shot
+                - -save-token=/var/run/secrets/nais.io/vault/vault_token
+                - -cn=secret:kv/preprod/fss/innsending-system-tests/team-soknad:dir=/var/run/secrets/nais.io/innsending-system-tests,fmt=flatten,retries=1
+                - -cn=secret:/serviceuser/data/dev/srvinnsendingtests:dir=/var/run/secrets/nais.io/srvinnsendingtests,fmt=flatten,retries=1
+              env:
+                - name: VAULT_AUTH_METHOD
+                  value: kubernetes
+                - name: VAULT_SIDEKICK_ROLE
+                  value: innsending-system-tests
+                - name: VAULT_K8S_LOGIN_PATH
+                  value: auth/kubernetes/preprod/fss/login
+          volumes:
+            - name: vault-secrets
+              emptyDir:
+                medium: Memory
+            - name: ca-bundle-jks
+              configMap:
+                defaultMode: 420
+                name: ca-bundle-jks
+            - name: ca-bundle-pem
+              configMap:
+                defaultMode: 420
+                name: ca-bundle-pem
