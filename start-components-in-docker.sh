@@ -15,7 +15,7 @@ wait_for_service_to_start() {
 	component="$1"
 	url="http://localhost:$2/internal/health"
 
-	for i in {1..90}
+	for i in {1..250}
 	do
 		if [[ $(curl -s -XGET $url) == {\"status\":\"UP\"* ]]; then
 			echo -e "${GREEN}Started $component${NOCOLOUR}"
