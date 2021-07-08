@@ -6,9 +6,9 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-#  schedule: "0 2 * * SUN"    # Every Sunday at 2 am
+  schedule: "0 2 * * SUN"    # Every Sunday at 2 am
 #  schedule: "0 */5 * * *" # Every five hours
-  schedule: "45 * * * *"  # Once an hour, at 45 past
+#  schedule: "30 * * * *"  # Once an hour, at 30 past
   startingDeadlineSeconds: 200
   ttlSecondsAfterFinished: 3600
   jobTemplate:
