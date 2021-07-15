@@ -4,7 +4,6 @@ This repository contains scripts to run the entire archiving system locally. It 
 As is evident by their names, the end-to-end tests will perform various tests on the system as a whole from the outside and test various behaviours of the system. The load tests will make many simultaneous requests to the system and make sure that the components can handle the load without breaking.
 
 ### Repository overview
-* **arkiv-mock**: Mocked version of the Joark archive. Used for the end-to-end tests.
 * **docs**: Documentation resources.
 * **system-tests**: Contains the end-to-end tests and load tests.
 * **docker-compose.yml**: File with definitions on how to build Docker images locally.

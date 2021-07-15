@@ -45,7 +45,7 @@ services:
 
 
   arkiv-mock:
-    build: arkiv-mock
+    build: ../arkiv-mock
     ports:
       - 8092:8092
     environment:

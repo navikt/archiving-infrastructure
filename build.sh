@@ -13,7 +13,7 @@ components=()
 components+=("../soknadsmottaker")
 components+=("../soknadsarkiverer")
 components+=("../soknadsfillager")
-components+=("./arkiv-mock")
+components+=("../arkiv-mock")
 
 
 check_sufficient_java_version() {
