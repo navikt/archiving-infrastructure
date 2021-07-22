@@ -9,7 +9,7 @@ import java.time.Duration
 
 class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
-	private val databaseName = "soknadsfillager"
+	private val databaseName = "postgres"
 	private val kafkaProperties = KafkaProperties()
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
@@ -61,12 +61,14 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
 
+		schemaRegistryContainer.start()
+
 		soknadsfillagerContainer = KGenericContainer("archiving-infrastructure_soknadsfillager")
 			.withNetworkAliases("soknadsfillager")
 			.withExposedPorts(defaultPorts["soknadsfillager"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
-				"SPRING_PROFILES_ACTIVE" to "docker",
+				"APPLICATION_PROFILE" to "docker",
 				"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
 				"DATABASE_NAME" to databaseName,
 				"APPLICATION_USERNAME" to postgresUsername,
@@ -74,32 +76,34 @@ class EmbeddedDockerImages {
 			.dependsOn(postgresContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(2)))
 
-		schemaRegistryContainer.start()
+		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
+			.withNetworkAliases("soknadsmottaker")
+			.withExposedPorts(defaultPorts["soknadsmottaker"])
+			.withNetwork(network)
+			.withEnv(hashMapOf(
+				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}"))
+			.dependsOn(kafkaContainer, schemaRegistryContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
 		soknadsfillagerContainer.start()
+		soknadsmottakerContainer.start()
 
 		arkivMockContainer = KGenericContainer("archiving-infrastructure_arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
 			.withExposedPorts(defaultPorts["arkiv-mock"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
-				"SPRING_PROFILES_ACTIVE" to "docker",
+				"APPLICATION_PROFILE" to "docker",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}"))
-			.dependsOn(kafkaContainer, schemaRegistryContainer)
+				"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
+				"DATABASE_NAME" to databaseName,
+				"APPLICATION_USERNAME" to postgresUsername,
+				"APPLICATION_PASSWORD" to postgresUsername))
+			.dependsOn(postgresContainer, kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		arkivMockContainer.start()
-
-		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure_soknadsmottaker")
-			.withNetworkAliases("soknadsmottaker")
-			.withExposedPorts(defaultPorts["soknadsmottaker"])
-			.withNetwork(network)
-			.withEnv(hashMapOf(
-				"SPRING_PROFILES_ACTIVE" to "docker",
-				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}"))
-			.dependsOn(kafkaContainer, schemaRegistryContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure_soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
@@ -107,7 +111,7 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(hashMapOf(
 				"SPRING_PROFILES_ACTIVE" to "test",
-				"BOOTSTRAPPING_TIMEOUT" to "10",
+				"BOOTSTRAPPING_TIMEOUT" to "60",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
 				"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
@@ -115,7 +119,6 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
-		soknadsmottakerContainer.start()
 		soknadsarkivererContainer.start()
 	}
 

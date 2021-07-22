@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 services:
 
   kafka-broker:
@@ -39,18 +39,10 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=soknadsfillager
+      - POSTGRES_DB=postgres
     ports:
       - 5432:5432
 
-
-  arkiv-mock:
-    build: ../arkiv-mock
-    ports:
-      - 8092:8092
-    environment:
-     - SPRING_PROFILES_ACTIVE=docker
-     - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
 
   soknadsmottaker:
     build: ../soknadsmottaker
@@ -59,8 +51,37 @@ services:
     depends_on:
       - kafka-broker
       - kafka-schema-registry
+
+  soknadsfillager:
+    build: ../soknadsfillager
+    ports:
+      - 9042:9042
+    depends_on:
+      - postgres
     environment:
-     - SPRING_PROFILES_ACTIVE=docker
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+      - APPLICATION_PROFILE=docker
+
+  arkiv-mock:
+    build: ../arkiv-mock
+    ports:
+      - 8092:8092
+    depends_on:
+      - postgres
+      - kafka-broker
+      - soknadsfillager
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+      - APPLICATION_PROFILE=docker
 
   soknadsarkiverer:
     build: ../soknadsarkiverer
@@ -72,23 +93,9 @@ services:
       - soknadsfillager
       - arkiv-mock
     environment:
-     - SPRING_PROFILES_ACTIVE=test
-     - FILESTORAGE_HOST=http://soknadsfillager:9042
-     - JOARK_HOST=http://arkiv-mock:8092
-     - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
-     - SCHEMA_REGISTRY_URL=http://kafka-schema-registry:8081
-
-  soknadsfillager:
-    build: ../soknadsfillager
-    ports:
-      - 9042:9042
-    depends_on:
-      - postgres
-    environment:
-     - SPRING_PROFILES_ACTIVE=docker
-     - DATABASE_HOST=postgres
-     - DATABASE_PORT=5432
-     - DATABASE_NAME=soknadsfillager
-     - DATABASE_USERNAME=postgres
-     - DATABASE_PASSWORD=postgres
-     - APPLICATION_PROFILE=docker
+      - SPRING_PROFILES_ACTIVE=test
+      - FILESTORAGE_HOST=http://soknadsfillager:9042
+      - JOARK_HOST=http://arkiv-mock:8092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
+      - SCHEMA_REGISTRY_URL=http://kafka-schema-registry:8081
+      - BOOTSTRAPPING_TIMEOUT=1
