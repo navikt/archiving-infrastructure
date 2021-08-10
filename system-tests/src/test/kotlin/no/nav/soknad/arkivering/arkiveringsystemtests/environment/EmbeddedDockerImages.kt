@@ -2,7 +2,10 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.kafka.KafkaProperties
 import org.junit.jupiter.api.fail
-import org.testcontainers.containers.*
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.containers.Network
+import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
@@ -110,7 +113,7 @@ class EmbeddedDockerImages {
 			.withExposedPorts(defaultPorts["soknadsarkiverer"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
-				"SPRING_PROFILES_ACTIVE" to "test",
+				"APPLICATION_PROFILE" to "test",
 				"BOOTSTRAPPING_TIMEOUT" to "60",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",

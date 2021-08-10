@@ -8,7 +8,7 @@ metadata:
 spec:
 #  schedule: "0 2 * * MON" # Every Monday at 2 am
 #  schedule: "0 */5 * * *" # Every five hours
-  schedule: "40 * * * *"  # Once an hour, at 40 past
+  schedule: "10 * * * *"  # Once an hour, at 10 past
   startingDeadlineSeconds: 200
   ttlSecondsAfterFinished: 3600
   jobTemplate:
@@ -96,7 +96,7 @@ spec:
                   value: https://soknadsfillager.dev.adeo.no
                 - name: SOKNADSMOTTAKER_URL
                   value: https://soknadsmottaker.dev.adeo.no
-                - name: ARKIV-MOCK_URL
+                - name: ARKIVMOCK_URL
                   value: https://arkiv-mock.dev.intern.nav.no
                 - name: NAV_TRUSTSTORE_PATH
                   value: /etc/ssl/certs/java/cacerts
