@@ -20,6 +20,7 @@ fun main() {
 		println("Load tests were erroneous: $t")
 		exitStatus = 1
 	} finally {
+		loadTests.resetArkivMockDatabase()
 		exitProcess(exitStatus)
 	}
 }

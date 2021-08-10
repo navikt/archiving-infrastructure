@@ -105,7 +105,7 @@ class VerificationTask<T> private constructor(
 	}
 
 
-	class Builder<T>(private var timeout: Long = verificationDefaultTimeout) {
+	class Builder<T>(private var timeout: Long = -1) {
 
 		private var channel: Channel<Pair<String, Boolean>> = Channel(0)
 		private var verifier: MutableList<Assertion<*, T>> = mutableListOf()
@@ -118,12 +118,20 @@ class VerificationTask<T> private constructor(
 		fun verifyPresence(): VerificationSteps { this.presence = Presence.PRESENCE; return VerificationSteps(this) }
 		fun verifyAbsence() = apply { this.presence = Presence.ABSENCE }
 
-		fun build() = VerificationTask(channel, key, verifier, presence, timeout)
+		fun build() = VerificationTask(channel, key, verifier, presence, getTimeout())
 
 		inner class VerificationSteps(private val builder: Builder<T>) {
 			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) =
 				apply { verifier.add(Assertion(expected, function, message)) }
 			fun build() = builder.build()
+		}
+
+		private fun getTimeout(): Long {
+			return when {
+				timeout >= 0 -> timeout
+				presence == Presence.PRESENCE -> verificationDefaultPresenseTimeout
+				else -> verificationDefaultAbsenceTimeout
+			}
 		}
 	}
 
@@ -131,4 +139,5 @@ class VerificationTask<T> private constructor(
 	private enum class Presence { PRESENCE, ABSENCE }
 }
 
-private const val verificationDefaultTimeout = 30_000L
+private const val verificationDefaultAbsenceTimeout = 30_000L
+private const val verificationDefaultPresenseTimeout = 100_000L
