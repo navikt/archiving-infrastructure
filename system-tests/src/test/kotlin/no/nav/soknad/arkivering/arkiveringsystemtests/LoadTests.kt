@@ -38,6 +38,7 @@ class KjellmanLoadTests : SystemTestBase() {
 
 	@AfterAll
 	fun teardown() {
+		loadTests.resetArkivMockDatabase()
 		tearDown()
 		if (targetEnvironment == "embedded") {
 			embeddedDockerImages.stopContainers()

@@ -1,7 +1,10 @@
 package no.nav.soknad.arkivering
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.innsending.performDeleteCall
 import no.nav.soknad.arkivering.innsending.sendDataToMottaker
 import no.nav.soknad.arkivering.innsending.sendFilesToFileStorage
 import no.nav.soknad.arkivering.kafka.KafkaListener
@@ -157,6 +160,14 @@ class LoadTests(private val config: Configuration) {
 	private fun setupVerificationThatFinishedEventsAreCreated(countAndTimeout: Pair<Int, Long>): AssertionHelper {
 		return AssertionHelper(kafkaListener)
 			.hasNumberOfFinishedEvents(countAndTimeout)
+	}
+
+	fun resetArkivMockDatabase() {
+		try {
+			performDeleteCall(config.config.arkivMockUrl + "/rest/journalpostapi/v1/reset")
+		} catch (e: Exception) {
+			println("Error when resetting ArkivMock database: $e")
+		}
 	}
 }
 
