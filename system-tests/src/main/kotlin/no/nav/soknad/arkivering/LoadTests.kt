@@ -164,9 +164,10 @@ class LoadTests(private val config: Configuration) {
 
 	fun resetArkivMockDatabase() {
 		try {
+			println("Resetting arkiv-mock database")
 			performDeleteCall(config.config.arkivMockUrl + "/rest/journalpostapi/v1/reset")
 		} catch (e: Exception) {
-			println("Error when resetting ArkivMock database: $e")
+			println("Error when resetting arkiv-mock database: $e")
 		}
 	}
 }
