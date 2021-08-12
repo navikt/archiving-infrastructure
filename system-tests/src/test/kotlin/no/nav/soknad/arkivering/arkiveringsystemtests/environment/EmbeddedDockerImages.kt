@@ -113,7 +113,7 @@ class EmbeddedDockerImages {
 			.withExposedPorts(defaultPorts["soknadsarkiverer"])
 			.withNetwork(network)
 			.withEnv(hashMapOf(
-				"APPLICATION_PROFILE" to "test",
+				"SPRING_PROFILES_ACTIVE" to "test",
 				"BOOTSTRAPPING_TIMEOUT" to "60",
 				"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
