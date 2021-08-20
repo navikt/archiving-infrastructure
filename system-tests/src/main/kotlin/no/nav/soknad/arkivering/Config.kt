@@ -15,7 +15,6 @@ val defaultPorts = HashMap<String, Int>().also {
 }
 
 val defaultProperties = mapOf(
-	"APP_VERSION"              to "",
 	"USERNAME"                 to "arkiverer",
 	"PASSWORD"                 to "",
 	"KAFKA_SECURITY"           to "",
@@ -25,7 +24,6 @@ val defaultProperties = mapOf(
 	"KAFKA_PROCESSING_TOPIC"   to "privat-soknadInnsendt-processingEventLog-v1-teamsoknad",
 	"KAFKA_MESSAGE_TOPIC"      to "privat-soknadInnsendt-messages-v1-teamsoknad",
 	"KAFKA_METRICS_TOPIC"      to "privat-soknadInnsendt-metrics-v1-teamsoknad",
-
 
 	"SOKNADSFILLAGER_URL"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"SOKNADSMOTTAKER_URL"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
@@ -58,7 +56,6 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 	data class KafkaConfig(
 		val overridingProperties: Map<String, String>,
 
-		val version: String = "APP_VERSION".configProperty(overridingProperties),
 		val username: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/username", "USERNAME".configProperty(overridingProperties)),
 		val password: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/password", "PASSWORD".configProperty(overridingProperties)),
 		val servers: String = "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties),
