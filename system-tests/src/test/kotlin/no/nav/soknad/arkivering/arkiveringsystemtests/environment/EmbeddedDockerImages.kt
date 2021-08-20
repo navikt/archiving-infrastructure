@@ -37,7 +37,7 @@ class EmbeddedDockerImages {
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
 
-		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"))
+		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
