@@ -16,14 +16,15 @@ import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
 
 class KafkaPublisher(private val appConfiguration: Configuration) {
 
 	private val kafkaProperties = KafkaProperties()
 	private val kafkaInputProducer = KafkaProducer<String, Soknadarkivschema>(kafkaConfigMap())
 	private val kafkaProcessingEventProducer = KafkaProducer<String, ProcessingEvent>(kafkaConfigMap())
-	private val kafkaStringProducer = KafkaProducer<String, String>(kafkaConfigMap().also { it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java })
+	private val kafkaStringProducer = KafkaProducer<String, String>(kafkaConfigMap().also {
+		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
+	})
 
 	fun putDataOnTopic(key: String, value: Soknadarkivschema, headers: Headers = RecordHeaders()) {
 		val topic = kafkaProperties.inputTopic
@@ -43,8 +44,10 @@ class KafkaPublisher(private val appConfiguration: Configuration) {
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
-	private fun <T> putDataOnTopic(key: String?, value: T, headers: Headers, topic: String,
-																 kafkaProducer: KafkaProducer<String, T>): RecordMetadata {
+	private fun <T> putDataOnTopic(
+		key: String?, value: T, headers: Headers, topic: String,
+		kafkaProducer: KafkaProducer<String, T>
+	): RecordMetadata {
 
 		val producerRecord = ProducerRecord(topic, key, value)
 		headers.add("MESSAGE_ID", UUID.randomUUID().toString().toByteArray())

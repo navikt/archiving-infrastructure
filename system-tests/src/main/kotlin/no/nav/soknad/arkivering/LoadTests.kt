@@ -72,7 +72,13 @@ class LoadTests(private val config: Configuration) {
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
 
-	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 5) {
+	private fun performTest(
+		testName: String,
+		numberOfEntities: Int,
+		numberOfFilesPerEntity: Int,
+		file: String,
+		timeout: Int = 5
+	) {
 		println("\nStarting test: $testName")
 
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
