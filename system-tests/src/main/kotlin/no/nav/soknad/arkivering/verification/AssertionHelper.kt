@@ -107,8 +107,10 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return registerVerificationTasks(countVerifier, valueVerifier)
 	}
 
-	private fun registerVerificationTasks(countVerifier: VerificationTask<Int>,
-																				valueVerifier: VerificationTask<ArkivDbData>): AssertionHelper {
+	private fun registerVerificationTasks(
+		countVerifier: VerificationTask<Int>,
+		valueVerifier: VerificationTask<ArkivDbData>
+	): AssertionHelper {
 
 		verificationTaskManager.registerTasks(listOf(countVerifier, valueVerifier))
 		kafkaListener.addConsumerForEntities(valueVerifier)

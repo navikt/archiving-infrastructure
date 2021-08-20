@@ -21,7 +21,8 @@ class ProcessingEventConverter(private val metricsConsumer: MetricsConsumer) : K
 			"soknadsarkiverer",
 			timestampedEntity.entity.type.name,
 			timestampedEntity.timestamp,
-			-1)
+			-1
+		)
 
 		val value = KafkaTimestampedEntity(metrics, timestampedEntity.timestamp)
 

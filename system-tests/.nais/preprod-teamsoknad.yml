@@ -6,9 +6,9 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-#  schedule: "0 2 * * MON" # Every Monday at 2 am
-#  schedule: "0 */5 * * *" # Every five hours
-  schedule: "40 * * * *"  # Once an hour, at 40 past
+  schedule: "0 6 * * MON" # Every Monday at 6 am
+#  schedule: "0 */3 * * *" # Every three hours
+#  schedule: "30 * * * *"  # Once an hour, at 30 past
   startingDeadlineSeconds: 200
   ttlSecondsAfterFinished: 3600
   jobTemplate:
@@ -70,8 +70,6 @@ spec:
               env:
                 - name: VAULT_TOKEN_PATH
                   value: /var/run/secrets/nais.io/vault/vault_token
-                - name: APP_VERSION
-                  value: {{ app_version }}
                 - name: KAFKA_BOOTSTRAP_SERVERS
                   value: b27apvl00045.preprod.local:8443,b27apvl00046.preprod.local:8443,b27apvl00047.preprod.local:8443
                 - name: SCHEMA_REGISTRY_URL
@@ -82,8 +80,6 @@ spec:
                   value: SASL_SSL
                 - name: KAFKA_SASLMEC
                   value: PLAIN
-                - name: SPRING_PROFILES_ACTIVE
-                  value: dev
                 - name: KAFKA_INPUT_TOPIC
                   value: privat-soknadInnsendt-v1-teamsoknad
                 - name: KAFKA_PROCESSING_TOPIC
@@ -96,7 +92,7 @@ spec:
                   value: https://soknadsfillager.dev.adeo.no
                 - name: SOKNADSMOTTAKER_URL
                   value: https://soknadsmottaker.dev.adeo.no
-                - name: ARKIV-MOCK_URL
+                - name: ARKIVMOCK_URL
                   value: https://arkiv-mock.dev.intern.nav.no
                 - name: NAV_TRUSTSTORE_PATH
                   value: /etc/ssl/certs/java/cacerts

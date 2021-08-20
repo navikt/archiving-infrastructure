@@ -23,7 +23,7 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 
 	val numberOfAttempts = 10
 	val headers = appConfiguration.config.soknadsfillagerUsername to appConfiguration.config.soknadsfillagerPassword
-	for (i in 0 .. numberOfAttempts) {
+	for (i in 0..numberOfAttempts) {
 		performPostCall(files, url, headers, false)
 		if (verifyFileExists(uuid, appConfiguration))
 			return

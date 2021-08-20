@@ -2,9 +2,9 @@ package no.nav.soknad.arkivering.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import no.nav.soknad.arkivering.verification.VerificationTask.Presence
 import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
 import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
+import no.nav.soknad.arkivering.verification.VerificationTask.Presence
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
@@ -34,7 +34,7 @@ class VerificationTask<T> private constructor(
 	private val verifiers: MutableList<Assertion<*, T>>,
 	private val presence: Presence,
 	timeout: Long
-): KafkaEntityConsumer<T> {
+) : KafkaEntityConsumer<T> {
 
 	private var hasSent = AtomicBoolean(false)
 	private val observedValues = mutableListOf<T>()
@@ -120,9 +120,12 @@ class VerificationTask<T> private constructor(
 
 		fun build() = VerificationTask(channel, key, verifier, presence, getTimeout())
 
+
 		inner class VerificationSteps(private val builder: Builder<T>) {
+
 			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) =
 				apply { verifier.add(Assertion(expected, function, message)) }
+
 			fun build() = builder.build()
 		}
 

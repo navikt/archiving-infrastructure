@@ -72,7 +72,13 @@ class LoadTests(private val config: Configuration) {
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
 
-	private fun performTest(testName: String, numberOfEntities: Int, numberOfFilesPerEntity: Int, file: String, timeout: Int = 5) {
+	private fun performTest(
+		testName: String,
+		numberOfEntities: Int,
+		numberOfFilesPerEntity: Int,
+		file: String,
+		timeout: Int = 5
+	) {
 		println("\nStarting test: $testName")
 
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
@@ -164,9 +170,10 @@ class LoadTests(private val config: Configuration) {
 
 	fun resetArkivMockDatabase() {
 		try {
+			println("Resetting arkiv-mock database")
 			performDeleteCall(config.config.arkivMockUrl + "/rest/journalpostapi/v1/reset")
 		} catch (e: Exception) {
-			println("Error when resetting ArkivMock database: $e")
+			println("Error when resetting arkiv-mock database: $e")
 		}
 	}
 }

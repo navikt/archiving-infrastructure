@@ -89,7 +89,7 @@ fun performDeleteCall(url: String) {
 }
 
 private val restRequestCallback = object : Callback {
-	override fun onResponse(call: Call, response: Response) { }
+	override fun onResponse(call: Call, response: Response) {}
 
 	override fun onFailure(call: Call, e: IOException) {
 		throw e

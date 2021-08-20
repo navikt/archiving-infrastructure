@@ -7,8 +7,11 @@ import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-fun loopAndVerify(expectedCount: Int, getCount: () -> Int,
-									finalCheck: () -> Any = { assert(expectedCount == getCount.invoke()) }) {
+fun loopAndVerify(
+	expectedCount: Int,
+	getCount: () -> Int,
+	finalCheck: () -> Any = { assert(expectedCount == getCount.invoke()) }
+) {
 
 	val startTime = System.currentTimeMillis()
 	val timeout = 30 * 1000
@@ -27,7 +30,8 @@ fun loopAndVerify(expectedCount: Int, getCount: () -> Int,
 
 private const val fnr = "10108000398" // Not a real fnr
 
-fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) = createDto(listOf(fileId), innsendingsId)
+fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
+	createDto(listOf(fileId), innsendingsId)
 
 fun createDto(fileIds: List<String>, innsendingsId: String = UUID.randomUUID().toString()) =
 	SoknadInnsendtDto(innsendingsId, false, fnr, "BIL", LocalDateTime.now(), createInnsendtDokumentDtos(fileIds))

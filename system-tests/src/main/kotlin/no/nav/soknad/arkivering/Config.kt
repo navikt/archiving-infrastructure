@@ -15,7 +15,6 @@ val defaultPorts = HashMap<String, Int>().also {
 }
 
 val defaultProperties = mapOf(
-	"APP_VERSION"              to "",
 	"USERNAME"                 to "arkiverer",
 	"PASSWORD"                 to "",
 	"KAFKA_SECURITY"           to "",
@@ -26,11 +25,10 @@ val defaultProperties = mapOf(
 	"KAFKA_MESSAGE_TOPIC"      to "privat-soknadInnsendt-messages-v1-teamsoknad",
 	"KAFKA_METRICS_TOPIC"      to "privat-soknadInnsendt-metrics-v1-teamsoknad",
 
-
 	"SOKNADSFILLAGER_URL"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"SOKNADSMOTTAKER_URL"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"SOKNADSARKIVERER_URL"     to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
-	"ARKIV-MOCK_URL"           to "http://localhost:${defaultPorts["arkiv-mock"]}",
+	"ARKIVMOCK_URL"            to "http://localhost:${defaultPorts["arkiv-mock"]}",
 	"SCHEMA_REGISTRY_URL"      to "http://localhost:${defaultPorts["schema-registry"]}",
 	"KAFKA_BOOTSTRAP_SERVERS"  to "localhost:${defaultPorts["kafka-broker"]}",
 	"SOKNADSFILLAGER_USERNAME" to "arkiverer",
@@ -58,7 +56,6 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 	data class KafkaConfig(
 		val overridingProperties: Map<String, String>,
 
-		val version: String = "APP_VERSION".configProperty(overridingProperties),
 		val username: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/username", "USERNAME".configProperty(overridingProperties)),
 		val password: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/password", "PASSWORD".configProperty(overridingProperties)),
 		val servers: String = "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties),
@@ -82,6 +79,6 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val soknadsfillagerUrl: String = "SOKNADSFILLAGER_URL".configProperty(overridingProperties),
 		val soknadsfillagerUsername: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsfillager_username", "SOKNADSFILLAGER_USERNAME".configProperty(overridingProperties)),
 		val soknadsfillagerPassword: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsfillager_password", "SOKNADSFILLAGER_PASSWORD".configProperty(overridingProperties)),
-		val arkivMockUrl: String = "ARKIV-MOCK_URL".configProperty(overridingProperties),
+		val arkivMockUrl: String = "ARKIVMOCK_URL".configProperty(overridingProperties),
 	)
 }
