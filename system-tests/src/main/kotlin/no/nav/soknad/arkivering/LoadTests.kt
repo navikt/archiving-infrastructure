@@ -51,7 +51,7 @@ class LoadTests(private val config: Configuration) {
 		val numberOfFilesPerEntity = 8
 		val file = fileOfSize38mb
 
-		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 60)
 	}
 
 	fun `100 simultaneous entities, 2 times 2 MB each`() {

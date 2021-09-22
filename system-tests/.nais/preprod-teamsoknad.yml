@@ -7,7 +7,7 @@ metadata:
   namespace: team-soknad
 spec:
 #  schedule: "0 6 * * MON" # Every Monday at 6 am
-  schedule: "0 */3 * * *" # Every three hours
+  schedule: "0 */5 * * *" # Every five hours
 #  schedule: "30 * * * *"  # Once an hour, at 30 past
   startingDeadlineSeconds: 200
   ttlSecondsAfterFinished: 3600

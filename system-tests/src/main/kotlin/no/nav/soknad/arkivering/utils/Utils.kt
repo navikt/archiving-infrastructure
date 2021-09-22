@@ -44,5 +44,5 @@ private fun createInnsendtDokumentDtos(fileIds: List<String>): List<InnsendtDoku
 	)
 
 private fun createInnsendtDokumentDto(id: String, erHovedskjema: Boolean) =
-	InnsendtDokumentDto("NAV 10-07.17", erHovedskjema, "Søknad om refusjon av reiseutgifter - bil",
+	InnsendtDokumentDto("NAV 10-07.17", erHovedskjema, "Søknad fra lasttest",
 		listOf(InnsendtVariantDto(id, null, "filnavn", "1024", "ARKIV", "PDFA")))
