@@ -89,9 +89,9 @@ spec:
                 - name: KAFKA_METRICS_TOPIC
                   value: privat-soknadInnsendt-metrics-v1-teamsoknad
                 - name: SOKNADSFILLAGER_URL
-                  value: https://soknadsfillager.dev.adeo.no
+                  value: https://soknadsfillager.dev.intern.nav.no
                 - name: SOKNADSMOTTAKER_URL
-                  value: https://soknadsmottaker.dev.adeo.no
+                  value: https://soknadsmottaker.dev.intern.nav.no
                 - name: ARKIVMOCK_URL
                   value: https://arkiv-mock.dev.intern.nav.no
                 - name: NAV_TRUSTSTORE_PATH
