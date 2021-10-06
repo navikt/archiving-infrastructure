@@ -5,9 +5,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okio.BufferedSink
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.*
 
+private val logger = LoggerFactory.getLogger("RestUtils")
 
 private val restClient = OkHttpClient()
 val objectMapper = ObjectMapper().also {
@@ -25,7 +27,7 @@ fun performGetCall(url: String, usernameAndPassword: Pair<String, String>): Byte
 		return if (it.isSuccessful) {
 			it.body?.bytes()
 		} else {
-			println(it.networkResponse)
+			logger.error("Get call not successful: ${it.networkResponse}")
 			null
 		}
 	}

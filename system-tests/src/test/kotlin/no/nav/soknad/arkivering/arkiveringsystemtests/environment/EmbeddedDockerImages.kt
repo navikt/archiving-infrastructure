@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.kafka.KafkaProperties
 import org.junit.jupiter.api.fail
+import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.Network
@@ -11,6 +12,8 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 
 class EmbeddedDockerImages {
+	private val logger = LoggerFactory.getLogger(javaClass)
+
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 	private val kafkaProperties = KafkaProperties()
@@ -150,7 +153,7 @@ class EmbeddedDockerImages {
 		try {
 			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topic)
 			if (result.exitCode != 0) {
-				println("\n\nKafka Container logs:\n${kafkaContainer.logs}")
+				logger.error("\n\nKafka Container logs:\n${kafkaContainer.logs}")
 				fail("Failed to create topic '$topicName'. Error:\n${result.stderr}")
 			}
 		} catch (e: Exception) {
@@ -164,10 +167,10 @@ class EmbeddedDockerImages {
 			val box = "=".repeat(9 + name.length)
 			return "\n\n$box\n= Logs $name =\n$box\n"
 		}
-		println(createHeader("soknadsfillager") + soknadsfillagerContainer.logs)
-		println(createHeader("soknadsmottaker") + soknadsmottakerContainer.logs)
-		println(createHeader("soknadsarkiverer") + soknadsarkivererContainer.logs)
-		println(createHeader("arkiv-mock") + arkivMockContainer.logs)
+		logger.info(createHeader("soknadsfillager") + soknadsfillagerContainer.logs)
+		logger.info(createHeader("soknadsmottaker") + soknadsmottakerContainer.logs)
+		logger.info(createHeader("soknadsarkiverer") + soknadsarkivererContainer.logs)
+		logger.info(createHeader("arkiv-mock") + arkivMockContainer.logs)
 
 		soknadsfillagerContainer.stop()
 		soknadsmottakerContainer.stop()

@@ -15,10 +15,12 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
+import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 import java.util.*
 
 class EndToEndTests : SystemTestBase() {
+	private val logger = LoggerFactory.getLogger(javaClass)
 
 	private val embeddedDockerImages = EmbeddedDockerImages()
 
@@ -308,7 +310,7 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto) {
-		println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		logger.debug("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		sendDataToMottaker(dto, false, config)
 	}
 

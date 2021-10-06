@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.FilElementDto
 import no.nav.soknad.arkivering.utils.loopAndVerify
+import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
+private val logger = LoggerFactory.getLogger("Soknadsfillager")
 
 fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
 	val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
@@ -13,7 +15,7 @@ fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
 }
 
 fun sendFilesToFileStorage(uuid: String, payload: ByteArray, message: String, appConfiguration: Configuration) {
-	println(message)
+	logger.debug(message)
 	sendFilesToFileStorageAndVerify(uuid, payload, appConfiguration)
 }
 
@@ -27,9 +29,9 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 		performPostCall(files, url, headers, false)
 		if (verifyFileExists(uuid, appConfiguration))
 			return
-		println("Failed to verify file '$uuid' - reattempting")
+		logger.warn("Failed to verify file '$uuid' - reattempting")
 	}
-	println("Failed to send file '$uuid' to Filestorage after $numberOfAttempts attempts!!")
+	logger.error("Failed to send file '$uuid' to Filestorage after $numberOfAttempts attempts!!")
 }
 
 fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appConfiguration: Configuration) {

@@ -15,10 +15,12 @@ import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
+import org.slf4j.LoggerFactory
 import java.time.ZoneOffset
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class SystemTestBase {
+	private val logger = LoggerFactory.getLogger(javaClass)
 
 	val attemptsThanSoknadsarkivererWillPerform = 6
 
@@ -32,7 +34,7 @@ abstract class SystemTestBase {
 
 
 	fun setUp() {
-		println("Target Environment: $targetEnvironment")
+		logger.info("Target Environment: $targetEnvironment")
 		if (isExternalEnvironment)
 			checkThatDependenciesAreUp()
 
@@ -82,17 +84,17 @@ abstract class SystemTestBase {
 
 
 	fun putPoisonPillOnKafkaTopic(key: String) {
-		println("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		logger.debug("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
 	fun putInputEventOnKafkaTopic(key: String, innsendingsId: String, fileId: String) {
-		println("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		logger.debug("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(innsendingsId, fileId))
 	}
 
 	fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
-		println("Processing event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		logger.debug("Processing event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		eventTypes.forEach { eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
 	}
 

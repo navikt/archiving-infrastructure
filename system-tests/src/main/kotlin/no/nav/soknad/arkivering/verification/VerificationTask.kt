@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
 import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
 import no.nav.soknad.arkivering.verification.VerificationTask.Presence
+import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
@@ -36,6 +37,8 @@ class VerificationTask<T> private constructor(
 	timeout: Long
 ) : KafkaEntityConsumer<T> {
 
+	private val logger = LoggerFactory.getLogger(javaClass)
+
 	private var hasSent = AtomicBoolean(false)
 	private val observedValues = mutableListOf<T>()
 
@@ -43,12 +46,12 @@ class VerificationTask<T> private constructor(
 		Timer("VerificationTaskTimer", false).schedule(timeout) {
 			if (presence == Presence.ABSENCE) {
 				// Verify absence - send satisfied signal after timeout.
-				println("Verifying absence - sending Satisfied signal")
+				logger.info("Verifying absence - sending Satisfied signal")
 				sendSatisfiedSignal()
 			} else {
 				// Verify presence - send dissatisfied signal after timeout.
 				if (hasSent.get().not()) {
-					println("Verifying presence - sending Dissatisfied signal")
+					logger.warn("Verifying presence - sending Dissatisfied signal")
 					sendDissatisfiedSignal()
 				}
 			}

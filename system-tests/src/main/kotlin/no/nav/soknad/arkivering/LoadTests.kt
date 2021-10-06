@@ -11,10 +11,12 @@ import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import no.nav.soknad.arkivering.verification.inMinutes
+import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class LoadTests(private val config: Configuration) {
+	private val logger = LoggerFactory.getLogger(javaClass)
 	/*
 	Nils-Arne, 2020-12-11:
 	Har sjekket på filstørrelser og antall på innsendte søknader siste 100 dager i arkivet.
@@ -34,7 +36,7 @@ class LoadTests(private val config: Configuration) {
 
 		val numberOfEntities = 10_000
 		val numberOfFilesPerEntity = 1
-		println("\nStarting test: $testName")
+		logger.info("\nStarting test: $testName")
 		uploadData(numberOfEntities, "0".toByteArray(), testName)
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(numberOfEntities inMinutes 30)
@@ -42,7 +44,7 @@ class LoadTests(private val config: Configuration) {
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
 		verifier.verify()
-		println("Finished test: $testName\n")
+		logger.info("Finished test: $testName\n")
 	}
 
 	fun `5 simultaneous entities, 8 times 38 MB each`() {
@@ -79,7 +81,7 @@ class LoadTests(private val config: Configuration) {
 		file: String,
 		timeout: Int = 5
 	) {
-		println("\nStarting test: $testName")
+		logger.info("\nStarting test: $testName")
 
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
@@ -88,7 +90,7 @@ class LoadTests(private val config: Configuration) {
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
 		verifier.verify()
-		println("Finished test: $testName\n")
+		logger.info("Finished test: $testName\n")
 	}
 
 
@@ -114,7 +116,7 @@ class LoadTests(private val config: Configuration) {
 
 	private fun warmupArchivingChain() {
 		val startTime = System.currentTimeMillis()
-		println("Warming up the archiving chain by sending a single message through the system")
+		logger.debug("Warming up the archiving chain by sending a single message through the system")
 
 		val fileId = "warmup_" + UUID.randomUUID().toString()
 		val dto = createDto(fileId)
@@ -123,7 +125,7 @@ class LoadTests(private val config: Configuration) {
 
 		setupVerificationThatFinishedEventsAreCreated(1 inMinutes 1).verify()
 
-		println("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
+		logger.debug("Archiving chain is warmed up in ${System.currentTimeMillis() - startTime} ms.")
 	}
 
 
@@ -132,7 +134,7 @@ class LoadTests(private val config: Configuration) {
 	 */
 	private fun sendDataToMottakerAsync(numberOfEntities: Int, numberOfFilesPerEntity: Int): List<SoknadInnsendtDto> {
 		val startTimeSendingToMottaker = System.currentTimeMillis()
-		println("About to send $numberOfEntities entities to Mottaker")
+		logger.info("About to send $numberOfEntities entities to Mottaker")
 
 		val atomicInteger = AtomicInteger()
 		val dtos = runBlocking {
@@ -143,7 +145,7 @@ class LoadTests(private val config: Configuration) {
 		}
 
 		val finishTimeSendingToMottaker = System.currentTimeMillis()
-		println("Sent $numberOfEntities entities to Mottaker in ${finishTimeSendingToMottaker - startTimeSendingToMottaker} ms")
+		logger.info("Sent $numberOfEntities entities to Mottaker in ${finishTimeSendingToMottaker - startTimeSendingToMottaker} ms")
 		return dtos
 	}
 
@@ -159,7 +161,7 @@ class LoadTests(private val config: Configuration) {
 
 	private fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
 		if (verbose)
-			println("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
+			logger.debug("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		sendDataToMottaker(dto, async, config)
 	}
 
@@ -170,10 +172,10 @@ class LoadTests(private val config: Configuration) {
 
 	fun resetArkivMockDatabase() {
 		try {
-			println("Resetting arkiv-mock database")
+			logger.info("Resetting arkiv-mock database")
 			performDeleteCall(config.config.arkivMockUrl + "/rest/journalpostapi/v1/reset")
 		} catch (e: Exception) {
-			println("Error when resetting arkiv-mock database: $e")
+			logger.error("Error when resetting arkiv-mock database", e)
 		}
 	}
 }
