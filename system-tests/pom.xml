@@ -60,6 +60,14 @@
 			<version>${logback.version}</version>
 		</dependency>
 		<dependency>
+<<<<<<< Updated upstream
+=======
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>${logstash.version}</version>
+		</dependency>
+		<dependency>
+>>>>>>> Stashed changes
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
