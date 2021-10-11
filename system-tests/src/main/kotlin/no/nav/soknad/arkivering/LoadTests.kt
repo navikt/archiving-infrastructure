@@ -36,7 +36,7 @@ class LoadTests(private val config: Configuration) {
 
 		val numberOfEntities = 10_000
 		val numberOfFilesPerEntity = 1
-		logger.info("\nStarting test: $testName")
+		logger.info("Starting test: $testName")
 		uploadData(numberOfEntities, "0".toByteArray(), testName)
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(numberOfEntities inMinutes 30)
@@ -44,7 +44,7 @@ class LoadTests(private val config: Configuration) {
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
 		verifier.verify()
-		logger.info("Finished test: $testName\n")
+		logger.info("Finished test: $testName")
 	}
 
 	fun `5 simultaneous entities, 8 times 38 MB each`() {
@@ -81,7 +81,7 @@ class LoadTests(private val config: Configuration) {
 		file: String,
 		timeout: Int = 5
 	) {
-		logger.info("\nStarting test: $testName")
+		logger.info("Starting test: $testName")
 
 		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
@@ -90,7 +90,7 @@ class LoadTests(private val config: Configuration) {
 		sendDataToMottakerAsync(numberOfEntities, numberOfFilesPerEntity)
 
 		verifier.verify()
-		logger.info("Finished test: $testName\n")
+		logger.info("Finished test: $testName")
 	}
 
 

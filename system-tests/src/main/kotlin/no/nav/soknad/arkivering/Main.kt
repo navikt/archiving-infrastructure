@@ -3,7 +3,7 @@ package no.nav.soknad.arkivering
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
-private val logger = LoggerFactory.getLogger("Main")
+private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 fun main() {
 	val config = Configuration()

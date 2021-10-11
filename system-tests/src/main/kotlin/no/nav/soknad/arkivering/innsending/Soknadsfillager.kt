@@ -7,7 +7,7 @@ import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 
-private val logger = LoggerFactory.getLogger("Soknadsfillager")
+private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.innsending.Soknadsfillager")
 
 fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
 	val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"

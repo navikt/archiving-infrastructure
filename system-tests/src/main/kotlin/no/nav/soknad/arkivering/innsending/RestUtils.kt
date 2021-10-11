@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.*
 
-private val logger = LoggerFactory.getLogger("RestUtils")
+private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.innsending.RestUtils")
 
 private val restClient = OkHttpClient()
 val objectMapper = ObjectMapper().also {
