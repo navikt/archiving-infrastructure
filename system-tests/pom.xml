@@ -14,6 +14,7 @@
 		<konfig.version>1.6.10.0</konfig.version>
 		<coroutines.version>1.5.2</coroutines.version>
 		<logback.version>1.2.6</logback.version>
+		<logstash.version>6.6</logstash.version>
 		<slf4j.version>1.7.32</slf4j.version>
 		<kafka-streams-avro-serde.version>6.2.1</kafka-streams-avro-serde.version>
 		<kafka.version>2.8.1</kafka.version>
@@ -60,14 +61,11 @@
 			<version>${logback.version}</version>
 		</dependency>
 		<dependency>
-<<<<<<< Updated upstream
-=======
 			<groupId>net.logstash.logback</groupId>
 			<artifactId>logstash-logback-encoder</artifactId>
 			<version>${logstash.version}</version>
 		</dependency>
 		<dependency>
->>>>>>> Stashed changes
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
