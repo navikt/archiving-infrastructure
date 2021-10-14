@@ -57,14 +57,12 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		val verificationTask = VerificationTask.Builder<InnsendingMetrics>()
 			.withManager(verificationTaskManager)
 			.withTimeout(timeoutInMs)
-			.forKey(key)
 			.verifyPresence()
 			.verifyThat(finishedEventIsPresent) { "Expected '$key' to have a FINISHED Processing Event, but saw none" }
 			.build()
 
-		metricsConsumer.addExternalConsumer(verificationTask)
-
 		verificationTaskManager.registerTasks(listOf(verificationTask))
+		metricsConsumer.addExternalConsumer(verificationTask)
 		kafkaListener.addConsumerForMetrics(verificationTask)
 
 		return this
