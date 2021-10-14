@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 /**
  * This class is for asynchronously verifying [VerificationTask]s that complete at some point in the future.
  * The [VerificationTask]s will at some point in the future signal if they succeed or fail through the [channel].
- * This class needs to be told which [VerificationTask]s to consider through the [registerTasks] function.
+ * This class needs to be told which [VerificationTask]s to consider through the [registerTask] function.
  * When calling [assertAllTasksSucceeds], the class will block and wait for all the registered tasks to complete.
  */
 class VerificationTaskManager {
@@ -24,8 +24,8 @@ class VerificationTaskManager {
 	private val tasks = mutableListOf<VerificationTask<*>>()
 
 
-	fun registerTasks(task: List<VerificationTask<*>>) {
-		tasks.addAll(task)
+	fun registerTask(task: VerificationTask<*>) {
+		tasks.add(task)
 	}
 
 	fun assertAllTasksSucceeds() {

@@ -153,9 +153,11 @@ class KafkaListener(private val appConfiguration: Configuration) {
 		processingEventConsumers.clear()
 	}
 
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers          .add(consumer)
+	@Suppress("unused")
 	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers         .add(consumer)
-	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers   .add(consumer)
+	@Suppress("unused")
 	fun addConsumerForNumberOfEntities(consumer: KafkaEntityConsumer<Int>)               = numberOfEntitiesConsumers.add(consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers          .add(consumer)
+	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers   .add(consumer)
 	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers .add(consumer)
 }

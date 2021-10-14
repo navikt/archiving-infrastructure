@@ -1,11 +1,9 @@
 package no.nav.soknad.arkivering.verification
 
-import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
+import no.nav.soknad.arkivering.avroschemas.EventTypes
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.dto.ArkivDbData
 import no.nav.soknad.arkivering.kafka.KafkaListener
-import no.nav.soknad.arkivering.metrics.MetricsConsumer
-import no.nav.soknad.arkivering.metrics.ProcessingEventConverter
 
 /**
  * This is a helper class for setting up asynchronous assertions of Kafka messages that will appear at some
@@ -23,47 +21,25 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	 */
 	private val verificationTaskManager = VerificationTaskManager()
 
-	/**
-	 * The [MetricsConsumer] will consume any and all [InnsendingMetrics] that appear on the appropriate Kafka topics
-	 */
-	private val metricsConsumer = MetricsConsumer()
-
-	/**
-	 * The [ProcessingEventConverter] is a helper class to convert [ProcessingEvent]'s to [InnsendingMetrics], so that
-	 * they can be consumed by the [metricsConsumer].
-	 */
-	private val processingEventConverter = ProcessingEventConverter(metricsConsumer)
-
 	init {
 		kafkaListener.clearConsumers()
-		addMetricsConsumers()
-	}
-
-	private fun addMetricsConsumers() {
-		kafkaListener.addConsumerForMetrics(metricsConsumer)
-		kafkaListener.addConsumerForProcessingEvents(processingEventConverter)
 	}
 
 
 	fun hasFinishedEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper {
 
-		val finishedEventIsPresent: (InnsendingMetrics) -> Boolean = {
-			metricsConsumer.getMetrics()
-				.filter { it.key == key }
-				.flatMap { it.value }
-				.any { it.action == "FINISHED" }
-		}
+		val finishedEventIsPresent: (ProcessingEvent) -> Boolean = { it.type == EventTypes.FINISHED }
 
-		val verificationTask = VerificationTask.Builder<InnsendingMetrics>()
+		val verificationTask = VerificationTask.Builder<ProcessingEvent>()
 			.withManager(verificationTaskManager)
 			.withTimeout(timeoutInMs)
+			.forKey(key)
 			.verifyPresence()
 			.verifyThat(finishedEventIsPresent) { "Expected '$key' to have a FINISHED Processing Event, but saw none" }
 			.build()
 
-		verificationTaskManager.registerTasks(listOf(verificationTask))
-		metricsConsumer.addExternalConsumer(verificationTask)
-		kafkaListener.addConsumerForMetrics(verificationTask)
+		verificationTaskManager.registerTask(verificationTask)
+		kafkaListener.addConsumerForProcessingEvents(verificationTask)
 
 		return this
 	}
@@ -80,7 +56,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			}
 			.build()
 
-		verificationTaskManager.registerTasks(listOf(verificationTask))
+		verificationTaskManager.registerTask(verificationTask)
 		kafkaListener.addConsumerForNumberOfCalls(verificationTask)
 
 		return this
@@ -93,7 +69,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.verifyPresence()
 			.build()
 
-		verificationTaskManager.registerTasks(listOf(verificationTask))
+		verificationTaskManager.registerTask(verificationTask)
 		kafkaListener.addConsumerForEntities(verificationTask)
 
 		return this
@@ -106,7 +82,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.verifyAbsence()
 			.build()
 
-		verificationTaskManager.registerTasks(listOf(verificationTask))
+		verificationTaskManager.registerTask(verificationTask)
 		kafkaListener.addConsumerForEntities(verificationTask)
 
 		return this
