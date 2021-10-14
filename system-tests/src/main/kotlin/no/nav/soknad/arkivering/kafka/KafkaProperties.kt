@@ -10,5 +10,4 @@ class KafkaProperties {
 
 	val entitiesTopic = "privat-soknadInnsendt-endToEndTests-entities"
 	val numberOfCallsTopic = "privat-soknadInnsendt-endToEndTests-numberOfCalls"
-	val numberOfEntitiesTopic = "privat-soknadInnsendt-endToEndTests-numberOfEntities"
 }

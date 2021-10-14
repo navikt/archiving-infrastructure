@@ -53,7 +53,6 @@ class EmbeddedDockerImages {
 		createTopic(kafkaProperties.messageTopic)
 		createTopic(kafkaProperties.entitiesTopic)
 		createTopic(kafkaProperties.numberOfCallsTopic)
-		createTopic(kafkaProperties.numberOfEntitiesTopic)
 		createTopic(kafkaProperties.metricsTopic)
 
 

@@ -29,11 +29,10 @@ class KafkaListener(private val appConfiguration: Configuration) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	private val verbose = true
 
-	private val entityConsumers           = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
-	private val metricsConsumers          = mutableListOf<KafkaEntityConsumer<InnsendingMetrics>>()
-	private val numberOfCallsConsumers    = mutableListOf<KafkaEntityConsumer<Int>>()
-	private val numberOfEntitiesConsumers = mutableListOf<KafkaEntityConsumer<Int>>()
-	private val processingEventConsumers  = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
+	private val entityConsumers          = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
+	private val metricsConsumers         = mutableListOf<KafkaEntityConsumer<InnsendingMetrics>>()
+	private val numberOfCallsConsumers   = mutableListOf<KafkaEntityConsumer<Int>>()
+	private val processingEventConsumers = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
 
 	private val kafkaStreams: KafkaStreams
 	private val kafkaProperties = KafkaProperties()
@@ -62,31 +61,25 @@ class KafkaListener(private val appConfiguration: Configuration) {
 		val processingEventTopicStream = streamsBuilder.stream(appConfiguration.kafkaConfig.processingTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
 		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,                Consumed.with(stringSerde, stringSerde))
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,           Consumed.with(stringSerde, intSerde))
-		val numberOfEntitiesStream     = streamsBuilder.stream(kafkaProperties.numberOfEntitiesTopic,        Consumed.with(stringSerde, intSerde))
 
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
-			.peek { key, entity -> log("Joark Entities    : $key - $entity") }
+			.peek { key, entity -> log("Joark Entities   : $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
-			.peek { key, entity -> log("Metrics received  : $key - $entity") }
+			.peek { key, entity -> log("Metrics received : $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
 
 		numberOfCallsStream
-			.peek { key, numberOfCalls -> log("Number of Calls   : $key - $numberOfCalls") }
+			.peek { key, numberOfCalls -> log("Number of Calls  : $key - $numberOfCalls") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
-		numberOfEntitiesStream
-			.peek { key, numberOfEntities -> log("Number of Entities: $key - $numberOfEntities") }
-			.transform({ TimestampExtractor() })
-			.foreach { key, numberOfEntities -> numberOfEntitiesConsumers.forEach { it.consume(key, numberOfEntities) } }
-
 		processingEventTopicStream
-			.peek { key, entity -> log("Processing Events : $key - $entity") }
+			.peek { key, entity -> log("Processing Events: $key - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
 	}
@@ -149,15 +142,12 @@ class KafkaListener(private val appConfiguration: Configuration) {
 		entityConsumers.clear()
 		metricsConsumers.clear()
 		numberOfCallsConsumers.clear()
-		numberOfEntitiesConsumers.clear()
 		processingEventConsumers.clear()
 	}
 
 	@Suppress("unused")
-	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers         .add(consumer)
-	@Suppress("unused")
-	fun addConsumerForNumberOfEntities(consumer: KafkaEntityConsumer<Int>)               = numberOfEntitiesConsumers.add(consumer)
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers          .add(consumer)
-	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers   .add(consumer)
-	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers .add(consumer)
+	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers        .add(consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers         .add(consumer)
+	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
+	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers.add(consumer)
 }
