@@ -3,8 +3,12 @@ package no.nav.soknad.arkivering.innsending
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 
-fun sendDataToMottaker(dto: SoknadInnsendtDto, async: Boolean, appConfiguration: Configuration) {
+fun sendDataToMottaker(innsendingKey: String, dto: SoknadInnsendtDto, async: Boolean, appConfiguration: Configuration) {
 	val url = appConfiguration.config.soknadsmottakerUrl + "/save"
-	val headers = appConfiguration.config.soknadsmottakerUsername to appConfiguration.config.soknadsmottakerPassword
+	val headers = listOf(
+		appConfiguration.config.soknadsmottakerUsername to appConfiguration.config.soknadsmottakerPassword,
+		"innsendingKey" to innsendingKey
+	)
+
 	performPostCall(dto, url, headers, async)
 }

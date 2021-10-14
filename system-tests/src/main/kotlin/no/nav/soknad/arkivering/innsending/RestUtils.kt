@@ -47,7 +47,10 @@ fun getStatusCodeForGetCall(url: String): Int {
 	}
 }
 
-fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String, String>, async: Boolean) {
+fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String, String>, async: Boolean) =
+	performPostCall(payload, url, listOf(usernameAndPassword), async)
+
+fun performPostCall(payload: Any, url: String, headerPairs: List<Pair<String, String>>, async: Boolean) {
 	val requestBody = object : RequestBody() {
 		override fun contentType() = "application/json".toMediaType()
 		override fun writeTo(sink: BufferedSink) {
@@ -55,7 +58,7 @@ fun performPostCall(payload: Any, url: String, usernameAndPassword: Pair<String,
 		}
 	}
 
-	val headers = createHeaders(usernameAndPassword)
+	val headers = createHeaders(headerPairs.first(), headerPairs.drop(1))
 	val request = Request.Builder().url(url).headers(headers).post(requestBody).build()
 
 	val call = restClient.newCall(request)
@@ -98,8 +101,14 @@ private val restRequestCallback = object : Callback {
 	}
 }
 
-private fun createHeaders(usernameAndPassword: Pair<String, String>): Headers {
+private fun createHeaders(usernameAndPassword: Pair<String, String>) = createHeaders(usernameAndPassword, emptyList())
+
+private fun createHeaders(usernameAndPassword: Pair<String, String>, headers: List<Pair<String, String>>): Headers {
 	val auth = "${usernameAndPassword.first}:${usernameAndPassword.second}"
 	val authHeader = "Basic " + Base64.getEncoder().encodeToString(auth.toByteArray())
-	return Headers.headersOf("Authorization", authHeader)
+
+	val allHeaders = listOf(Pair("Authorization", authHeader)).plus(headers)
+	val h = allHeaders.flatMap { listOf(it.first, it.second) }.toTypedArray()
+
+	return Headers.headersOf(*h)
 }

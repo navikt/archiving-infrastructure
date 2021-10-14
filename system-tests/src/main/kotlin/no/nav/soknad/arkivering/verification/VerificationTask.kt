@@ -32,9 +32,9 @@ import kotlin.concurrent.schedule
 class VerificationTask<T> private constructor(
 	private val channel: Channel<Pair<String, Boolean>>,
 	private val key: String?,
-	private val verifiers: MutableList<Assertion<*, T>>,
+	private val verifiers: MutableList<Assertion<T>>,
 	private val presence: Presence,
-	timeout: Long
+	timeoutInMs: Long
 ) : KafkaEntityConsumer<T> {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -43,7 +43,7 @@ class VerificationTask<T> private constructor(
 	private val observedValues = mutableListOf<T>()
 
 	init {
-		Timer("VerificationTaskTimer", false).schedule(timeout) {
+		Timer("VerificationTaskTimer", false).schedule(timeoutInMs) {
 			if (presence == Presence.ABSENCE) {
 				// Verify absence - send satisfied signal after timeout.
 				logger.info("Verifying absence - sending Satisfied signal")
@@ -70,7 +70,7 @@ class VerificationTask<T> private constructor(
 		}
 
 		if (this.key == null || this.key == key) {
-			if (verifiers.all { it.expected == it.actualFunction.invoke(value) }) {
+			if (verifiers.all { it.verify(value) }) {
 				sendSatisfiedSignal()
 			}
 		}
@@ -84,10 +84,8 @@ class VerificationTask<T> private constructor(
 			observedValues.isEmpty() -> "Verification failed - Expected to see value but saw none"
 			else -> try {
 				val lastSeenValue = observedValues.last()
-				val firstFailingVerification = verifiers.first { it.expected != it.actualFunction.invoke(lastSeenValue) }
-				"Verification failed for assertion '${firstFailingVerification.message}'!\n" +
-					"Expected: '${firstFailingVerification.expected}'\n" +
-					"But found '${firstFailingVerification.actualFunction.invoke(lastSeenValue)}'"
+				val firstFailingVerification = verifiers.first { it.verify(lastSeenValue) }
+				"Verification failed!\n${firstFailingVerification.errorMessage(lastSeenValue)}"
 			} catch (e: Exception) {
 				"Verification failed with error '$e'!"
 			}
@@ -108,14 +106,14 @@ class VerificationTask<T> private constructor(
 	}
 
 
-	class Builder<T>(private var timeout: Long = -1) {
+	class Builder<T>(private var timeoutInMs: Long = -1) {
 
 		private var channel: Channel<Pair<String, Boolean>> = Channel(0)
-		private var verifier: MutableList<Assertion<*, T>> = mutableListOf()
+		private var verifier: MutableList<Assertion<T>> = mutableListOf()
 		private var presence: Presence = Presence.PRESENCE
 		private var key: String? = null
 
-		fun withTimeout(timeout: Long) = apply { this.timeout = timeout }
+		fun withTimeout(timeoutInMs: Long) = apply { this.timeoutInMs = timeoutInMs }
 		fun withManager(manager: VerificationTaskManager) = apply { this.channel = manager.getChannel() }
 		fun forKey(key: String) = apply { this.key = key }
 		fun verifyPresence(): VerificationSteps { this.presence = Presence.PRESENCE; return VerificationSteps(this) }
@@ -126,24 +124,28 @@ class VerificationTask<T> private constructor(
 
 		inner class VerificationSteps(private val builder: Builder<T>) {
 
-			fun <R> verifyThat(expected: R, function: (T) -> R, message: String) =
-				apply { verifier.add(Assertion(expected, function, message)) }
+			fun verifyThat(function: (T) -> Boolean, message: (T) -> String) =
+				apply { verifier.add(Assertion(function, message)) }
 
 			fun build() = builder.build()
 		}
 
 		private fun getTimeout(): Long {
 			return when {
-				timeout >= 0 -> timeout
-				presence == Presence.PRESENCE -> verificationDefaultPresenseTimeout
+				timeoutInMs >= 0 -> timeoutInMs
+				presence == Presence.PRESENCE -> verificationDefaultPresenceTimeout
 				else -> verificationDefaultAbsenceTimeout
 			}
 		}
 	}
 
-	private data class Assertion<V, T>(val expected: V, val actualFunction: (T) -> V, val message: String)
+	private data class Assertion<T>(val assertion: (T) -> Boolean, val errorMessage: (T) -> String) {
+		fun verify(value: T) = assertion.invoke(value)
+		fun errorMessage(value: T) = errorMessage.invoke(value)
+	}
+
 	private enum class Presence { PRESENCE, ABSENCE }
 }
 
 private const val verificationDefaultAbsenceTimeout = 30_000L
-private const val verificationDefaultPresenseTimeout = 100_000L
+const val verificationDefaultPresenceTimeout = 100_000L
