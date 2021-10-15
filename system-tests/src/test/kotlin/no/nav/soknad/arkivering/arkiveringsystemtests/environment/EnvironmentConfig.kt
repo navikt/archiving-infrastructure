@@ -55,8 +55,8 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 	}
 
 
-	fun getUrlForSoknadsfillager()   = getAttribute("soknadsfillager.url")
-	fun getUrlForSoknadsmottaker()   = getAttribute("soknadsmottaker.url")
-	fun getUrlForSoknadsarkiverer()  = getAttribute("soknadsarkiverer.url")
-	fun getUrlForArkivMock()         = getAttribute("arkiv-mock.url")
+	fun getUrlForSoknadsfillager()  = getAttribute("soknadsfillager.url")
+	fun getUrlForSoknadsmottaker()  = getAttribute("soknadsmottaker.url")
+	fun getUrlForSoknadsarkiverer() = getAttribute("soknadsarkiverer.url")
+	fun getUrlForArkivMock()        = getAttribute("arkiv-mock.url")
 }

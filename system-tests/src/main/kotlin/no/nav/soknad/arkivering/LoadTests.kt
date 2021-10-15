@@ -30,34 +30,9 @@ class LoadTests(private val config: Configuration) {
 	private val kafkaListener = KafkaListener(config)
 
 
-	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
-		val testName = "10 000 simultaneous entities, 1 times 1 byte each"
-
-		val numberOfEntities = 10_000
-		val numberOfFilesPerEntity = 1
-		logger.info("Starting test: $testName")
-		val innsendingKeys = (0 until numberOfEntities).map { UUID.randomUUID().toString() }
-		uploadData(numberOfEntities, "0".toByteArray(), testName)
-		warmupArchivingChain()
-		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 30)
-
-		sendDataToMottakerAsync(innsendingKeys, numberOfEntities, numberOfFilesPerEntity)
-
-		verifier.verify()
-		logger.info("Finished test: $testName")
-	}
-
-	fun `5 simultaneous entities, 8 times 38 MB each`() {
-		val testName = "5 simultaneous entities, 8 times 38 MB each"
-		val numberOfEntities = 5
-		val numberOfFilesPerEntity = 8
-		val file = fileOfSize38mb
-
-		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
-	}
-
+	@Suppress("FunctionName")
 	fun `100 simultaneous entities, 2 times 2 MB each`() {
-		val testName = "100 simultaneous entities, 2 times 2 MB each"
+		val testName = Thread.currentThread().stackTrace[1].methodName
 		val numberOfEntities = 100
 		val numberOfFilesPerEntity = 2
 		val file = fileOfSize2mb
@@ -65,14 +40,36 @@ class LoadTests(private val config: Configuration) {
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
 
+	@Suppress("FunctionName")
 	fun `100 simultaneous entities, 20 times 1 MB each`() {
-		val testName = "100 simultaneous entities, 20 times 1 MB each"
+		val testName = Thread.currentThread().stackTrace[1].methodName
 		val numberOfEntities = 100
 		val numberOfFilesPerEntity = 20
 		val file = fileOfSize1mb
 
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file)
 	}
+
+	@Suppress("FunctionName")
+	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfEntities = 10_000
+		val numberOfFilesPerEntity = 1
+		val file = fileOfSize1byte
+
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
+	}
+
+	@Suppress("FunctionName")
+	fun `5 simultaneous entities, 8 times 38 MB each`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfEntities = 5
+		val numberOfFilesPerEntity = 8
+		val file = fileOfSize38mb
+
+		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
+	}
+
 
 	private fun performTest(
 		testName: String,
@@ -84,7 +81,7 @@ class LoadTests(private val config: Configuration) {
 		logger.info("Starting test: $testName")
 
 		val innsendingKeys = (0 until numberOfEntities).map { UUID.randomUUID().toString() }
-		uploadImages(numberOfEntities * numberOfFilesPerEntity, file, testName)
+		uploadData(numberOfEntities * numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeout)
 
@@ -95,14 +92,10 @@ class LoadTests(private val config: Configuration) {
 	}
 
 
-	private fun uploadImages(numberOfImages: Int, filename: String, testName: String) {
+	private fun uploadData(numberOfFiles: Int, filename: String, testName: String) {
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
-		uploadData(numberOfImages, fileContent, testName)
-	}
-
-	private fun uploadData(numberOfImages: Int, fileContent: ByteArray, testName: String) {
 		runBlocking {
-			(0 until numberOfImages)
+			(0 until numberOfFiles)
 				.chunked(2)
 				.forEach { ids ->
 					ids.map { id ->
@@ -199,3 +192,4 @@ class LoadTests(private val config: Configuration) {
 private const val fileOfSize38mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"
 private const val fileOfSize2mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.png"
 private const val fileOfSize1mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.jpg"
+private const val fileOfSize1byte = "/1_byte_file"

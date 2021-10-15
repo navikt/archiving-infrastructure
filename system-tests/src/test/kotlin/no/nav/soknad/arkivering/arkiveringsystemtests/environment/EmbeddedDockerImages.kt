@@ -30,6 +30,7 @@ class EmbeddedDockerImages {
 	private var soknadsarkivererLogs = ""
 
 
+	@Suppress("HttpUrlsUsage")
 	fun startContainers() {
 		val network = Network.newNetwork()
 
