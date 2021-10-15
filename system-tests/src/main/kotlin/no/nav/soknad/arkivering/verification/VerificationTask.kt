@@ -39,8 +39,8 @@ class VerificationTask<T> private constructor(
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private var hasSent = AtomicBoolean(false)
-	private val observedValues = mutableListOf<T>()
+	private var hasSentSignalToChannel = AtomicBoolean(false)
+	private var lastObservedValue: T? = null
 
 	init {
 		Timer("VerificationTaskTimer", false).schedule(timeoutInMs) {
@@ -50,7 +50,7 @@ class VerificationTask<T> private constructor(
 				sendSatisfiedSignal()
 			} else {
 				// Verify presence - send dissatisfied signal after timeout.
-				if (hasSent.get().not()) {
+				if (hasSentSignalToChannel.get().not()) {
 					logger.warn("Verifying presence - sending Dissatisfied signal")
 					sendDissatisfiedSignal()
 				}
@@ -63,14 +63,14 @@ class VerificationTask<T> private constructor(
 	}
 
 	private fun verifyEntity(key: String, value: T) {
-		observedValues.add(value)
+		lastObservedValue = value
 		if (presence == Presence.ABSENCE && this.key == key) {
-			sendDissatisfiedSignal()
+			sendDissatisfiedSignal(value)
 			return
 		}
 
 		if (this.key == null || this.key == key) {
-			if (verifiers.all { it.verify(value) }) {
+			if (verifiers.all { it.isSatisfied(value) }) {
 				sendSatisfiedSignal()
 			}
 		}
@@ -78,14 +78,13 @@ class VerificationTask<T> private constructor(
 
 	private fun sendSatisfiedSignal() = sendSignal("ok", true)
 
-	private fun sendDissatisfiedSignal() {
+	private fun sendDissatisfiedSignal(failingValue: T? = lastObservedValue) {
 		val text = when {
 			presence == Presence.ABSENCE -> "Verification failed - Expected not to see value"
-			observedValues.isEmpty() -> "Verification failed - Expected to see value but saw none"
+			failingValue == null -> "Verification failed - Expected to see value but saw none"
 			else -> try {
-				val lastSeenValue = observedValues.last()
-				val firstFailingVerification = verifiers.first { it.verify(lastSeenValue) }
-				"Verification failed!\n${firstFailingVerification.errorMessage(lastSeenValue)}"
+				val firstFailingVerification = verifiers.first { !it.isSatisfied(failingValue) }
+				"Verification failed!\n${firstFailingVerification.errorMessage(failingValue)}"
 			} catch (e: Exception) {
 				"Verification failed with error '$e'!"
 			}
@@ -97,8 +96,8 @@ class VerificationTask<T> private constructor(
 
 	@Synchronized
 	private fun sendSignal(text: String, value: Boolean) {
-		if (hasSent.get().not()) {
-			hasSent.set(true)
+		if (hasSentSignalToChannel.get().not()) {
+			hasSentSignalToChannel.set(true)
 			runBlocking {
 				channel.send(text to value)
 			}
@@ -109,7 +108,7 @@ class VerificationTask<T> private constructor(
 	class Builder<T>(private var timeoutInMs: Long = -1) {
 
 		private var channel: Channel<Pair<String, Boolean>> = Channel(0)
-		private var verifier: MutableList<Assertion<T>> = mutableListOf()
+		private var verifiers: MutableList<Assertion<T>> = mutableListOf()
 		private var presence: Presence = Presence.PRESENCE
 		private var key: String? = null
 
@@ -119,13 +118,13 @@ class VerificationTask<T> private constructor(
 		fun verifyPresence(): VerificationSteps { this.presence = Presence.PRESENCE; return VerificationSteps(this) }
 		fun verifyAbsence() = apply { this.presence = Presence.ABSENCE }
 
-		fun build() = VerificationTask(channel, key, verifier, presence, getTimeout())
+		fun build() = VerificationTask(channel, key, verifiers, presence, getTimeout())
 
 
 		inner class VerificationSteps(private val builder: Builder<T>) {
 
 			fun verifyThat(function: (T) -> Boolean, message: (T) -> String) =
-				apply { verifier.add(Assertion(function, message)) }
+				apply { verifiers.add(Assertion(function, message)) }
 
 			fun build() = builder.build()
 		}
@@ -140,7 +139,7 @@ class VerificationTask<T> private constructor(
 	}
 
 	private data class Assertion<T>(val assertion: (T) -> Boolean, val errorMessage: (T) -> String) {
-		fun verify(value: T) = assertion.invoke(value)
+		fun isSatisfied(value: T) = assertion.invoke(value)
 		fun errorMessage(value: T) = errorMessage.invoke(value)
 	}
 
