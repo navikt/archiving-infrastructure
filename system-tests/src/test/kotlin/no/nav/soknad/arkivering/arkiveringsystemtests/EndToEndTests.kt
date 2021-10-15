@@ -48,7 +48,7 @@ class EndToEndTests : SystemTestBase() {
 		setNormalArchiveBehaviour(key)
 
 		sendFilesToFileStorage(fileId)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -66,7 +66,7 @@ class EndToEndTests : SystemTestBase() {
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
 		sendFilesToFileStorage(fileId)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -92,7 +92,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId0)
 		sendFilesToFileStorage(fileId1)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -110,7 +110,7 @@ class EndToEndTests : SystemTestBase() {
 		setNormalArchiveBehaviour(key)
 
 		pollAndVerifyDataInFileStorage(fileId, 0)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
@@ -135,7 +135,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId0)
 		sendFilesToFileStorage(fileId1)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
@@ -153,7 +153,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 404, erroneousAttempts)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -171,7 +171,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 500, erroneousAttempts)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -189,7 +189,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(key, erroneousAttempts)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -208,7 +208,7 @@ class EndToEndTests : SystemTestBase() {
 		resetArchiveDatabase()
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(key, moreAttemptsThanSoknadsarkivererWillPerform)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -269,7 +269,7 @@ class EndToEndTests : SystemTestBase() {
 
 		sendFilesToFileStorage(fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 404, attemptsThanSoknadsarkivererWillPerform + 1)
-		sendDataToMottaker(key, dto)
+		sendDataToSoknadsmottaker(key, dto)
 		assertThatArkivMock()
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
@@ -305,7 +305,7 @@ class EndToEndTests : SystemTestBase() {
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(finishedKey, finishedInnsendingsId, finishedFileId)
 		putProcessingEventOnKafkaTopic(finishedKey, RECEIVED, STARTED, ARCHIVED, FINISHED)
-		sendDataToMottaker(newKey, newDto)
+		sendDataToSoknadsmottaker(newKey, newDto)
 		val verifier = assertThatArkivMock()
 			.hasEntityInArchive(newKey)
 			.hasCallCountInArchive(newKey, expectedCount = 1)
@@ -326,9 +326,9 @@ class EndToEndTests : SystemTestBase() {
 		pollAndVerifyDataInFileStorage(uuid, expectedNumberOfHits, config)
 	}
 
-	private fun sendDataToMottaker(key: String, dto: SoknadInnsendtDto) {
-		logger.debug("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToMottaker(key, dto, false, config)
+	private fun sendDataToSoknadsmottaker(key: String, dto: SoknadInnsendtDto) {
+		logger.debug("$key: Sending to Soknadsmottaker for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		sendDataToSoknadsmottaker(key, dto, false, config)
 	}
 
 	private fun shutDownSoknadsarkiverer() {

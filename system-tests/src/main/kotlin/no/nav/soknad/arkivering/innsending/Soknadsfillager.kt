@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.innsending.Soknadsfillager")
 
 fun sendFilesToFileStorage(uuid: String, appConfiguration: Configuration) {
-	val message = "fileUuid is $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
+	val message = "Uploading file with fileUuid $uuid for test '${Thread.currentThread().stackTrace[2].methodName}'"
 	sendFilesToFileStorage(uuid, "apabepa".toByteArray(), message, appConfiguration)
 }
 
@@ -36,8 +36,11 @@ private fun sendFilesToFileStorageAndVerify(uuid: String, payload: ByteArray, ap
 
 fun pollAndVerifyDataInFileStorage(uuid: String, expectedNumberOfHits: Int, appConfiguration: Configuration) {
 	val url = appConfiguration.config.soknadsfillagerUrl + "/filer?ids=$uuid"
-	loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url, appConfiguration) },
-		{ assert(expectedNumberOfHits == getNumberOfFiles(url, appConfiguration)) { "Expected $expectedNumberOfHits files in File Storage" } })
+
+	val errorMessage = "Expected $expectedNumberOfHits files in File Storage"
+	val finalCheck = { assert(expectedNumberOfHits == getNumberOfFiles(url, appConfiguration)) { errorMessage } }
+
+	loopAndVerify(expectedNumberOfHits, { getNumberOfFiles(url, appConfiguration) }, finalCheck)
 }
 
 private fun verifyFileExists(uuid: String, appConfiguration: Configuration): Boolean {

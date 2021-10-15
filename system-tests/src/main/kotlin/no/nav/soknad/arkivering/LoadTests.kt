@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.innsending.performDeleteCall
-import no.nav.soknad.arkivering.innsending.sendDataToMottaker
+import no.nav.soknad.arkivering.innsending.sendDataToSoknadsmottaker
 import no.nav.soknad.arkivering.innsending.sendFilesToFileStorage
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.utils.createDto
@@ -85,7 +85,7 @@ class LoadTests(private val config: Configuration) {
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeout)
 
-		sendDataToMottakerAsync(innsendingKeys, numberOfEntities, numberOfFilesPerEntity)
+		sendDataToSoknadsmottakerAsync(innsendingKeys, numberOfEntities, numberOfFilesPerEntity)
 
 		verifier.verify()
 		logger.info("Finished test: $testName")
@@ -100,7 +100,8 @@ class LoadTests(private val config: Configuration) {
 				.forEach { ids ->
 					ids.map { id ->
 						withContext(Dispatchers.Default) {
-							sendFilesToFileStorage(id.toString(), fileContent, "fileUuid is $id for test '$testName'", config)
+							sendFilesToFileStorage(id.toString(), fileContent,
+								"Uploading file with fileUuid $id for test '$testName'", config)
 						}
 					}
 				}
@@ -116,7 +117,7 @@ class LoadTests(private val config: Configuration) {
 		val innsendingKey = UUID.randomUUID().toString()
 		val dto = createDto(fileId)
 		sendFilesToFileStorage(fileId, config)
-		sendDataToMottaker(innsendingKey, dto, async = false, verbose = true)
+		sendDataToSoknadsmottaker(innsendingKey, dto, async = false, verbose = true)
 
 		setupVerificationThatFinishedEventsAreCreated(expectedKeys = listOf(innsendingKey), 1).verify()
 
@@ -128,42 +129,42 @@ class LoadTests(private val config: Configuration) {
 	 * This assumes that the file storage is already populated with files with ids ranging from 0 up to
 	 * numberOfEntities * numberOfFilesPerEntity
 	 */
-	private fun sendDataToMottakerAsync(
+	private fun sendDataToSoknadsmottakerAsync(
 		innsendingKeys: List<String>,
 		numberOfEntities: Int,
 		numberOfFilesPerEntity: Int
 	): List<SoknadInnsendtDto> {
 
-		val startTimeSendingToMottaker = System.currentTimeMillis()
-		logger.info("About to send $numberOfEntities entities to Mottaker")
+		val startTimeSendingToSoknadsmottaker = System.currentTimeMillis()
+		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
 		val atomicInteger = AtomicInteger()
 		val dtos = runBlocking {
 			(0 until numberOfEntities).map {
 				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
-				sendDataToMottakerAsync(innsendingKeys[it], fileIds)
+				sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
 			}
 		}
 
-		val timeTaken = System.currentTimeMillis() - startTimeSendingToMottaker
+		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
 		logger.info("Sent $numberOfEntities entities to Soknadsmottaker in $timeTaken ms")
 		return dtos
 	}
 
-	private suspend fun sendDataToMottakerAsync(innsendingKey: String, fileIds: List<String>): SoknadInnsendtDto {
+	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): SoknadInnsendtDto {
 		return withContext(Dispatchers.Default) {
 
 			val dto = createDto(fileIds)
 
-			sendDataToMottaker(innsendingKey, dto, async = true, verbose = false)
+			sendDataToSoknadsmottaker(innsendingKey, dto, async = true, verbose = false)
 			dto
 		}
 	}
 
-	private fun sendDataToMottaker(innsendingKey: String, dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
+	private fun sendDataToSoknadsmottaker(key: String, dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
 		if (verbose)
-			logger.debug("innsendingsId is ${dto.innsendingsId} for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToMottaker(innsendingKey, dto, async, config)
+			logger.debug("$key: Sending to Soknadsmottaker for test '${Thread.currentThread().stackTrace[2].methodName}'")
+		sendDataToSoknadsmottaker(key, dto, async, config)
 	}
 
 	private fun setupVerificationThatFinishedEventsAreCreated(
