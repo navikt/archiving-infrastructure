@@ -40,18 +40,18 @@ class VerificationTask<T> private constructor(
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	private var hasSentSignalToChannel = AtomicBoolean(false)
-	private var lastObservedValue: T? = null
+	private var lastObservedValueForKey: T? = null
 
 	init {
 		Timer("VerificationTaskTimer", false).schedule(timeoutInMs) {
 			if (presence == Presence.ABSENCE) {
 				// Verify absence - send satisfied signal after timeout.
-				logger.info("Verifying absence - sending Satisfied signal")
+				logger.info("$key: Verifying absence - sending Satisfied signal")
 				sendSatisfiedSignal()
 			} else {
 				// Verify presence - send dissatisfied signal after timeout.
 				if (hasSentSignalToChannel.get().not()) {
-					logger.warn("Verifying presence - sending Dissatisfied signal")
+					logger.warn("$key: Verifying presence - sending Dissatisfied signal")
 					sendDissatisfiedSignal()
 				}
 			}
@@ -63,13 +63,13 @@ class VerificationTask<T> private constructor(
 	}
 
 	private fun verifyEntity(key: String, value: T) {
-		lastObservedValue = value
 		if (presence == Presence.ABSENCE && this.key == key) {
-			sendDissatisfiedSignal(value)
+			sendDissatisfiedSignal()
 			return
 		}
 
 		if (this.key == null || this.key == key) {
+			lastObservedValueForKey = value
 			if (verifiers.all { it.isSatisfied(value) }) {
 				sendSatisfiedSignal()
 			}
@@ -78,13 +78,17 @@ class VerificationTask<T> private constructor(
 
 	private fun sendSatisfiedSignal() = sendSignal("ok", true)
 
-	private fun sendDissatisfiedSignal(failingValue: T? = lastObservedValue) {
+	private fun sendDissatisfiedSignal() {
+		val lastObservedValue = lastObservedValueForKey
 		val text = when {
 			presence == Presence.ABSENCE -> "Verification failed - Expected not to see value"
-			failingValue == null -> "Verification failed - Expected to see value but saw none"
+			lastObservedValue == null -> "Verification failed - Expected to see value but saw none"
+
 			else -> try {
-				val firstFailingVerification = verifiers.first { !it.isSatisfied(failingValue) }
-				"Verification failed!\n${firstFailingVerification.errorMessage(failingValue)}"
+				val errorMessages = verifiers
+					.filter { !it.isSatisfied(lastObservedValue) }
+					.joinToString("\n") { it.errorMessage(lastObservedValue) }
+				"Verification failed!\n$errorMessages"
 			} catch (e: Exception) {
 				"Verification failed with error '$e'!"
 			}
