@@ -4,15 +4,15 @@ import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import java.io.File
 
-val defaultPorts = HashMap<String, Int>().also {
-	it["soknadsfillager"]  = 9042
-	it["soknadsmottaker"]  = 8090
-	it["soknadsarkiverer"] = 8091
-	it["arkiv-mock"]       = 8092
-	it["kafka-broker"]     = 9092
-	it["schema-registry"]  = 8081
-	it["database"]         = 5432
-}
+val defaultPorts = mapOf(
+	"soknadsfillager"  to 9042,
+	"soknadsmottaker"  to 8090,
+	"soknadsarkiverer" to 8091,
+	"arkiv-mock"       to 8092,
+	"kafka-broker"     to 9092,
+	"schema-registry"  to 8081,
+	"database"         to 5432
+)
 
 val defaultProperties = mapOf(
 	"USERNAME"                 to "arkiverer",

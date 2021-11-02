@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
+import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.kafka.KafkaProperties
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory

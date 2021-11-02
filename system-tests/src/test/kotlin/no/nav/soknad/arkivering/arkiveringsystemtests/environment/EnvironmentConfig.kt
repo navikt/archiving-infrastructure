@@ -1,14 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
-val defaultPorts = HashMap<String, Int>().also {
-	it["soknadsfillager"]  = 9042
-	it["soknadsmottaker"]  = 8090
-	it["soknadsarkiverer"] = 8091
-	it["arkiv-mock"]       = 8092
-	it["kafka-broker"]     = 9092
-	it["schema-registry"]  = 8081
-	it["database"]         = 5432
-}
+import no.nav.soknad.arkivering.defaultPorts
 
 private val defaultProperties = mapOf(
 	"soknadsfillager.url"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
