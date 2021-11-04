@@ -144,22 +144,19 @@ class EmbeddedDockerImages {
 		soknadsarkivererContainer.start()
 	}
 
-	private fun createTopic(topicName: String) {
-		// kafka container uses with embedded zookeeper
-		// confluent platform and Kafka compatibility 5.1.x <-> kafka 2.1.x
-		// kafka 2.1.x require option --zookeeper, later versions use --bootstrap-servers instead
-		val topic =
-			"/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic $topicName"
+	private fun createTopic(topic: String) {
+		val topicCommand =
+			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:9092 --replication-factor 1 --partitions 1 --topic $topic"
 
 		try {
-			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topic)
+			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topicCommand)
 			if (result.exitCode != 0) {
 				logger.error("\n\nKafka Container logs:\n${kafkaContainer.logs}")
-				fail("Failed to create topic '$topicName'. Error:\n${result.stderr}")
+				fail("Failed to create topic '$topic'. Error:\n${result.stderr}")
 			}
 		} catch (e: Exception) {
 			e.printStackTrace()
-			fail("Failed to create topic '$topicName'")
+			fail("Failed to create topic '$topic'")
 		}
 	}
 
