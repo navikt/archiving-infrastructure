@@ -74,11 +74,11 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val overridingProperties: Map<String, String>,
 
 		val soknadsmottakerUrl: String = "SOKNADSMOTTAKER_URL".configProperty(overridingProperties),
-		val soknadsmottakerUsername: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsmottaker_username", "SOKNADSMOTTAKER_USERNAME".configProperty(overridingProperties)),
-		val soknadsmottakerPassword: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsmottaker_password", "SOKNADSMOTTAKER_PASSWORD".configProperty(overridingProperties)),
+		val soknadsmottakerUsername: String = readFileAsText("/secrets/innsending-data/username", "SOKNADSMOTTAKER_USERNAME".configProperty(overridingProperties)),
+		val soknadsmottakerPassword: String = readFileAsText("/secrets/innsending-data/password", "SOKNADSMOTTAKER_PASSWORD".configProperty(overridingProperties)),
 		val soknadsfillagerUrl: String = "SOKNADSFILLAGER_URL".configProperty(overridingProperties),
-		val soknadsfillagerUsername: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsfillager_username", "SOKNADSFILLAGER_USERNAME".configProperty(overridingProperties)),
-		val soknadsfillagerPassword: String = readFileAsText("/var/run/secrets/nais.io/innsending-system-tests/soknadsfillager_password", "SOKNADSFILLAGER_PASSWORD".configProperty(overridingProperties)),
+		val soknadsfillagerUsername: String = readFileAsText("/secrets/innsending-data/username", "SOKNADSFILLAGER_USERNAME".configProperty(overridingProperties)),
+		val soknadsfillagerPassword: String = readFileAsText("/secrets/innsending-data/password", "SOKNADSFILLAGER_PASSWORD".configProperty(overridingProperties)),
 		val arkivMockUrl: String = "ARKIVMOCK_URL".configProperty(overridingProperties),
 	)
 }

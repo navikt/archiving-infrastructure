@@ -61,9 +61,9 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/kv
-                - mountPath: /var/run/secrets/nais.io/innsending-system-tests
+                - mountPath: /secrets/innsending-data
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/innsending-system-tests
+                  subPath: vault/secret/team-soknad/innsending/basicauth
                 - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
@@ -115,9 +115,9 @@ spec:
                 - mountPath: /var/run/secrets/nais.io/kv
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/kv
-                - mountPath: /var/run/secrets/nais.io/innsending-system-tests
+                - mountPath: /secrets/innsending-data
                   name: vault-secrets
-                  subPath: vault/var/run/secrets/nais.io/innsending-system-tests
+                  subPath: vault/secret/team-soknad/innsending/basicauth
                 - mountPath: /var/run/secrets/nais.io/srvinnsendingtests
                   name: vault-secrets
                   subPath: vault/var/run/secrets/nais.io/srvinnsendingtests
@@ -127,7 +127,7 @@ spec:
                 - -vault=https://vault.adeo.no
                 - -one-shot
                 - -save-token=/var/run/secrets/nais.io/vault/vault_token
-                - -cn=secret:kv/preprod/fss/innsending-system-tests/team-soknad:dir=/var/run/secrets/nais.io/innsending-system-tests,fmt=flatten,retries=1
+                - -cn=secret:/secret/team-soknad/innsending/basicauth:dir=/secrets/innsending-data,fmt=flatten,retries=1
                 - -cn=secret:/serviceuser/data/dev/srvinnsendingtests:dir=/var/run/secrets/nais.io/srvinnsendingtests,fmt=flatten,retries=1
               env:
                 - name: VAULT_AUTH_METHOD
