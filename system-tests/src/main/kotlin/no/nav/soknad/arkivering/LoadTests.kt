@@ -154,7 +154,7 @@ class LoadTests(private val config: Configuration) {
 	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): SoknadInnsendtDto {
 		return withContext(Dispatchers.Default) {
 
-			val dto = createDto(fileIds)
+			val dto = createDto(fileIds, innsendingKey)
 
 			sendDataToSoknadsmottaker(innsendingKey, dto, async = true, verbose = false)
 			dto
