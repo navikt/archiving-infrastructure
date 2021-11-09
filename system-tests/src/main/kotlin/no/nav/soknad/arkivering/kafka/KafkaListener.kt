@@ -24,7 +24,7 @@ import org.apache.kafka.streams.processor.ProcessorContext
 import org.slf4j.LoggerFactory
 import java.util.*
 
-class KafkaListener(private val appConfiguration: Configuration) {
+class KafkaListener(private val kafkaConfig: Configuration.KafkaConfig) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 	private val verbose = true
@@ -35,7 +35,6 @@ class KafkaListener(private val appConfiguration: Configuration) {
 	private val processingEventConsumers = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
 
 	private val kafkaStreams: KafkaStreams
-	private val kafkaProperties = KafkaProperties()
 
 	private val intSerde = Serdes.IntegerSerde()
 	private val stringSerde = Serdes.StringSerde()
@@ -57,10 +56,10 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-		val metricsStream              = streamsBuilder.stream(appConfiguration.kafkaConfig.metricsTopic,    Consumed.with(stringSerde, createInnsendingMetricsSerde()))
-		val processingEventTopicStream = streamsBuilder.stream(appConfiguration.kafkaConfig.processingTopic, Consumed.with(stringSerde, createProcessingEventSerde()))
-		val entitiesStream             = streamsBuilder.stream(kafkaProperties.entitiesTopic,                Consumed.with(stringSerde, stringSerde))
-		val numberOfCallsStream        = streamsBuilder.stream(kafkaProperties.numberOfCallsTopic,           Consumed.with(stringSerde, intSerde))
+		val metricsStream              = streamsBuilder.stream(kafkaConfig.metricsTopic,       Consumed.with(stringSerde, createInnsendingMetricsSerde()))
+		val processingEventTopicStream = streamsBuilder.stream(kafkaConfig.processingTopic,    Consumed.with(stringSerde, createProcessingEventSerde()))
+		val entitiesStream             = streamsBuilder.stream(kafkaConfig.entitiesTopic,      Consumed.with(stringSerde, stringSerde))
+		val numberOfCallsStream        = streamsBuilder.stream(kafkaConfig.numberOfCallsTopic, Consumed.with(stringSerde, intSerde))
 
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
@@ -90,18 +89,18 @@ class KafkaListener(private val appConfiguration: Configuration) {
 	}
 
 	private fun kafkaConfig() = Properties().also {
-		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = appConfiguration.kafkaConfig.schemaRegistryUrl
+		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistryUrl
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = "innsending-system-tests"
-		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = appConfiguration.kafkaConfig.servers
+		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.servers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
 		it[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = LogAndContinueExceptionHandler::class.java
 		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 1000
 
-		if (appConfiguration.kafkaConfig.secure == "TRUE") {
-			it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = appConfiguration.kafkaConfig.protocol
-			it[SaslConfigs.SASL_JAAS_CONFIG] = appConfiguration.kafkaConfig.saslJaasConfig
-			it[SaslConfigs.SASL_MECHANISM] = appConfiguration.kafkaConfig.salsmec
+		if (kafkaConfig.secure == "TRUE") {
+			it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = kafkaConfig.protocol
+			it[SaslConfigs.SASL_JAAS_CONFIG] = kafkaConfig.saslJaasConfig
+			it[SaslConfigs.SASL_MECHANISM] = kafkaConfig.salsmec
 		}
 	}
 
@@ -110,7 +109,7 @@ class KafkaListener(private val appConfiguration: Configuration) {
 
 	private fun <T : SpecificRecord> createAvroSerde(): SpecificAvroSerde<T> {
 		val serdeConfig =
-			hashMapOf(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to appConfiguration.kafkaConfig.schemaRegistryUrl)
+			hashMapOf(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to kafkaConfig.schemaRegistryUrl)
 		return SpecificAvroSerde<T>().also { it.configure(serdeConfig, false) }
 	}
 

@@ -15,28 +15,30 @@ val defaultPorts = mapOf(
 )
 
 val defaultProperties = mapOf(
-	"USERNAME"                 to "arkiverer",
-	"PASSWORD"                 to "",
-	"KAFKA_SECURITY"           to "",
-	"KAFKA_SECPROT"            to "",
-	"KAFKA_SASLMEC"            to "",
-	"KAFKA_INPUT_TOPIC"        to "privat-soknadInnsendt-v1-teamsoknad",
-	"KAFKA_PROCESSING_TOPIC"   to "privat-soknadInnsendt-processingEventLog-v1-teamsoknad",
-	"KAFKA_MESSAGE_TOPIC"      to "privat-soknadInnsendt-messages-v1-teamsoknad",
-	"KAFKA_METRICS_TOPIC"      to "privat-soknadInnsendt-metrics-v1-teamsoknad",
+	"KAFKA_USERNAME"              to "arkiverer",
+	"KAFKA_PASSWORD"              to "",
+	"KAFKA_SECURITY"              to "",
+	"KAFKA_SECPROT"               to "",
+	"KAFKA_SASLMEC"               to "",
 
-	"SOKNADSFILLAGER_URL"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
-	"SOKNADSMOTTAKER_URL"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
-	"SOKNADSARKIVERER_URL"     to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
-	"ARKIVMOCK_URL"            to "http://localhost:${defaultPorts["arkiv-mock"]}",
-	"SCHEMA_REGISTRY_URL"      to "http://localhost:${defaultPorts["schema-registry"]}",
-	"KAFKA_BOOTSTRAP_SERVERS"  to "localhost:${defaultPorts["kafka-broker"]}",
-	"SOKNADSFILLAGER_USERNAME" to "sender",
-	"SOKNADSFILLAGER_PASSWORD" to "password",
-	"SOKNADSMOTTAKER_USERNAME" to "sender",
-	"SOKNADSMOTTAKER_PASSWORD" to "password"
+	"KAFKA_INPUT_TOPIC"           to "privat-soknadInnsendt-v1-teamsoknad",
+	"KAFKA_PROCESSING_TOPIC"      to "privat-soknadInnsendt-processingEventLog-v1-teamsoknad",
+	"KAFKA_MESSAGE_TOPIC"         to "privat-soknadInnsendt-messages-v1-teamsoknad",
+	"KAFKA_METRICS_TOPIC"         to "privat-soknadInnsendt-metrics-v1-teamsoknad",
+	"KAFKA_ENTITIES_TOPIC"        to "privat-soknadInnsendt-systemTests-entities",
+	"KAFKA_NUMBER_OF_CALLS_TOPIC" to "privat-soknadInnsendt-systemTests-numberOfCalls",
+
+	"SOKNADSFILLAGER_URL"         to "http://localhost:${defaultPorts["soknadsfillager"]}",
+	"SOKNADSMOTTAKER_URL"         to "http://localhost:${defaultPorts["soknadsmottaker"]}",
+	"SOKNADSARKIVERER_URL"        to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
+	"ARKIVMOCK_URL"               to "http://localhost:${defaultPorts["arkiv-mock"]}",
+	"SCHEMA_REGISTRY_URL"         to "http://localhost:${defaultPorts["schema-registry"]}",
+	"KAFKA_BOOTSTRAP_SERVERS"     to "localhost:${defaultPorts["kafka-broker"]}",
+	"SOKNADSFILLAGER_USERNAME"    to "sender",
+	"SOKNADSFILLAGER_PASSWORD"    to "password",
+	"SOKNADSMOTTAKER_USERNAME"    to "sender",
+	"SOKNADSMOTTAKER_PASSWORD"    to "password"
 )
-
 
 
 private val appConfig =
@@ -56,18 +58,21 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 	data class KafkaConfig(
 		val overridingProperties: Map<String, String>,
 
-		val username: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/username", "USERNAME".configProperty(overridingProperties)),
-		val password: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/password", "PASSWORD".configProperty(overridingProperties)),
+		val username: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/username", "KAFKA_USERNAME".configProperty(overridingProperties)),
+		val password: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/password", "KAFKA_PASSWORD".configProperty(overridingProperties)),
 		val servers: String = "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties),
 		val schemaRegistryUrl: String = "SCHEMA_REGISTRY_URL".configProperty(overridingProperties),
 		val secure: String = "KAFKA_SECURITY".configProperty(overridingProperties),
 		val protocol: String = "KAFKA_SECPROT".configProperty(overridingProperties),
 		val salsmec: String = "KAFKA_SASLMEC".configProperty(overridingProperties),
+		val saslJaasConfig: String = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$username\" password=\"$password\";",
+
 		val inputTopic: String = "KAFKA_INPUT_TOPIC".configProperty(overridingProperties),
 		val processingTopic: String = "KAFKA_PROCESSING_TOPIC".configProperty(overridingProperties),
 		val messageTopic: String = "KAFKA_MESSAGE_TOPIC".configProperty(overridingProperties),
 		val metricsTopic: String = "KAFKA_METRICS_TOPIC".configProperty(overridingProperties),
-		val saslJaasConfig: String = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$username\" password=\"$password\";"
+		val entitiesTopic: String = "KAFKA_ENTITIES_TOPIC".configProperty(overridingProperties),
+		val numberOfCallsTopic: String = "KAFKA_NUMBER_OF_CALLS_TOPIC".configProperty(overridingProperties)
 	)
 
 	data class Config(

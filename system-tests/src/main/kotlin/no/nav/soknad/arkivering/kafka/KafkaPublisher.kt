@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit
 
 class KafkaPublisher(private val appConfiguration: Configuration) {
 
-	private val kafkaProperties = KafkaProperties()
 	private val kafkaInputProducer = KafkaProducer<String, Soknadarkivschema>(kafkaConfigMap())
 	private val kafkaProcessingEventProducer = KafkaProducer<String, ProcessingEvent>(kafkaConfigMap())
 	private val kafkaStringProducer = KafkaProducer<String, String>(kafkaConfigMap().also {
@@ -27,19 +26,19 @@ class KafkaPublisher(private val appConfiguration: Configuration) {
 	})
 
 	fun putDataOnTopic(key: String, value: Soknadarkivschema, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.inputTopic
+		val topic = appConfiguration.kafkaConfig.inputTopic
 		val kafkaProducer = kafkaInputProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
 	fun putDataOnTopic(key: String, value: ProcessingEvent, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.processingEventLogTopic
+		val topic = appConfiguration.kafkaConfig.processingTopic
 		val kafkaProducer = kafkaProcessingEventProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
 	fun putDataOnTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
-		val topic = kafkaProperties.inputTopic
+		val topic = appConfiguration.kafkaConfig.inputTopic
 		val kafkaProducer = kafkaStringProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}

@@ -27,7 +27,7 @@ class LoadTests(private val config: Configuration) {
 	* Gjennomsnitt filstørrelse 0,67MB
 	*/
 
-	private val kafkaListener = KafkaListener(config)
+	private val kafkaListener = KafkaListener(config.kafkaConfig)
 
 
 	@Suppress("FunctionName")

@@ -53,15 +53,15 @@ abstract class SystemTestBase {
 			Configuration()
 		}
 		kafkaPublisher = KafkaPublisher(config)
-		kafkaListener = KafkaListener(config)
+		kafkaListener = KafkaListener(config.kafkaConfig)
 	}
 
 	private fun checkThatDependenciesAreUp() {
 		val dependencies = HashMap<String, String>().also {
-			it["soknadsmottaker"] = env.getUrlForSoknadsmottaker()
+			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()
-			it["soknadsfillager"] = env.getUrlForSoknadsfillager()
-			it["arkiv-mock"] = env.getUrlForArkivMock()
+			it["soknadsfillager"]  = env.getUrlForSoknadsfillager()
+			it["arkiv-mock"]       = env.getUrlForArkivMock()
 		}
 		for (dep in dependencies) {
 			try {

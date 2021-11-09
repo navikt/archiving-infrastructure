@@ -1,7 +1,7 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.defaultPorts
-import no.nav.soknad.arkivering.kafka.KafkaProperties
+import no.nav.soknad.arkivering.defaultProperties
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
@@ -17,7 +17,6 @@ class EmbeddedDockerImages {
 
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
-	private val kafkaProperties = KafkaProperties()
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
@@ -49,12 +48,12 @@ class EmbeddedDockerImages {
 		postgresContainer.start()
 		kafkaContainer.start()
 
-		createTopic(kafkaProperties.inputTopic)
-		createTopic(kafkaProperties.processingEventLogTopic)
-		createTopic(kafkaProperties.messageTopic)
-		createTopic(kafkaProperties.entitiesTopic)
-		createTopic(kafkaProperties.numberOfCallsTopic)
-		createTopic(kafkaProperties.metricsTopic)
+		createTopic(defaultProperties["KAFKA_INPUT_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
