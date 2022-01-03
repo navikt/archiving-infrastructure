@@ -4,9 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.performDeleteCall
 import no.nav.soknad.arkivering.innsending.sendDataToSoknadsmottaker
-import no.nav.soknad.arkivering.innsending.sendFilesToFileStorage
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.utils.createDto
 import no.nav.soknad.arkivering.verification.AssertionHelper
@@ -28,6 +28,7 @@ class LoadTests(private val config: Configuration) {
 	*/
 
 	private val kafkaListener = KafkaListener(config.kafkaConfig)
+	private val soknadsfillagerApi = SoknadsfillagerApi(config)
 
 
 	@Suppress("FunctionName")
@@ -81,7 +82,7 @@ class LoadTests(private val config: Configuration) {
 		logger.info("Starting test: $testName")
 
 		val innsendingKeys = (0 until numberOfEntities).map { UUID.randomUUID().toString() }
-		uploadData(numberOfEntities * numberOfFilesPerEntity, file, testName)
+		uploadData(innsendingKeys, numberOfEntities * numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeout)
 
@@ -92,7 +93,7 @@ class LoadTests(private val config: Configuration) {
 	}
 
 
-	private fun uploadData(numberOfFiles: Int, filename: String, testName: String) {
+	private fun uploadData(innsendingKeys: List<String>, numberOfFiles: Int, filename: String, testName: String) {
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
 		runBlocking {
 			(0 until numberOfFiles)
@@ -100,8 +101,8 @@ class LoadTests(private val config: Configuration) {
 				.forEach { ids ->
 					ids.map { id ->
 						withContext(Dispatchers.Default) {
-							sendFilesToFileStorage(id.toString(), fileContent,
-								"Uploading file with fileUuid $id for test '$testName'", config)
+							sendFilesToFileStorage(innsendingKeys[id], id.toString(), fileContent,
+								"Uploading file with id $id for test '$testName'")
 						}
 					}
 				}
@@ -115,8 +116,8 @@ class LoadTests(private val config: Configuration) {
 
 		val fileId = "warmup_" + UUID.randomUUID().toString()
 		val innsendingKey = UUID.randomUUID().toString()
-		val dto = createDto(fileId)
-		sendFilesToFileStorage(fileId, config)
+		val dto = createDto(innsendingKey, fileId)
+		sendFilesToFileStorage(innsendingKey, fileId)
 		sendDataToSoknadsmottaker(innsendingKey, dto, async = false, verbose = true)
 
 		setupVerificationThatFinishedEventsAreCreated(expectedKeys = listOf(innsendingKey), 1).verify()
@@ -154,7 +155,7 @@ class LoadTests(private val config: Configuration) {
 	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): SoknadInnsendtDto {
 		return withContext(Dispatchers.Default) {
 
-			val dto = createDto(fileIds, innsendingKey)
+			val dto = createDto(innsendingKey, fileIds)
 
 			sendDataToSoknadsmottaker(innsendingKey, dto, async = true, verbose = false)
 			dto
@@ -187,6 +188,14 @@ class LoadTests(private val config: Configuration) {
 		} catch (e: Exception) {
 			logger.error("Error when resetting arkiv-mock database", e)
 		}
+	}
+
+	private fun sendFilesToFileStorage(innsendingId: String, fileId: String) {
+		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId)
+	}
+
+	private fun sendFilesToFileStorage(innsendingId: String, fileId: String, payload: ByteArray, message: String) {
+		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId, payload, message)
 	}
 }
 

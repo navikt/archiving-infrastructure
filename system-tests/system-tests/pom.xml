@@ -10,7 +10,7 @@
 
 	<artifactId>system-tests</artifactId>
 	<version>1.1.0</version>
-	<name>system-tests</name>
+	<name>${project.artifactId}</name>
 	<description>End-to-end-tests and Load-tests</description>
 
 	<properties>

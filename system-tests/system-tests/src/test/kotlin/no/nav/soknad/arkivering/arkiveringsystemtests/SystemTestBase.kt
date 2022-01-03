@@ -88,9 +88,9 @@ abstract class SystemTestBase {
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
-	fun putInputEventOnKafkaTopic(key: String, innsendingsId: String, fileId: String) {
+	fun putInputEventOnKafkaTopic(key: String, fileId: String) {
 		logger.debug("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(innsendingsId, fileId))
+		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(key, fileId))
 	}
 
 	fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
@@ -109,7 +109,7 @@ abstract class SystemTestBase {
 	}
 
 	private fun createSoknadarkivschema(innsendingsId: String, fileId: String): Soknadarkivschema {
-		val soknadInnsendtDto = createDto(fileId, innsendingsId)
+		val soknadInnsendtDto = createDto(innsendingsId, fileId)
 		val innsendtDokumentDto = soknadInnsendtDto.innsendteDokumenter[0]
 		val innsendtVariantDto = innsendtDokumentDto.varianter[0]
 

@@ -30,10 +30,10 @@ fun loopAndVerify(
 
 private const val fnr = "10108000398" // Not a real fnr
 
-fun createDto(fileId: String, innsendingsId: String = UUID.randomUUID().toString()) =
-	createDto(listOf(fileId), innsendingsId)
+fun createDto(innsendingsId: String, fileId: String) =
+	createDto(innsendingsId, listOf(fileId))
 
-fun createDto(fileIds: List<String>, innsendingsId: String = UUID.randomUUID().toString()) =
+fun createDto(innsendingsId: String, fileIds: List<String>) =
 	SoknadInnsendtDto(innsendingsId, false, fnr, "BIL", LocalDateTime.now(), createInnsendtDokumentDtos(fileIds))
 
 private fun createInnsendtDokumentDtos(fileIds: List<String>): List<InnsendtDokumentDto> =
