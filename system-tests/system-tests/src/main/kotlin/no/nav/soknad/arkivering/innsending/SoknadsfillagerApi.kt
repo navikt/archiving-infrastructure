@@ -1,8 +1,10 @@
 package no.nav.soknad.arkivering.innsending
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.soknadsfillager.api.FilesApi
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ApiClient
+import no.nav.soknad.arkivering.soknadsfillager.infrastructure.Serializer.jacksonObjectMapper
 import no.nav.soknad.arkivering.soknadsfillager.model.FileData
 import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
@@ -14,6 +16,7 @@ class SoknadsfillagerApi(appConfiguration: Configuration) {
 	private val filesApi: FilesApi
 
 	init {
+		jacksonObjectMapper.registerModule(JavaTimeModule())
 		ApiClient.username = appConfiguration.config.soknadsfillagerUsername
 		ApiClient.password = appConfiguration.config.soknadsfillagerPassword
 		filesApi = FilesApi(appConfiguration.config.soknadsfillagerUrl)
