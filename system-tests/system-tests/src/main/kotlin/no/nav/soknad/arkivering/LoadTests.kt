@@ -77,14 +77,14 @@ class LoadTests(private val config: Configuration) {
 		numberOfEntities: Int,
 		numberOfFilesPerEntity: Int,
 		file: String,
-		timeout: Int = 5
+		timeoutInMinutes: Int = 5
 	) {
 		logger.info("Starting test: $testName")
 
 		val innsendingKeys = (0 until numberOfEntities).map { UUID.randomUUID().toString() }
-		uploadData(innsendingKeys, numberOfEntities * numberOfFilesPerEntity, file, testName)
+		uploadData(innsendingKeys, numberOfEntities, numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()
-		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeout)
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeoutInMinutes)
 
 		sendDataToSoknadsmottakerAsync(innsendingKeys, numberOfEntities, numberOfFilesPerEntity)
 
@@ -93,16 +93,34 @@ class LoadTests(private val config: Configuration) {
 	}
 
 
-	private fun uploadData(innsendingKeys: List<String>, numberOfFiles: Int, filename: String, testName: String) {
+	private fun uploadData(
+		innsendingKeys: List<String>,
+		numberOfEntities: Int,
+		numberOfFilesPerEntity: Int,
+		filename: String,
+		testName: String
+	) {
+
+		val chunks = 2
+		var keyIndex = 0
+		var filesPerEntityCounter = 0
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
+
 		runBlocking {
-			(0 until numberOfFiles)
-				.chunked(2)
+			(0 until numberOfEntities * numberOfFilesPerEntity)
+				.chunked(chunks)
 				.forEach { ids ->
-					ids.map { id ->
+					ids.forEach { id ->
 						withContext(Dispatchers.Default) {
-							sendFilesToFileStorage(innsendingKeys[id], id.toString(), fileContent,
-								"Uploading file with id $id for test '$testName'")
+
+							sendFilesToFileStorage(innsendingKeys[keyIndex], id.toString(), fileContent,
+								"${innsendingKeys[keyIndex]}: Uploading file with id $id for test '$testName'")
+
+							filesPerEntityCounter += 1
+							if (filesPerEntityCounter % numberOfFilesPerEntity == 0) {
+								keyIndex += 1
+								filesPerEntityCounter = 0
+							}
 						}
 					}
 				}

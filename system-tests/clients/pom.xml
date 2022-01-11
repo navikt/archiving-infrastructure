@@ -10,7 +10,7 @@
 
 	<artifactId>system-tests-clients</artifactId>
 	<name>${project.artifactId}</name>
-	<description>Clients used for system-tests</description>
+	<description>Clients used by system-tests</description>
 
 	<properties>
 		<jackson.version>2.13.1</jackson.version>
