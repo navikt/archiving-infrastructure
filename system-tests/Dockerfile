@@ -1,4 +1,4 @@
-FROM navikt/java:11
+FROM navikt/java:17
 
 ENV APPLICATION_NAME=innsending-system-tests
 COPY system-tests/target/*jar-with-dependencies.jar app.jar
