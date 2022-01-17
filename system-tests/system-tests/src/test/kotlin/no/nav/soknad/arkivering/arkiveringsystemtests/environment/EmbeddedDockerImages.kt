@@ -145,7 +145,7 @@ class EmbeddedDockerImages {
 
 	private fun createTopic(topic: String) {
 		val topicCommand =
-			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:9092 --replication-factor 1 --partitions 1 --topic $topic"
+			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:${defaultPorts["kafka-broker"]} --replication-factor 1 --partitions 1 --topic $topic"
 
 		try {
 			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topicCommand)
