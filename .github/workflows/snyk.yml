@@ -13,4 +13,4 @@ jobs:
           TEAM: team-soknad
         with:
           command: monitor
-          args: --configuration-attributes=usage:java-runtime --project-name=${{ github.repository }} --remote-repo-url=https://github.com/${{ github.repository }}.git --org=${TEAM}
+          args: --configuration-attributes=usage:java-runtime --all-projects --remote-repo-url=https://github.com/${{ github.repository }}.git --org=${TEAM}
