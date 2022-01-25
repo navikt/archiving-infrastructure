@@ -43,8 +43,8 @@ check_sufficient_java_version() {
 			fi
 		done
 	fi
-	if [[ $result -lt 17 ]]; then
-		echo "Needs to have at least version 17 of Java installed. Detected version: $result"
+	if [[ $result -lt 11 ]]; then
+		echo "Needs to have at least version 11 of Java installed. Detected version: $result"
 		exit 1
 	fi
 }
