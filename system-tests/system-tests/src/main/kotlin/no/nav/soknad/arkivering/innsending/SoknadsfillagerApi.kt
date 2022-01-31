@@ -23,7 +23,7 @@ class SoknadsfillagerApi(appConfiguration: Configuration) {
 	}
 
 	fun checkFilesInFileStorage(innsendingId: String, fileId: String) {
-		filesApi.checkFilesByIds(fileId, innsendingId)
+		filesApi.checkFilesByIds(listOf(fileId), innsendingId)
 	}
 
 	fun sendFilesToFileStorage(innsendingId: String, fileId: String) {
