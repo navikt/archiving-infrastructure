@@ -13,15 +13,15 @@
 	<description>End-to-end-tests and Load-tests</description>
 
 	<properties>
-		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
+		<arkivering-schemas.version>6b4ceead30</arkivering-schemas.version>
 		<konfig.version>1.6.10.0</konfig.version>
 		<coroutines.version>1.6.0</coroutines.version>
 		<logback.version>1.2.10</logback.version>
 		<logstash.version>7.0.1</logstash.version>
-		<slf4j.version>1.7.32</slf4j.version>
+		<slf4j.version>1.7.35</slf4j.version>
 		<kafka-streams-avro-serde.version>7.0.1</kafka-streams-avro-serde.version>
-		<kafka.version>3.0.0</kafka.version>
-		<testcontainers.version>1.16.2</testcontainers.version>
+		<kafka.version>3.1.0</kafka.version>
+		<testcontainers.version>1.16.3</testcontainers.version>
 		<postgresql.version>42.3.1</postgresql.version>
 		<okhttp.version>4.9.3</okhttp.version>
 		<jackson.version>2.13.1</jackson.version>
