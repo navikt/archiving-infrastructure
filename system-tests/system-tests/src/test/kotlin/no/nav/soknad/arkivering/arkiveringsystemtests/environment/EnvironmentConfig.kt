@@ -9,9 +9,9 @@ private val defaultProperties = mapOf(
 	"arkiv-mock.url"           to "http://localhost:${defaultPorts["arkiv-mock"]}",
 	"schema-registry.url"      to "http://localhost:${defaultPorts["schema-registry"]}",
 	"kafka-broker.url"         to "localhost:${defaultPorts["kafka-broker"]}",
-	"soknadsfillager.username" to "arkiverer",
+	"soknadsfillager.username" to "sender",
 	"soknadsfillager.password" to "password",
-	"soknadsmottaker.username" to "avsender",
+	"soknadsmottaker.username" to "innsending",
 	"soknadsmottaker.password" to "password"
 )
 
