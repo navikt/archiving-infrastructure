@@ -36,7 +36,7 @@ val defaultProperties = mapOf(
 	"KAFKA_BOOTSTRAP_SERVERS"     to "localhost:${defaultPorts["kafka-broker"]}",
 	"SOKNADSFILLAGER_USERNAME"    to "sender",
 	"SOKNADSFILLAGER_PASSWORD"    to "password",
-	"SOKNADSMOTTAKER_USERNAME"    to "sender",
+	"SOKNADSMOTTAKER_USERNAME"    to "innsending",
 	"SOKNADSMOTTAKER_PASSWORD"    to "password"
 )
 
