@@ -2,22 +2,21 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
-import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
+import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
 import no.nav.soknad.arkivering.innsending.performDeleteCall
 import no.nav.soknad.arkivering.innsending.performPutCall
-import no.nav.soknad.arkivering.innsending.sendDataToSoknadsmottaker
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ClientException
-import no.nav.soknad.arkivering.utils.createDto
+import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
+import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
+import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
+import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
 import java.util.*
 
 class EndToEndTests : SystemTestBase() {
@@ -25,6 +24,7 @@ class EndToEndTests : SystemTestBase() {
 
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var soknadsfillagerApi: SoknadsfillagerApi
+	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 
 	@BeforeAll
 	fun setup() {
@@ -35,6 +35,7 @@ class EndToEndTests : SystemTestBase() {
 
 		setUp()
 		soknadsfillagerApi = SoknadsfillagerApi(config)
+		soknadsmottakerApi = SoknadsmottakerApi(config)
 	}
 
 	@AfterAll
@@ -51,11 +52,11 @@ class EndToEndTests : SystemTestBase() {
 	fun `Happy case - one file ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 		setNormalArchiveBehaviour(key)
 
 		sendFilesToFileStorage(key, fileId)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -68,12 +69,12 @@ class EndToEndTests : SystemTestBase() {
 	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 		setNormalArchiveBehaviour(key)
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
 		sendFilesToFileStorage(key, fileId)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -87,19 +88,19 @@ class EndToEndTests : SystemTestBase() {
 		val key = UUID.randomUUID().toString()
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
-		val dto = SoknadInnsendtDto(key, false, "personId", "tema", LocalDateTime.now(),
+		val soknad = Soknad(key, false, "personId", "tema",
 			listOf(
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
+				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+					listOf(Varianter(fileId0, "application/pdf", "filnavn", "PDFA"))),
 
-				InnsendtDokumentDto("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
+				DocumentData("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
+					listOf(Varianter(fileId1, "application/pdf", "filnavn", "PDFA")))
 			))
 		setNormalArchiveBehaviour(key)
 
 		sendFilesToFileStorage(key, fileId0)
 		sendFilesToFileStorage(key, fileId1)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -113,11 +114,11 @@ class EndToEndTests : SystemTestBase() {
 	fun `No files in file storage - Nothing is sent to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 		setNormalArchiveBehaviour(key)
 
 		verifyAbsenceInFileStorage(key, fileId, 404)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
@@ -130,19 +131,19 @@ class EndToEndTests : SystemTestBase() {
 		val key = UUID.randomUUID().toString()
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
-		val dto = SoknadInnsendtDto(key, false, "personId", "tema", LocalDateTime.now(),
+		val soknad = Soknad(key, false, "personId", "tema",
 			listOf(
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId0, null, "filnavn", "1024", "variantformat", "PDFA"))),
+				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+					listOf(Varianter(fileId0, "application/pdf", "filnavn", "PDFA"))),
 
-				InnsendtDokumentDto("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
-					listOf(InnsendtVariantDto(fileId1, null, "filnavn", "1024", "variantformat", "PDFA")))
+				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+					listOf(Varianter(fileId1, "application/pdf", "filnavn", "PDFA")))
 			))
 		setNormalArchiveBehaviour(key)
 
 		sendFilesToFileStorage(key, fileId0)
 		sendFilesToFileStorage(key, fileId1)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
@@ -156,11 +157,11 @@ class EndToEndTests : SystemTestBase() {
 		val key = UUID.randomUUID().toString()
 		val erroneousAttempts = 2
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 404, erroneousAttempts)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -174,11 +175,11 @@ class EndToEndTests : SystemTestBase() {
 		val key = UUID.randomUUID().toString()
 		val erroneousAttempts = 1
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 500, erroneousAttempts)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -192,11 +193,11 @@ class EndToEndTests : SystemTestBase() {
 		val key = UUID.randomUUID().toString()
 		val erroneousAttempts = 3
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(key, erroneousAttempts)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -209,13 +210,13 @@ class EndToEndTests : SystemTestBase() {
 	fun `Archive responds 200 but has wrong response body - Will retry until soknadsarkiverer gives up`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 		val moreAttemptsThanSoknadsarkivererWillPerform = attemptsThanSoknadsarkivererWillPerform + 1
 
 		resetArchiveDatabase()
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(key, moreAttemptsThanSoknadsarkivererWillPerform)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -270,11 +271,11 @@ class EndToEndTests : SystemTestBase() {
 	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val dto = createDto(key, fileId)
+		val soknad = createSoknad(key, fileId)
 
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithCodeForXAttempts(key, 404, attemptsThanSoknadsarkivererWillPerform + 1)
-		sendDataToSoknadsmottaker(key, dto)
+		sendDataToSoknadsmottaker(key, soknad)
 		assertThatArkivMock()
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
@@ -298,7 +299,7 @@ class EndToEndTests : SystemTestBase() {
 		val finishedFileId = UUID.randomUUID().toString()
 		val newFileId = UUID.randomUUID().toString()
 
-		val newDto = createDto(newKey, newFileId)
+		val newSoknad = createSoknad(newKey, newFileId)
 		setNormalArchiveBehaviour(finishedKey)
 		setNormalArchiveBehaviour(newKey)
 
@@ -308,7 +309,7 @@ class EndToEndTests : SystemTestBase() {
 		shutDownSoknadsarkiverer()
 		putInputEventOnKafkaTopic(finishedKey, finishedFileId)
 		putProcessingEventOnKafkaTopic(finishedKey, RECEIVED, STARTED, ARCHIVED, FINISHED)
-		sendDataToSoknadsmottaker(newKey, newDto)
+		sendDataToSoknadsmottaker(newKey, newSoknad)
 		val verifier = assertThatArkivMock()
 			.hasEntityInArchive(newKey)
 			.hasCallCountInArchive(newKey, expectedCount = 1)
@@ -350,9 +351,9 @@ class EndToEndTests : SystemTestBase() {
 		}
 	}
 
-	private fun sendDataToSoknadsmottaker(key: String, dto: SoknadInnsendtDto) {
+	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad) {
 		logger.debug("$key: Sending to Soknadsmottaker for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToSoknadsmottaker(key, dto, false, config)
+		soknadsmottakerApi.sendDataToSoknadsmottaker(soknad)
 	}
 
 	private fun shutDownSoknadsarkiverer() {

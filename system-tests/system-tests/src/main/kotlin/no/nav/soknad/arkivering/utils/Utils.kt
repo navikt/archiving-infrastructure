@@ -1,10 +1,8 @@
 package no.nav.soknad.arkivering.utils
 
-import no.nav.soknad.arkivering.dto.InnsendtDokumentDto
-import no.nav.soknad.arkivering.dto.InnsendtVariantDto
-import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
-import java.time.LocalDateTime
-import java.util.*
+import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
+import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
+import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
 import java.util.concurrent.TimeUnit
 
 fun loopAndVerify(
@@ -30,19 +28,26 @@ fun loopAndVerify(
 
 private const val fnr = "10108000398" // Not a real fnr
 
-fun createDto(innsendingsId: String, fileId: String) =
-	createDto(innsendingsId, listOf(fileId))
 
-fun createDto(innsendingsId: String, fileIds: List<String>) =
-	SoknadInnsendtDto(innsendingsId, false, fnr, "BIL", LocalDateTime.now(), createInnsendtDokumentDtos(fileIds))
+fun createSoknad(innsendingId: String, fileId: String) = createSoknad(innsendingId, listOf(fileId))
+fun createSoknad(innsendingId: String, fileIds: List<String>) = Soknad(
+	innsendingId,
+	false,
+	fnr,
+	"BIL",
+	createDocuments(fileIds)
+)
 
-private fun createInnsendtDokumentDtos(fileIds: List<String>): List<InnsendtDokumentDto> =
-	mutableListOf(
-		createInnsendtDokumentDto(fileIds.first(), true)
-	).plus(
-		fileIds.drop(1).map { createInnsendtDokumentDto(it, false) }
-	)
+fun createDocuments(fileIds: List<String>) = listOf(DocumentData(
+	"NAV 10-07.40",
+	true,
+	"Søknad om stønad til anskaffelse av motorkjøretøy",
+	fileIds.map { createVarianter(it) }
+))
 
-private fun createInnsendtDokumentDto(id: String, erHovedskjema: Boolean) =
-	InnsendtDokumentDto("NAV 10-07.17", erHovedskjema, "Søknad fra lasttest",
-		listOf(InnsendtVariantDto(id, null, "filnavn", "1024", "ARKIV", "PDFA")))
+fun createVarianter(fileId: String) = Varianter(
+	fileId,
+	"application/pdf",
+	"innsending.pdf",
+	"PDFA"
+)

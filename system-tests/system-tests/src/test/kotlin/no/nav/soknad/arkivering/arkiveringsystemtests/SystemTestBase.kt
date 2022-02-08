@@ -9,13 +9,14 @@ import no.nav.soknad.arkivering.innsending.getStatusCodeForGetCall
 import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
-import no.nav.soknad.arkivering.utils.createDto
+import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -109,16 +110,16 @@ abstract class SystemTestBase {
 	}
 
 	private fun createSoknadarkivschema(innsendingsId: String, fileId: String): Soknadarkivschema {
-		val soknadInnsendtDto = createDto(innsendingsId, fileId)
-		val innsendtDokumentDto = soknadInnsendtDto.innsendteDokumenter[0]
-		val innsendtVariantDto = innsendtDokumentDto.varianter[0]
+		val soknad = createSoknad(innsendingsId, fileId)
+		val document = soknad.dokumenter[0]
+		val variant = document.varianter[0]
 
-		val mottattVariant = listOf(MottattVariant(innsendtVariantDto.uuid, innsendtVariantDto.filNavn, innsendtVariantDto.filtype, innsendtVariantDto.variantformat))
+		val mottattVariant = listOf(MottattVariant(variant.id, variant.filnavn, variant.filtype, variant.mediaType))
 
-		val mottattDokument = listOf(MottattDokument(innsendtDokumentDto.skjemaNummer, innsendtDokumentDto.erHovedSkjema, innsendtDokumentDto.tittel, mottattVariant))
+		val mottattDokument = listOf(MottattDokument(document.skjemanummer, document.erHovedskjema, document.tittel, mottattVariant))
 
-		return Soknadarkivschema(innsendingsId, soknadInnsendtDto.personId, soknadInnsendtDto.tema,
-			soknadInnsendtDto.innsendtDato.toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
+		return Soknadarkivschema(innsendingsId, soknad.personId, soknad.tema,
+			LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
 	}
 
 
