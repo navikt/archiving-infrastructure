@@ -2,9 +2,9 @@ package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Configuration
-import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ApiClient
-import no.nav.soknad.arkivering.soknadsfillager.infrastructure.Serializer
 import no.nav.soknad.arkivering.soknadsmottaker.api.SoknadApi
+import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.ApiClient
+import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.Serializer
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 
 class SoknadsmottakerApi(appConfiguration: Configuration) {

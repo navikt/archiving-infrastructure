@@ -35,15 +35,19 @@ fun createSoknad(innsendingId: String, fileIds: List<String>) = Soknad(
 	false,
 	fnr,
 	"BIL",
-	createDocuments(fileIds)
+	mutableListOf(
+		createDocuments(fileIds.first(), true)
+	).plus(
+		fileIds.drop(1).map { createDocuments(it, false) }
+	)
 )
 
-fun createDocuments(fileIds: List<String>) = listOf(DocumentData(
+fun createDocuments(fileId: String, erHovedskjema: Boolean) = DocumentData(
 	"NAV 10-07.40",
-	true,
+	erHovedskjema,
 	"Søknad om stønad til anskaffelse av motorkjøretøy",
-	fileIds.map { createVarianter(it) }
-))
+	listOf(createVarianter(fileId))
+)
 
 fun createVarianter(fileId: String) = Varianter(
 	fileId,
