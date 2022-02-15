@@ -3,12 +3,12 @@ package no.nav.soknad.arkivering
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
+import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
 import no.nav.soknad.arkivering.innsending.performDeleteCall
-import no.nav.soknad.arkivering.innsending.sendDataToSoknadsmottaker
 import no.nav.soknad.arkivering.kafka.KafkaListener
-import no.nav.soknad.arkivering.utils.createDto
+import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
+import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -29,6 +29,7 @@ class LoadTests(private val config: Configuration) {
 
 	private val kafkaListener = KafkaListener(config.kafkaConfig)
 	private val soknadsfillagerApi = SoknadsfillagerApi(config)
+	private val soknadsmottakerApi = SoknadsmottakerApi(config)
 
 
 	@Suppress("FunctionName")
@@ -134,9 +135,9 @@ class LoadTests(private val config: Configuration) {
 
 		val fileId = "warmup_" + UUID.randomUUID().toString()
 		val innsendingKey = UUID.randomUUID().toString()
-		val dto = createDto(innsendingKey, fileId)
+		val soknad = createSoknad(innsendingKey, fileId)
 		sendFilesToFileStorage(innsendingKey, fileId)
-		sendDataToSoknadsmottaker(innsendingKey, dto, async = false, verbose = true)
+		sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = true)
 
 		setupVerificationThatFinishedEventsAreCreated(expectedKeys = listOf(innsendingKey), 1).verify()
 
@@ -152,13 +153,13 @@ class LoadTests(private val config: Configuration) {
 		innsendingKeys: List<String>,
 		numberOfEntities: Int,
 		numberOfFilesPerEntity: Int
-	): List<SoknadInnsendtDto> {
+	): List<Soknad> {
 
 		val startTimeSendingToSoknadsmottaker = System.currentTimeMillis()
 		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
 		val atomicInteger = AtomicInteger()
-		val dtos = runBlocking {
+		val soknader = runBlocking {
 			(0 until numberOfEntities).map {
 				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
 				sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
@@ -167,23 +168,23 @@ class LoadTests(private val config: Configuration) {
 
 		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
 		logger.info("Sent $numberOfEntities entities to Soknadsmottaker in $timeTaken ms")
-		return dtos
+		return soknader
 	}
 
-	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): SoknadInnsendtDto {
+	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): Soknad {
 		return withContext(Dispatchers.Default) {
 
-			val dto = createDto(innsendingKey, fileIds)
+			val soknad = createSoknad(innsendingKey, fileIds)
 
-			sendDataToSoknadsmottaker(innsendingKey, dto, async = true, verbose = false)
-			dto
+			sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = false)
+			soknad
 		}
 	}
 
-	private fun sendDataToSoknadsmottaker(key: String, dto: SoknadInnsendtDto, async: Boolean, verbose: Boolean) {
+	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad, verbose: Boolean) {
 		if (verbose)
 			logger.debug("$key: Sending to Soknadsmottaker for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		sendDataToSoknadsmottaker(key, dto, async, config)
+		soknadsmottakerApi.sendDataToSoknadsmottaker(soknad)
 	}
 
 	private fun setupVerificationThatFinishedEventsAreCreated(

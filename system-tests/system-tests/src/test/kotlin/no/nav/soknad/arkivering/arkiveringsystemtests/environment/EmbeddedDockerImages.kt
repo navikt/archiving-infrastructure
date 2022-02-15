@@ -80,9 +80,7 @@ class EmbeddedDockerImages {
 				hashMapOf(
 					"APPLICATION_PROFILE" to "docker",
 					"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
-					"DATABASE_NAME" to databaseName,
-					"APPLICATION_USERNAME" to postgresUsername,
-					"APPLICATION_PASSWORD" to postgresUsername
+					"DATABASE_NAME" to databaseName
 				)
 			)
 			.dependsOn(postgresContainer)
@@ -113,9 +111,7 @@ class EmbeddedDockerImages {
 					"APPLICATION_PROFILE" to "docker",
 					"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 					"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
-					"DATABASE_NAME" to databaseName,
-					"APPLICATION_USERNAME" to postgresUsername,
-					"APPLICATION_PASSWORD" to postgresUsername
+					"DATABASE_NAME" to databaseName
 				)
 			)
 			.dependsOn(postgresContainer, kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer)

@@ -13,7 +13,7 @@
 	<description>End-to-end-tests and Load-tests</description>
 
 	<properties>
-		<arkivering-schemas.version>6b4ceead30</arkivering-schemas.version>
+		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
 		<konfig.version>1.6.10.0</konfig.version>
 		<coroutines.version>1.6.0</coroutines.version>
 		<logback.version>1.2.10</logback.version>

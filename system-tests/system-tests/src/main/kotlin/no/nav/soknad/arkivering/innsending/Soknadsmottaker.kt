@@ -1,14 +1,23 @@
 package no.nav.soknad.arkivering.innsending
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Configuration
-import no.nav.soknad.arkivering.dto.SoknadInnsendtDto
+import no.nav.soknad.arkivering.soknadsmottaker.api.SoknadApi
+import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.ApiClient
+import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.Serializer
+import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 
-fun sendDataToSoknadsmottaker(key: String, dto: SoknadInnsendtDto, async: Boolean, appConfiguration: Configuration) {
-	val url = appConfiguration.config.soknadsmottakerUrl + "/save"
-	val headers = listOf(
-		appConfiguration.config.soknadsmottakerUsername to appConfiguration.config.soknadsmottakerPassword,
-		"innsendingKey" to key
-	)
+class SoknadsmottakerApi(appConfiguration: Configuration) {
+	private val soknadApi: SoknadApi
 
-	performPostCall(dto, url, headers, async)
+	init {
+		Serializer.jacksonObjectMapper.registerModule(JavaTimeModule())
+		ApiClient.username = appConfiguration.config.soknadsmottakerUsername
+		ApiClient.password = appConfiguration.config.soknadsmottakerPassword
+		soknadApi = SoknadApi(appConfiguration.config.soknadsmottakerUrl)
+	}
+
+	fun sendDataToSoknadsmottaker(soknad: Soknad) {
+		soknadApi.receive(soknad)
+	}
 }

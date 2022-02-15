@@ -39,6 +39,5 @@ class SoknadsfillagerApi(appConfiguration: Configuration) {
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String, payload: ByteArray) {
 		val files = listOf(FileData(fileId, payload, OffsetDateTime.now(ZoneOffset.UTC)))
 		filesApi.addFiles(files, innsendingId)
-		checkFilesInFileStorage(innsendingId, fileId)
 	}
 }
