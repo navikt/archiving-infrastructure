@@ -2,7 +2,7 @@ package no.nav.soknad.arkivering.verification
 
 import no.nav.soknad.arkivering.avroschemas.EventTypes
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
-import no.nav.soknad.arkivering.dto.ArkivDbData
+import no.nav.soknad.arkivering.dto.ArchiveEntity
 import no.nav.soknad.arkivering.kafka.KafkaListener
 
 /**
@@ -63,7 +63,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	}
 
 	fun hasEntityInArchive(key: String): AssertionHelper {
-		val verificationTask = VerificationTask.Builder<ArkivDbData>()
+		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
 			.forKey(key)
 			.verifyPresence()
@@ -76,7 +76,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	}
 
 	fun hasNoEntityInArchive(key: String): AssertionHelper {
-		val verificationTask = VerificationTask.Builder<ArkivDbData>()
+		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
 			.forKey(key)
 			.verifyAbsence()

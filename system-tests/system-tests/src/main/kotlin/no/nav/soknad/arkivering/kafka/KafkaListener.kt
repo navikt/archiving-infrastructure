@@ -8,7 +8,7 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.soknad.arkivering.Configuration
 import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
-import no.nav.soknad.arkivering.dto.ArkivDbData
+import no.nav.soknad.arkivering.dto.ArchiveEntity
 import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.config.SaslConfigs
@@ -29,7 +29,7 @@ class KafkaListener(private val kafkaConfig: Configuration.KafkaConfig) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	private val verbose = true
 
-	private val entityConsumers          = mutableListOf<KafkaEntityConsumer<ArkivDbData>>()
+	private val entityConsumers          = mutableListOf<KafkaEntityConsumer<ArchiveEntity>>()
 	private val metricsConsumers         = mutableListOf<KafkaEntityConsumer<InnsendingMetrics>>()
 	private val numberOfCallsConsumers   = mutableListOf<KafkaEntityConsumer<Int>>()
 	private val processingEventConsumers = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
@@ -62,8 +62,8 @@ class KafkaListener(private val kafkaConfig: Configuration.KafkaConfig) {
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaConfig.numberOfCallsTopic, Consumed.with(stringSerde, intSerde))
 
 		entitiesStream
-			.mapValues { json -> mapper.readValue<ArkivDbData>(json) }
-			.peek { key, entity -> log("$key: Joark Entities    - $entity") }
+			.mapValues { json -> mapper.readValue<ArchiveEntity>(json) }
+			.peek { key, entity -> log("$key: Archive Entities  - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
@@ -146,7 +146,7 @@ class KafkaListener(private val kafkaConfig: Configuration.KafkaConfig) {
 
 	@Suppress("unused")
 	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers        .add(consumer)
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArkivDbData>)       = entityConsumers         .add(consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)       = entityConsumers         .add(consumer)
 	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
 	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers.add(consumer)
 }

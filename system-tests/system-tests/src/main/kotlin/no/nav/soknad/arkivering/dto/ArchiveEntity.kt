@@ -1,6 +1,6 @@
 package no.nav.soknad.arkivering.dto
 
-data class ArkivDbData(
+data class ArchiveEntity(
 	val id: String,
 	val title: String,
 	val tema: String,
