@@ -51,6 +51,8 @@ services:
     depends_on:
       - kafka-broker
       - kafka-schema-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
 
   soknadsfillager:
     build: ../soknadsfillager
@@ -59,12 +61,12 @@ services:
     depends_on:
       - postgres
     environment:
+      - APPLICATION_PROFILE=docker
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=postgres
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
-      - APPLICATION_PROFILE=docker
 
   arkiv-mock:
     build: ../arkiv-mock
@@ -75,13 +77,13 @@ services:
       - kafka-broker
       - soknadsfillager
     environment:
+      - APPLICATION_PROFILE=docker
       - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=postgres
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
-      - APPLICATION_PROFILE=docker
 
   soknadsarkiverer:
     build: ../soknadsarkiverer
