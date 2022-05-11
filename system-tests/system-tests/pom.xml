@@ -15,22 +15,22 @@
 	<properties>
 		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
 		<konfig.version>1.6.10.0</konfig.version>
-		<coroutines.version>1.6.0</coroutines.version>
-		<logback.version>1.2.10</logback.version>
-		<logstash.version>7.0.1</logstash.version>
+		<coroutines.version>1.6.1</coroutines.version>
+		<logback.version>1.2.11</logback.version>
+		<logstash.version>7.1.1</logstash.version>
 		<slf4j.version>1.7.36</slf4j.version>
-		<kafka-streams-avro-serde.version>7.0.1</kafka-streams-avro-serde.version>
-		<kafka.version>3.1.0</kafka.version>
-		<testcontainers.version>1.16.3</testcontainers.version>
-		<postgresql.version>42.3.3</postgresql.version>
-		<okhttp.version>4.9.3</okhttp.version>
-		<jackson.version>2.13.1</jackson.version>
+		<kafka-streams-avro-serde.version>7.1.1</kafka-streams-avro-serde.version>
+		<kafka.version>3.2.0</kafka.version>
+		<testcontainers.version>1.17.1</testcontainers.version>
+		<postgresql.version>42.3.5</postgresql.version>
+		<okhttp3.version>4.9.3</okhttp3.version>
+		<jackson.version>2.13.2</jackson.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
 
-		<maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
 		<java.version>17</java.version>
 		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-		<kotlin.version>1.6.10</kotlin.version>
+		<kotlin.version>1.6.21</kotlin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -93,7 +93,7 @@
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
-			<version>${okhttp.version}</version>
+			<version>${okhttp3.version}</version>
 		</dependency>
 
 		<dependency>
