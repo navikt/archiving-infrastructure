@@ -4,7 +4,7 @@ services:
   kafka-broker:
     image: wurstmeister/kafka
     ports:
-      - 9092:9092
+      - "9092:9092"
     environment:
       KAFKA_CREATE_TOPICS: "privat-soknadInnsendt-v1-teamsoknad:1:1,privat-soknadInnsendt-processingEventLog-v1-teamsoknad:1:1,privat-soknadInnsendt-messages-v1-teamsoknad:1:1,privat-soknadInnsendt-systemTests-entities:1:1,privat-soknadInnsendt-systemTests-numberOfCalls:1:1,privat-soknadInnsendt-metrics-v1-teamsoknad:1:1"
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
@@ -19,13 +19,13 @@ services:
   kafka-zookeeper:
     image: wurstmeister/zookeeper
     ports:
-      - 2181:2181
+      - "2181:2181"
 
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry
     hostname: kafka-schema-registry
     ports:
-      - 8081:8081
+      - "8081:8081"
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-broker:29092
       SCHEMA_REGISTRY_HOST_NAME: kafka-schema-registry
@@ -41,13 +41,13 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
 
 
   soknadsmottaker:
     build: ../soknadsmottaker
     ports:
-      - 8090:8090
+      - "8090:8090"
     depends_on:
       - kafka-broker
       - kafka-schema-registry
@@ -57,38 +57,34 @@ services:
   soknadsfillager:
     build: ../soknadsfillager
     ports:
-      - 9042:9042
+      - "9042:9042"
     depends_on:
       - postgres
     environment:
-      - APPLICATION_PROFILE=docker
-      - DATABASE_HOST=postgres
+      - SPRING_PROFILES_ACTIVE=docker
       - DATABASE_PORT=5432
-      - DATABASE_NAME=postgres
+      - DATABASE_HOST=postgres
+      - DATABASE_DATABASE=postgres
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
+      - INNSENDING_USERNAME=sender
+      - INNSENDING_PASSWORD=password
 
   arkiv-mock:
     build: ../arkiv-mock
     ports:
-      - 8092:8092
+      - "8092:8092"
     depends_on:
-      - postgres
       - kafka-broker
       - soknadsfillager
     environment:
       - APPLICATION_PROFILE=docker
       - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=postgres
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=postgres
 
   soknadsarkiverer:
     build: ../soknadsarkiverer
     ports:
-      - 8091:8091
+      - "8091:8091"
     depends_on:
       - kafka-broker
       - kafka-schema-registry

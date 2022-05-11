@@ -4,6 +4,11 @@ import com.natpryce.konfig.*
 import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
 import java.io.File
 
+const val soknadsfillagerUsername = "sender"
+const val soknadsfillagerPassword = "password"
+const val soknadsmottakerUsername = "innsending"
+const val soknadsmottakerPassword = "password"
+
 val defaultPorts = mapOf(
 	"soknadsfillager"  to 9042,
 	"soknadsmottaker"  to 8090,
@@ -34,10 +39,10 @@ val defaultProperties = mapOf(
 	"ARKIVMOCK_URL"               to "http://localhost:${defaultPorts["arkiv-mock"]}",
 	"SCHEMA_REGISTRY_URL"         to "http://localhost:${defaultPorts["schema-registry"]}",
 	"KAFKA_BOOTSTRAP_SERVERS"     to "localhost:${defaultPorts["kafka-broker"]}",
-	"SOKNADSFILLAGER_USERNAME"    to "sender",
-	"SOKNADSFILLAGER_PASSWORD"    to "password",
-	"SOKNADSMOTTAKER_USERNAME"    to "innsending",
-	"SOKNADSMOTTAKER_PASSWORD"    to "password"
+	"SOKNADSFILLAGER_USERNAME"    to soknadsfillagerUsername,
+	"SOKNADSFILLAGER_PASSWORD"    to soknadsfillagerPassword,
+	"SOKNADSMOTTAKER_USERNAME"    to soknadsmottakerUsername,
+	"SOKNADSMOTTAKER_PASSWORD"    to soknadsmottakerPassword
 )
 
 

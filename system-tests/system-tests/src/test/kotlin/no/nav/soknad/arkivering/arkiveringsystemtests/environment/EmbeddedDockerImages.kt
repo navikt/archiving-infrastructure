@@ -1,7 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
-import no.nav.soknad.arkivering.defaultPorts
-import no.nav.soknad.arkivering.defaultProperties
+import no.nav.soknad.arkivering.*
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
@@ -78,9 +77,14 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(
 				hashMapOf(
-					"APPLICATION_PROFILE" to "docker",
-					"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
-					"DATABASE_NAME" to databaseName
+					"SPRING_PROFILES_ACTIVE" to "docker",
+					"DATABASE_HOST"          to postgresContainer.networkAliases[0],
+					"DATABASE_PORT"          to defaultPorts["database"].toString(),
+					"DATABASE_DATABASE"      to databaseName,
+					"DATABASE_USERNAME"      to postgresUsername,
+					"DATABASE_PASSWORD"      to postgresUsername,
+					"INNSENDING_USERNAME"    to soknadsfillagerUsername,
+					"INNSENDING_PASSWORD"    to soknadsfillagerPassword
 				)
 			)
 			.dependsOn(postgresContainer)
@@ -111,11 +115,9 @@ class EmbeddedDockerImages {
 				hashMapOf(
 					"APPLICATION_PROFILE" to "docker",
 					"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"DATABASE_JDBC_URL" to "jdbc:postgresql://${postgresContainer.networkAliases[0]}:${defaultPorts["database"]}/$databaseName",
-					"DATABASE_NAME" to databaseName
 				)
 			)
-			.dependsOn(postgresContainer, kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer)
+			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		arkivMockContainer.start()
