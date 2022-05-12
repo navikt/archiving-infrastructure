@@ -53,6 +53,10 @@ class EmbeddedDockerImages {
 		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
+
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
@@ -97,8 +101,12 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SPRING_PROFILES_ACTIVE" to "docker",
-					"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}"
+					"NAIS_NAMESPACE" to "team-soknad",
+					"KAFKA_SECURITY" to "FALSE",
+					"KAFKA_SCHEMA_REGISTRY" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
+					"KAFKA_BROKERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+					"INNSENDING_USERNAME" to soknadsmottakerUsername,
+					"INNSENDING_PASSWORD" to soknadsmottakerPassword
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
