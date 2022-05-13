@@ -82,10 +82,10 @@ services:
       - "8092:8092"
     depends_on:
       - kafka-broker
-      - soknadsfillager
     environment:
-      - APPLICATION_PROFILE=docker
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
+      - SPRING_PROFILES_ACTIVE=docker
+      - KAFKA_SECURITY=false
+      - KAFKA_BROKERS=kafka-broker:29092
 
   soknadsarkiverer:
     build: ../soknadsarkiverer

@@ -58,7 +58,6 @@ class EmbeddedDockerImages {
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
 
 
-
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])
@@ -82,8 +81,8 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SPRING_PROFILES_ACTIVE" to "docker",
-					"DATABASE_HOST"          to postgresContainer.networkAliases[0],
 					"DATABASE_PORT"          to defaultPorts["database"].toString(),
+					"DATABASE_HOST"          to postgresContainer.networkAliases[0],
 					"DATABASE_DATABASE"      to databaseName,
 					"DATABASE_USERNAME"      to postgresUsername,
 					"DATABASE_PASSWORD"      to postgresUsername,
@@ -101,12 +100,12 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SPRING_PROFILES_ACTIVE" to "docker",
-					"NAIS_NAMESPACE" to "team-soknad",
-					"KAFKA_SECURITY" to "FALSE",
-					"KAFKA_SCHEMA_REGISTRY" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
-					"KAFKA_BROKERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"INNSENDING_USERNAME" to soknadsmottakerUsername,
-					"INNSENDING_PASSWORD" to soknadsmottakerPassword
+					"NAIS_NAMESPACE"         to "team-soknad",
+					"KAFKA_SECURITY"         to "FALSE",
+					"KAFKA_SCHEMA_REGISTRY"  to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
+					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+					"INNSENDING_USERNAME"    to soknadsmottakerUsername,
+					"INNSENDING_PASSWORD"    to soknadsmottakerPassword
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
@@ -121,11 +120,12 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(
 				hashMapOf(
-					"APPLICATION_PROFILE" to "docker",
-					"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+					"SPRING_PROFILES_ACTIVE" to "docker",
+					"KAFKA_SECURITY"         to "FALSE",
+					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				)
 			)
-			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer)
+			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
 		arkivMockContainer.start()
@@ -152,7 +152,8 @@ class EmbeddedDockerImages {
 
 	private fun createTopic(topic: String) {
 		val topicCommand =
-			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:${defaultPorts["kafka-broker"]} --replication-factor 1 --partitions 1 --topic $topic"
+			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:${defaultPorts["kafka-broker"]} " +
+				"--replication-factor 1 --partitions 1 --topic $topic"
 
 		try {
 			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topicCommand)
