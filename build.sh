@@ -9,11 +9,37 @@ YELLOW='\033[1;33m'
 NOCOLOUR='\033[0m'
 
 
+available_components=()
+available_components+=("soknadsmottaker")
+available_components+=("soknadsarkiverer")
+available_components+=("soknadsfillager")
+available_components+=("arkiv-mock")
+
 components=()
-components+=("../soknadsmottaker")
-components+=("../soknadsarkiverer")
-components+=("../soknadsfillager")
-components+=("../arkiv-mock")
+if [ $# -eq 0 ]; then
+  # If user gave no arguments, add all components
+  for comp in "${available_components[@]}"; do
+    components+=("../$comp")
+  done
+
+else
+  # If user gave arguments, make sure it is a valid component and add it
+  for arg in "$@"; do
+    valid_component=0
+    for comp in "${available_components[@]}"; do
+      if [ "$arg" == "$comp" ]; then
+        valid_component=1
+        break
+      fi
+    done
+
+    if [ "$valid_component" -eq 0 ]; then
+      echo "Unknown component $arg"
+      exit
+    fi
+    components+=("../$comp")
+  done
+fi
 
 
 check_sufficient_java_version() {
@@ -27,13 +53,15 @@ check_sufficient_java_version() {
 	fi
 	local IFS=$'\n'
 	# remove \r for Cygwin
-	local lines=$("$java_cmd" -Xms32M -Xmx32M -version 2>&1 | tr '\r' '\n')
+	local lines
+	lines=$("$java_cmd" -Xms32M -Xmx32M -version 2>&1 | tr '\r' '\n')
 	if [[ -z $java_cmd ]]; then
 		result=no_java
 	else
 		for line in $lines; do
 			if [[ (-z $result) && ($line = *"version \""*) ]]; then
-				local ver=$(echo $line | sed -e 's/.*version "\(.*\)"\(.*\)/\1/; 1q')
+				local ver
+				ver=$(echo $line | sed -e 's/.*version "\(.*\)"\(.*\)/\1/; 1q')
 				# on macOS, sed doesn't support '?'
 				if [[ $ver = "1."* ]]; then
 					result=$(echo $ver | sed -e 's/1\.\([0-9]*\)\(.*\)/\1/; 1q')
@@ -66,15 +94,11 @@ check_if_components_exists() {
 }
 
 check_if_docker_is_running() {
-	docker info &> /dev/null
-	if [ $? -ne 0 ]; then
-		echo "Docker does not seem to be running"
-		exit 1
-	fi
+  docker info &> /dev/null || { echo "Docker does not seem to be running"; exit 1; }
 }
 
 build() {
-	cd "$1"
+	cd "$1" || exit
 	mvn clean install $MVN_FLAGS
 }
 build_components_and_show_progress() {
@@ -84,11 +108,11 @@ build_components_and_show_progress() {
 	longest_name=0
 	for dir in "${components[@]}"; do
 
-		build ${dir} 1> /dev/null &
+		build "${dir}" 1> /dev/null &
 		comp=$(echo "${dir}" | cut -d'/' -f 2)
 		pid=$!
-		jobs+=($comp)
-		jobs+=($pid)
+		jobs+=("$comp")
+		jobs+=("$pid")
 
 		namelen=${#comp}
 		if [[ $namelen -ge $longest_name ]]; then
@@ -112,8 +136,8 @@ build_components_and_show_progress() {
 			if [[ -z $pid ]]; then
 				continue
 			fi
-			if [[ $pid != 0 ]] && ps -p $pid > /dev/null 2>&1 ; then
-				components_being_built+=($comp)
+			if [[ $pid != 0 ]] && ps -p "$pid" > /dev/null 2>&1 ; then
+				components_being_built+=("$comp")
 			elif [[ $pid != 0 ]] ; then
 
 				wait "$pid"
@@ -162,11 +186,11 @@ build_components_and_show_progress() {
 
 clean_docker() {
 	if [[ $(docker ps -qa) ]]; then
-		docker stop $(docker ps -qa)
-		docker rm $(docker ps -qa)
+		docker stop "$(docker ps -qa)"
+		docker rm "$(docker ps -qa)"
 	fi
 	if [[ $(docker volume ls -qf dangling=true) ]]; then
-		docker volume rm $(docker volume ls -qf dangling=true)
+		docker volume rm "$(docker volume ls -qf dangling=true)"
 	fi
 }
 
@@ -181,9 +205,5 @@ check_sufficient_java_version
 check_if_docker_is_running
 
 clean_docker > /dev/null
-build_components_and_show_progress
-if [ $? -ne 0 ]; then
-	echo "Failed to build, exiting."
-	exit 1
-fi
+build_components_and_show_progress || { echo "Failed to build, exiting."; exit 1; }
 build-docker
