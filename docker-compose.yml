@@ -6,7 +6,7 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_CREATE_TOPICS: "privat-soknadInnsendt-v1-teamsoknad:1:1,privat-soknadInnsendt-processingEventLog-v1-teamsoknad:1:1,privat-soknadInnsendt-messages-v1-teamsoknad:1:1,privat-soknadInnsendt-systemTests-entities:1:1,privat-soknadInnsendt-systemTests-numberOfCalls:1:1,privat-soknadInnsendt-metrics-v1-teamsoknad:1:1,min-side.aapen-brukernotifikasjon-done-v1:1:1,min-side.aapen-brukernotifikasjon-beskjed-v1:1:1,min-side.aapen-brukernotifikasjon-oppgave-v1:1:1"
+      KAFKA_CREATE_TOPICS: "privat-soknadinnsending-v1-dev:1:1,privat-soknadinnsending-processingeventlog-v1-dev:1:1,privat-soknadinnsending-messages-v1-dev:1:1,privat-soknadinnsending-metrics-v1-dev:1:1,privat-soknadinnsending-systemtests-entities:1:1,privat-soknadinnsending-systemtests-numberofcalls:1:1,min-side.aapen-brukernotifikasjon-done-v1:1:1,min-side.aapen-brukernotifikasjon-beskjed-v1:1:1,min-side.aapen-brukernotifikasjon-oppgave-v1:1:1"
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
       # For more details see https://rmoff.net/2018/08/02/kafka-listeners-explained/
       KAFKA_LISTENERS: INTERNAL://kafka-broker:29092,EXTERNAL://kafka-broker:9092
@@ -100,6 +100,6 @@ services:
       - SPRING_PROFILES_ACTIVE=test
       - FILESTORAGE_HOST=http://soknadsfillager:9042
       - JOARK_HOST=http://arkiv-mock:8092
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:29092
-      - SCHEMA_REGISTRY_URL=http://kafka-schema-registry:8081
+      - KAFKA_BROKERS=kafka-broker:29092
+      - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - BOOTSTRAPPING_TIMEOUT=1

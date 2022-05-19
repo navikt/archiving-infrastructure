@@ -137,11 +137,11 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SPRING_PROFILES_ACTIVE" to "test",
-					"BOOTSTRAPPING_TIMEOUT" to "60",
-					"KAFKA_BOOTSTRAP_SERVERS" to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"SCHEMA_REGISTRY_URL" to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
-					"FILESTORAGE_HOST" to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
-					"JOARK_HOST" to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}"
+					"BOOTSTRAPPING_TIMEOUT"  to "60",
+					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+					"KAFKA_SCHEMA_REGISTRY"  to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
+					"FILESTORAGE_HOST"       to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
+					"JOARK_HOST"             to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}"
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)

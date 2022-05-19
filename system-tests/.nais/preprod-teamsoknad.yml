@@ -80,6 +80,14 @@ spec:
                   value: SASL_SSL
                 - name: KAFKA_SASLMEC
                   value: PLAIN
+                - name: KAFKA_INPUT_TOPIC
+                  value: privat-soknadinnsending-v1-loadtests
+                - name: KAFKA_PROCESSING_TOPIC
+                  value: privat-soknadinnsending-processingeventlog-v1-loadtests
+                - name: KAFKA_MESSAGE_TOPIC
+                  value: privat-soknadinnsending-messages-v1-loadtests
+                - name: KAFKA_METRICS_TOPIC
+                  value: privat-soknadinnsending-metrics-v1-loadtests
                 - name: SOKNADSFILLAGER_URL
                   value: https://soknadsfillager.dev.intern.nav.no
                 - name: SOKNADSMOTTAKER_URL
