@@ -16,7 +16,7 @@ available_components+=("soknadsfillager")
 available_components+=("arkiv-mock")
 
 components=()
-if [ $# -eq 0 ]; then
+if [ $# -eq 1 ] && [ "$1" == "no-testcontainers" ] || [ $# -eq 0 ]; then
   # If user gave no arguments, add all components
   for comp in "${available_components[@]}"; do
     components+=("../$comp")
@@ -37,7 +37,7 @@ else
       echo "Unknown component $arg"
       exit
     fi
-    components+=("../$comp")
+    components+=("../$arg")
   done
 fi
 
