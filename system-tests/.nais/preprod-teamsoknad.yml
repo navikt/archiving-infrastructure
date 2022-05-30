@@ -6,7 +6,7 @@ metadata:
   name: innsending-system-tests
   namespace: team-soknad
 spec:
-  schedule: "0 6 * * MON" # Every Monday at 6 am
+  schedule: "0 17 * * MON" # Every Monday at 5 pm
 #  schedule: "0 */5 * * *" # Every five hours
 #  schedule: "30 * * * *"  # Once an hour, at 30 past
   startingDeadlineSeconds: 200
