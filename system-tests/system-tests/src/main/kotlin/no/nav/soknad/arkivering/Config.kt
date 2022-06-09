@@ -39,7 +39,6 @@ val defaultProperties = mapOf(
 	"SOKNADSFILLAGER_URL"         to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"SOKNADSMOTTAKER_URL"         to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"SOKNADSARKIVERER_URL"        to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
-	"ARKIVMOCK_URL"               to "http://localhost:${defaultPorts["arkiv-mock"]}",
 	"SCHEMA_REGISTRY_URL"         to "http://localhost:${defaultPorts["schema-registry"]}",
 	"KAFKA_BOOTSTRAP_SERVERS"     to "localhost:${defaultPorts["kafka-broker"]}",
 	"SOKNADSFILLAGER_USERNAME"    to soknadsfillagerUsername,
@@ -92,6 +91,5 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val soknadsfillagerUrl: String = "SOKNADSFILLAGER_URL".configProperty(overridingProperties),
 		val soknadsfillagerUsername: String = readFileAsText("/secrets/innsending-data/username", "SOKNADSFILLAGER_USERNAME".configProperty(overridingProperties)),
 		val soknadsfillagerPassword: String = readFileAsText("/secrets/innsending-data/password", "SOKNADSFILLAGER_PASSWORD".configProperty(overridingProperties)),
-		val arkivMockUrl: String = "ARKIVMOCK_URL".configProperty(overridingProperties),
 	)
 }

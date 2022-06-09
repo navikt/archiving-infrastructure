@@ -4,7 +4,6 @@ import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDocker
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
-import no.nav.soknad.arkivering.innsending.performDeleteCall
 import no.nav.soknad.arkivering.innsending.performPutCall
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ClientException
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
@@ -213,7 +212,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = createSoknad(key, fileId)
 		val moreAttemptsThanSoknadsarkivererWillPerform = attemptsThanSoknadsarkivererWillPerform + 1
 
-		resetArchiveDatabase()
 		sendFilesToFileStorage(key, fileId)
 		mockArchiveRespondsWithErroneousBodyForXAttempts(key, moreAttemptsThanSoknadsarkivererWillPerform)
 		sendDataToSoknadsmottaker(key, soknad)
@@ -366,11 +364,6 @@ class EndToEndTests : SystemTestBase() {
 		verifyComponentIsUp(url, "soknadsarkiverer")
 	}
 
-
-	private fun resetArchiveDatabase() {
-		val url = env.getUrlForArkivMock() + "/rest/journalpostapi/v1/reset"
-		performDeleteCall(url)
-	}
 
 	private fun setNormalArchiveBehaviour(uuid: String) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"

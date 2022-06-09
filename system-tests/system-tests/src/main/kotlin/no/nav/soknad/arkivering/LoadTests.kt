@@ -5,7 +5,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
-import no.nav.soknad.arkivering.innsending.performDeleteCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
@@ -198,15 +197,6 @@ class LoadTests(private val config: Configuration) {
 		expectedKeys.forEach { assertionHelper.hasFinishedEvent(it, timeoutInMs) }
 
 		return assertionHelper
-	}
-
-	fun resetArkivMockDatabase() {
-		try {
-			logger.info("Resetting arkiv-mock database")
-			performDeleteCall(config.config.arkivMockUrl + "/rest/journalpostapi/v1/reset")
-		} catch (e: Exception) {
-			logger.error("Error when resetting arkiv-mock database", e)
-		}
 	}
 
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String) {

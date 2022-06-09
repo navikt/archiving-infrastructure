@@ -23,7 +23,6 @@ fun main() {
 		logger.error("Load tests were <TODO REMOVE> erroneous", t) // TODO: Remove "<TODO REMOVE>"
 		exitStatus = 1
 	} finally {
-		loadTests.resetArkivMockDatabase()
 		exitProcess(exitStatus)
 	}
 }

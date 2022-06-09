@@ -37,13 +37,3 @@ fun performPutCall(url: String) {
 			throw IOException("Unexpected code $response")
 	}
 }
-
-fun performDeleteCall(url: String) {
-	val requestBody = object : RequestBody() {
-		override fun contentType() = "application/json".toMediaType()
-		override fun writeTo(sink: BufferedSink) {}
-	}
-
-	val request = Request.Builder().url(url).delete(requestBody).build()
-	restClient.newCall(request).execute().close()
-}
