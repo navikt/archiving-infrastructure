@@ -227,7 +227,7 @@ class EndToEndTests : SystemTestBase() {
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
-	fun `Put input event on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
+	fun `Put main event on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
 		setNormalArchiveBehaviour(key)
@@ -235,7 +235,7 @@ class EndToEndTests : SystemTestBase() {
 		sendFilesToFileStorage(key, fileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, fileId)
+		putMainEventOnKafkaTopic(key, fileId)
 		val verifier = assertThatArkivMock()
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
@@ -247,7 +247,7 @@ class EndToEndTests : SystemTestBase() {
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
-	fun `Put input event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
+	fun `Put main event and processing events on Kafka when Soknadsarkiverer is down - will start up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
 		setNormalArchiveBehaviour(key)
@@ -255,7 +255,7 @@ class EndToEndTests : SystemTestBase() {
 		sendFilesToFileStorage(key, fileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(key, fileId)
+		putMainEventOnKafkaTopic(key, fileId)
 		putProcessingEventOnKafkaTopic(key, RECEIVED, STARTED, STARTED)
 		val verifier = assertThatArkivMock()
 			.hasEntityInArchive(key)
@@ -268,7 +268,7 @@ class EndToEndTests : SystemTestBase() {
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
-	fun `Soknadsarkiverer restarts before finishing to put input event in the archive - will pick event up and send to the archive`() {
+	fun `Soknadsarkiverer restarts before finishing to put main event in the archive - will pick event up and send to the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
 		val soknad = createSoknad(key, fileId)
@@ -293,7 +293,7 @@ class EndToEndTests : SystemTestBase() {
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
 	@Test
-	fun `Put finished input event on Kafka and send a new input event when Soknadsarkiverer is down - only the new input event ends up in the archive`() {
+	fun `Put finished main event on Kafka and send a new main event when Soknadsarkiverer is down - only the new main event ends up in the archive`() {
 		val finishedKey = UUID.randomUUID().toString()
 		val newKey = UUID.randomUUID().toString()
 		val finishedFileId = UUID.randomUUID().toString()
@@ -307,7 +307,7 @@ class EndToEndTests : SystemTestBase() {
 		sendFilesToFileStorage(newKey, newFileId)
 
 		shutDownSoknadsarkiverer()
-		putInputEventOnKafkaTopic(finishedKey, finishedFileId)
+		putMainEventOnKafkaTopic(finishedKey, finishedFileId)
 		putProcessingEventOnKafkaTopic(finishedKey, RECEIVED, STARTED, ARCHIVED, FINISHED)
 		sendDataToSoknadsmottaker(newKey, newSoknad)
 		val verifier = assertThatArkivMock()

@@ -89,8 +89,8 @@ abstract class SystemTestBase {
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
-	fun putInputEventOnKafkaTopic(key: String, fileId: String) {
-		logger.debug("Input Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
+	fun putMainEventOnKafkaTopic(key: String, fileId: String) {
+		logger.debug("Main Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(key, fileId))
 	}
 

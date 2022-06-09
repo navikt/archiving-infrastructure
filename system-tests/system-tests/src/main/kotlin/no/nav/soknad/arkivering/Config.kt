@@ -26,7 +26,7 @@ val defaultProperties = mapOf(
 	"KAFKA_SECPROT"               to "",
 	"KAFKA_SASLMEC"               to "",
 
-	"KAFKA_INPUT_TOPIC"                      to "privat-soknadinnsending-v1-dev",
+	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
 	"KAFKA_METRICS_TOPIC"                    to "privat-soknadinnsending-metrics-v1-dev",
@@ -75,7 +75,7 @@ data class Configuration(val overridingProperties: Map<String, String> = mapOf()
 		val salsmec: String = "KAFKA_SASLMEC".configProperty(overridingProperties),
 		val saslJaasConfig: String = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$username\" password=\"$password\";",
 
-		val inputTopic: String = "KAFKA_INPUT_TOPIC".configProperty(overridingProperties),
+		val mainTopic: String = "KAFKA_MAIN_TOPIC".configProperty(overridingProperties),
 		val processingTopic: String = "KAFKA_PROCESSING_TOPIC".configProperty(overridingProperties),
 		val messageTopic: String = "KAFKA_MESSAGE_TOPIC".configProperty(overridingProperties),
 		val metricsTopic: String = "KAFKA_METRICS_TOPIC".configProperty(overridingProperties),
