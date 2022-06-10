@@ -17,7 +17,7 @@ import no.nav.soknad.arkivering.kafka.KafkaListener
 class AssertionHelper(private val kafkaListener: KafkaListener) {
 
 	/**
-	 * The [VerificationTaskManager] is a manager for blocking and awaiting for all verifications to finish.
+	 * The [VerificationTaskManager] is a manager for blocking and waiting for all verifications to finish.
 	 */
 	private val verificationTaskManager = VerificationTaskManager()
 

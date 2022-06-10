@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class LoadTests(private val config: Configuration) {
+class LoadTests(config: Configuration) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	/*
 	Nils-Arne, 2020-12-11:
