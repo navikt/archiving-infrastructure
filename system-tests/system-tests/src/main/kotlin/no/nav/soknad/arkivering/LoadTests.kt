@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class LoadTests(config: Configuration) {
+class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	/*
 	Nils-Arne, 2020-12-11:
@@ -26,7 +26,7 @@ class LoadTests(config: Configuration) {
 	* Gjennomsnitt filstørrelse 0,67MB
 	*/
 
-	private val kafkaListener = KafkaListener(config.kafkaConfig)
+	private val kafkaListener = KafkaListener(kafkaConfig)
 	private val soknadsfillagerApi = SoknadsfillagerApi(config)
 	private val soknadsmottakerApi = SoknadsmottakerApi(config)
 

@@ -6,8 +6,7 @@ import kotlin.system.exitProcess
 private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 fun main() {
-	val config = Configuration()
-	val loadTests = LoadTests(config)
+	val loadTests = LoadTests(Config(), KafkaConfig())
 	var exitStatus = 0
 
 	try {

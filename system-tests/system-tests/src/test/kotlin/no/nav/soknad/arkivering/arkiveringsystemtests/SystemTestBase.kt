@@ -2,7 +2,9 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.soknad.arkivering.Configuration
+import no.nav.soknad.arkivering.Config
+import no.nav.soknad.arkivering.KafkaConfig
+import no.nav.soknad.arkivering.SchemaRegistry
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.avroschemas.*
 import no.nav.soknad.arkivering.innsending.getStatusCodeForGetCall
@@ -28,7 +30,8 @@ abstract class SystemTestBase {
 	val targetEnvironment: String? = System.getProperty("targetEnvironment")
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
-	lateinit var config: Configuration
+	lateinit var config: Config
+	lateinit var kafkaConfig: KafkaConfig
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	private lateinit var kafkaListener: KafkaListener
@@ -41,19 +44,17 @@ abstract class SystemTestBase {
 
 		val dockerImages = env.embeddedDockerImages
 		config = if (dockerImages != null) {
-			val dockerUrls = mapOf(
-				"SOKNADSFILLAGER_URL"     to dockerImages.getUrlForSoknadsfillager(),
-				"SOKNADSMOTTAKER_URL"     to dockerImages.getUrlForSoknadsmottaker(),
-				"SOKNADSARKIVERER_URL"    to dockerImages.getUrlForSoknadsarkiverer(),
-				"SCHEMA_REGISTRY_URL"     to dockerImages.getUrlForSchemaRegistry(),
-				"KAFKA_BOOTSTRAP_SERVERS" to dockerImages.getUrlForKafkaBroker()
-			)
-			Configuration(dockerUrls)
+			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker())
 		} else {
-			Configuration()
+			Config()
 		}
-		kafkaPublisher = KafkaPublisher(config)
-		kafkaListener = KafkaListener(config.kafkaConfig)
+		kafkaConfig = if (dockerImages != null) {
+			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker(), schemaRegistry = SchemaRegistry(url = dockerImages.getUrlForSchemaRegistry()))
+		} else {
+			KafkaConfig()
+		}
+		kafkaPublisher = KafkaPublisher(kafkaConfig)
+		kafkaListener = KafkaListener(kafkaConfig)
 	}
 
 	private fun checkThatDependenciesAreUp() {

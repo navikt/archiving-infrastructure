@@ -32,7 +32,7 @@ class KjellmanLoadTests : SystemTestBase() {
 		}
 
 		setUp()
-		loadTests = LoadTests(config)
+		loadTests = LoadTests(config, kafkaConfig)
 	}
 
 	@AfterAll

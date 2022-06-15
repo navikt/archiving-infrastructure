@@ -1,13 +1,9 @@
 package no.nav.soknad.arkivering
 
-import com.natpryce.konfig.*
-import com.natpryce.konfig.ConfigurationProperties.Companion.systemProperties
-import java.io.File
-
-const val soknadsfillagerUsername = "sender"
-const val soknadsfillagerPassword = "password"
-const val soknadsmottakerUsername = "innsending"
-const val soknadsmottakerPassword = "password"
+const val defaultSoknadsfillagerUsername = "sender"
+const val defaultSoknadsfillagerPassword = "password"
+const val defaultSoknadsmottakerUsername = "innsending"
+const val defaultSoknadsmottakerPassword = "password"
 
 val defaultPorts = mapOf(
 	"soknadsfillager"  to 9042,
@@ -20,11 +16,15 @@ val defaultPorts = mapOf(
 )
 
 val defaultProperties = mapOf(
-	"KAFKA_USERNAME"              to "arkiverer",
-	"KAFKA_PASSWORD"              to "",
-	"KAFKA_SECURITY"              to "",
-	"KAFKA_SECPROT"               to "",
-	"KAFKA_SASLMEC"               to "",
+	"KAFKA_STREAMS_APPLICATION_ID"   to "innsending-system-tests",
+	"KAFKA_BROKERS"                  to "localhost:${defaultPorts["kafka-broker"]}",
+	"KAFKA_SECURITY"                 to "FALSE",
+	"KAFKA_KEYSTORE_PATH"            to "",
+	"KAFKA_TRUSTSTORE_PATH"          to "",
+	"KAFKA_CREDSTORE_PASSWORD"       to "",
+	"KAFKA_SCHEMA_REGISTRY"          to "http://localhost:${defaultPorts["schema-registry"]}",
+	"KAFKA_SCHEMA_REGISTRY_USER"     to "",
+	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
@@ -36,60 +36,57 @@ val defaultProperties = mapOf(
 	"KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC" to "min-side.aapen-brukernotifikasjon-beskjed-v1",
 	"KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC" to "min-side.aapen-brukernotifikasjon-oppgave-v1",
 
-	"SOKNADSFILLAGER_URL"         to "http://localhost:${defaultPorts["soknadsfillager"]}",
-	"SOKNADSMOTTAKER_URL"         to "http://localhost:${defaultPorts["soknadsmottaker"]}",
-	"SOKNADSARKIVERER_URL"        to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
-	"SCHEMA_REGISTRY_URL"         to "http://localhost:${defaultPorts["schema-registry"]}",
-	"KAFKA_BOOTSTRAP_SERVERS"     to "localhost:${defaultPorts["kafka-broker"]}",
-	"SOKNADSFILLAGER_USERNAME"    to soknadsfillagerUsername,
-	"SOKNADSFILLAGER_PASSWORD"    to soknadsfillagerPassword,
-	"SOKNADSMOTTAKER_USERNAME"    to soknadsmottakerUsername,
-	"SOKNADSMOTTAKER_PASSWORD"    to soknadsmottakerPassword
+	"SOKNADSMOTTAKER_URL"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
+	"SOKNADSFILLAGER_URL"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
+	"SOKNADSMOTTAKER_USERNAME" to defaultSoknadsmottakerUsername,
+	"SOKNADSFILLAGER_USERNAME" to defaultSoknadsfillagerUsername,
+	"SOKNADSMOTTAKER_PASSWORD" to defaultSoknadsmottakerPassword,
+	"SOKNADSFILLAGER_PASSWORD" to defaultSoknadsfillagerPassword,
 )
 
 
-private val appConfig =
-	EnvironmentVariables() overriding
-		systemProperties() overriding
-		ConfigurationMap(defaultProperties)
+fun getProperty(propName: String, defaultValue: String = ""): String =
+	System.getenv(propName) ?: (defaultProperties[propName] ?: defaultValue)
 
-private fun String.configProperty(overridingProperties: Map<String, String>): String =
-	overridingProperties[this] ?: appConfig[Key(this, stringType)]
+data class Config(
+	val soknadsmottakerUrl: String = getProperty("SOKNADSMOTTAKER_URL"),
+	val soknadsmottakerUsername: String = getProperty("INNSENDING_USERNAME", defaultSoknadsmottakerUsername),
+	val soknadsmottakerPassword: String = getProperty("INNSENDING_PASSWORD", defaultSoknadsmottakerPassword),
+	val soknadsfillagerUrl: String = getProperty("SOKNADSFILLAGER_URL"),
+	val soknadsfillagerUsername: String = getProperty("INNSENDING_USERNAME", defaultSoknadsfillagerUsername),
+	val soknadsfillagerPassword: String = getProperty("INNSENDING_PASSWORD", defaultSoknadsfillagerPassword),
+)
 
-fun readFileAsText(fileName: String, default: String = "") = try { File(fileName).readText(Charsets.UTF_8) } catch (e: Exception) { default }
+data class KafkaConfig(
+	val applicationId: String = getProperty("KAFKA_STREAMS_APPLICATION_ID"),
+	val brokers: String = getProperty("KAFKA_BROKERS"),
+	val security: SecurityConfig = SecurityConfig(),
+	val topics: Topics = Topics(),
+	val schemaRegistry: SchemaRegistry = SchemaRegistry(),
+)
 
-data class Configuration(val overridingProperties: Map<String, String> = mapOf(),
-												 val kafkaConfig: KafkaConfig = KafkaConfig(overridingProperties),
-												 val config: Config = Config(overridingProperties)) {
+data class SecurityConfig(
+	val enabled: String = getProperty("KAFKA_SECURITY"),
+	val keyStorePath: String = getProperty("KAFKA_KEYSTORE_PATH"),
+	val keyStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
+	val trustStorePath: String = getProperty("KAFKA_TRUSTSTORE_PATH"),
+	val trustStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
+)
 
-	data class KafkaConfig(
-		val overridingProperties: Map<String, String>,
+data class Topics(
+	val mainTopic: String = getProperty("KAFKA_MAIN_TOPIC"),
+	val processingTopic: String = getProperty("KAFKA_PROCESSING_TOPIC"),
+	val messageTopic: String = getProperty("KAFKA_MESSAGE_TOPIC"),
+	val metricsTopic: String = getProperty("KAFKA_METRICS_TOPIC"),
+	val entitiesTopic: String = getProperty("KAFKA_ENTITIES_TOPIC"),
+	val numberOfCallsTopic: String = getProperty("KAFKA_NUMBER_OF_CALLS_TOPIC"),
+	val brukernotifikasjonDoneTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"),
+	val brukernotifikasjonBeskjedTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"),
+	val brukernotifikasjonOppgaveTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"),
+)
 
-		val username: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/username", "KAFKA_USERNAME".configProperty(overridingProperties)),
-		val password: String = readFileAsText("/var/run/secrets/nais.io/srvinnsendingtests/password", "KAFKA_PASSWORD".configProperty(overridingProperties)),
-		val servers: String = "KAFKA_BOOTSTRAP_SERVERS".configProperty(overridingProperties),
-		val schemaRegistryUrl: String = "SCHEMA_REGISTRY_URL".configProperty(overridingProperties),
-		val secure: String = "KAFKA_SECURITY".configProperty(overridingProperties),
-		val protocol: String = "KAFKA_SECPROT".configProperty(overridingProperties),
-		val salsmec: String = "KAFKA_SASLMEC".configProperty(overridingProperties),
-		val saslJaasConfig: String = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$username\" password=\"$password\";",
-
-		val mainTopic: String = "KAFKA_MAIN_TOPIC".configProperty(overridingProperties),
-		val processingTopic: String = "KAFKA_PROCESSING_TOPIC".configProperty(overridingProperties),
-		val messageTopic: String = "KAFKA_MESSAGE_TOPIC".configProperty(overridingProperties),
-		val metricsTopic: String = "KAFKA_METRICS_TOPIC".configProperty(overridingProperties),
-		val entitiesTopic: String = "KAFKA_ENTITIES_TOPIC".configProperty(overridingProperties),
-		val numberOfCallsTopic: String = "KAFKA_NUMBER_OF_CALLS_TOPIC".configProperty(overridingProperties)
-	)
-
-	data class Config(
-		val overridingProperties: Map<String, String>,
-
-		val soknadsmottakerUrl: String = "SOKNADSMOTTAKER_URL".configProperty(overridingProperties),
-		val soknadsmottakerUsername: String = readFileAsText("/secrets/innsending-data/username", "SOKNADSMOTTAKER_USERNAME".configProperty(overridingProperties)),
-		val soknadsmottakerPassword: String = readFileAsText("/secrets/innsending-data/password", "SOKNADSMOTTAKER_PASSWORD".configProperty(overridingProperties)),
-		val soknadsfillagerUrl: String = "SOKNADSFILLAGER_URL".configProperty(overridingProperties),
-		val soknadsfillagerUsername: String = readFileAsText("/secrets/innsending-data/username", "SOKNADSFILLAGER_USERNAME".configProperty(overridingProperties)),
-		val soknadsfillagerPassword: String = readFileAsText("/secrets/innsending-data/password", "SOKNADSFILLAGER_PASSWORD".configProperty(overridingProperties)),
-	)
-}
+data class SchemaRegistry(
+	val url: String = getProperty("KAFKA_SCHEMA_REGISTRY"),
+	val username: String = getProperty("KAFKA_SCHEMA_REGISTRY_USER"),
+	val password: String = getProperty("KAFKA_SCHEMA_REGISTRY_PASSWORD"),
+)

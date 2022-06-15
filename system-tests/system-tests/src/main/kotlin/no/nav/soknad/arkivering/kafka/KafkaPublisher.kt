@@ -1,8 +1,9 @@
 package no.nav.soknad.arkivering.kafka
 
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer
-import no.nav.soknad.arkivering.Configuration
+import no.nav.soknad.arkivering.KafkaConfig
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.avroschemas.Soknadarkivschema
 import org.apache.kafka.clients.CommonClientConfigs
@@ -10,14 +11,14 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
-import org.apache.kafka.common.config.SaslConfigs
+import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.StringSerializer
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class KafkaPublisher(private val appConfiguration: Configuration) {
+class KafkaPublisher(private val kafkaConfig: KafkaConfig) {
 
 	private val kafkaMainProducer = KafkaProducer<String, Soknadarkivschema>(kafkaConfigMap())
 	private val kafkaProcessingEventProducer = KafkaProducer<String, ProcessingEvent>(kafkaConfigMap())
@@ -26,19 +27,19 @@ class KafkaPublisher(private val appConfiguration: Configuration) {
 	})
 
 	fun putDataOnTopic(key: String, value: Soknadarkivschema, headers: Headers = RecordHeaders()) {
-		val topic = appConfiguration.kafkaConfig.mainTopic
+		val topic = kafkaConfig.topics.mainTopic
 		val kafkaProducer = kafkaMainProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
 	fun putDataOnTopic(key: String, value: ProcessingEvent, headers: Headers = RecordHeaders()) {
-		val topic = appConfiguration.kafkaConfig.processingTopic
+		val topic = kafkaConfig.topics.processingTopic
 		val kafkaProducer = kafkaProcessingEventProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
 
 	fun putDataOnTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
-		val topic = appConfiguration.kafkaConfig.mainTopic
+		val topic = kafkaConfig.topics.mainTopic
 		val kafkaProducer = kafkaStringProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
@@ -58,14 +59,20 @@ class KafkaPublisher(private val appConfiguration: Configuration) {
 	}
 
 	private fun kafkaConfigMap() = HashMap<String, Any>().also {
-		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = appConfiguration.kafkaConfig.schemaRegistryUrl
-		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = appConfiguration.kafkaConfig.servers
+		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
+		it[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = SpecificAvroSerializer::class.java
-		if (appConfiguration.kafkaConfig.secure == "TRUE") {
-			it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = appConfiguration.kafkaConfig.protocol
-			it[SaslConfigs.SASL_JAAS_CONFIG] = appConfiguration.kafkaConfig.saslJaasConfig
-			it[SaslConfigs.SASL_MECHANISM] = appConfiguration.kafkaConfig.salsmec
+		if (kafkaConfig.security.enabled == "TRUE") {
+			it[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
+			it[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
+			it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "SSL"
+			it[SslConfigs.SSL_KEYSTORE_TYPE_CONFIG] = "PKCS12"
+			it[SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG] = kafkaConfig.security.trustStorePath
+			it[SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG] = kafkaConfig.security.keyStorePassword
+			it[SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG] = kafkaConfig.security.keyStorePath
+			it[SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG] = kafkaConfig.security.keyStorePassword
+			it[SslConfigs.SSL_KEY_PASSWORD_CONFIG] = kafkaConfig.security.keyStorePassword
 		}
 	}
 }

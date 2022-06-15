@@ -14,7 +14,6 @@
 
 	<properties>
 		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
-		<konfig.version>1.6.10.0</konfig.version>
 		<coroutines.version>1.6.2</coroutines.version>
 		<logback.version>1.2.11</logback.version>
 		<logstash.version>7.2</logstash.version>
@@ -51,12 +50,6 @@
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-reflect</artifactId>
 			<version>${kotlin.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.natpryce</groupId>
-			<artifactId>konfig</artifactId>
-			<version>${konfig.version}</version>
 		</dependency>
 
 		<dependency>

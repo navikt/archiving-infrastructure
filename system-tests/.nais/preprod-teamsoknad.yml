@@ -15,9 +15,13 @@ spec:
       rules:
         - application: arkiv-mock
   envFrom:
-    - secret: soknadsarkiver-google-secret  # TODO
-    - secret: shared-innsending-secret      # TODO
+    - secret: shared-innsending-secret
+      metadata:
+        annotations:
+          reloader.stakater.com/match: "true"
   env:
+    - name: KAFKA_SECURITY
+      value: TRUE
     - name: KAFKA_MAIN_TOPIC
       value: privat-soknadinnsending-v1-loadtests
     - name: KAFKA_PROCESSING_TOPIC
@@ -27,7 +31,7 @@ spec:
     - name: KAFKA_MESSAGE_TOPIC
       value: privat-soknadinnsending-messages-v1-loadtests
     - name: SOKNADSFILLAGER_URL
-      value: #TODO
+      value: https://soknadsfillager-gcp-loadtests.dev.intern.nav.no
     - name: SOKNADSMOTTAKER_URL
       value: https://soknadsmottaker-gcp-loadtests.dev.intern.nav.no
 
@@ -46,3 +50,4 @@ spec:
       enabled: true
   kafka:
     pool: nav-dev
+    streams: true

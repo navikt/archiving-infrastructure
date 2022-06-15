@@ -86,8 +86,8 @@ class EmbeddedDockerImages {
 					"DATABASE_DATABASE"      to databaseName,
 					"DATABASE_USERNAME"      to postgresUsername,
 					"DATABASE_PASSWORD"      to postgresUsername,
-					"INNSENDING_USERNAME"    to soknadsfillagerUsername,
-					"INNSENDING_PASSWORD"    to soknadsfillagerPassword
+					"INNSENDING_USERNAME"    to defaultSoknadsfillagerUsername,
+					"INNSENDING_PASSWORD"    to defaultSoknadsfillagerPassword
 				)
 			)
 			.dependsOn(postgresContainer)
@@ -104,8 +104,8 @@ class EmbeddedDockerImages {
 					"KAFKA_SECURITY"         to "FALSE",
 					"KAFKA_SCHEMA_REGISTRY"  to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
 					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"INNSENDING_USERNAME"    to soknadsmottakerUsername,
-					"INNSENDING_PASSWORD"    to soknadsmottakerPassword
+					"INNSENDING_USERNAME"    to defaultSoknadsmottakerUsername,
+					"INNSENDING_PASSWORD"    to defaultSoknadsmottakerPassword
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
