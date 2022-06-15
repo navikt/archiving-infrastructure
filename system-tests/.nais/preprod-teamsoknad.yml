@@ -21,7 +21,7 @@ spec:
           reloader.stakater.com/match: "true"
   env:
     - name: KAFKA_SECURITY
-      value: TRUE
+      value: "TRUE"
     - name: KAFKA_MAIN_TOPIC
       value: privat-soknadinnsending-v1-loadtests
     - name: KAFKA_PROCESSING_TOPIC
