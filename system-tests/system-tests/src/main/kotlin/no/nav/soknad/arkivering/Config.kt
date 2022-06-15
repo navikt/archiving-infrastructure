@@ -66,7 +66,7 @@ data class KafkaConfig(
 )
 
 data class SecurityConfig(
-	val enabled: String = getProperty("KAFKA_SECURITY"),
+	val enabled: Boolean = getProperty("KAFKA_SECURITY").toBoolean(),
 	val keyStorePath: String = getProperty("KAFKA_KEYSTORE_PATH"),
 	val keyStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
 	val trustStorePath: String = getProperty("KAFKA_TRUSTSTORE_PATH"),
