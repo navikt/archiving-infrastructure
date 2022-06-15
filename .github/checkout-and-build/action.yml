@@ -7,7 +7,7 @@ inputs:
   branch:
     description: 'Branch to check out'
     required: false
-    default: ""
+    default: "main"
   sub_directory:
     description: 'Directory to go to before building'
     required: false
@@ -28,19 +28,17 @@ runs:
     - name: 'Checkout, compile and Docker Build'
       shell: bash
       run: |
+        orig_path=$(pwd)
         if [ ! -d "${{ inputs.component_name }}" ]; then
           git clone https://github.com/navikt/${{ inputs.component_name }}.git
         fi
         cd ${{ inputs.component_name }}
-        if [[ "${{ inputs.branch }}" != "" ]]; then
-          git checkout ${{ inputs.branch }}
-        fi
+        git checkout ${{ inputs.branch }}
         cd ${{ inputs.sub_directory }}
 
+        TEST_PARAM=""
         if [[ ${{ inputs.skip_tests }} = "true" ]]; then
           TEST_PARAM="-DskipTests"
-        else
-          TEST_PARAM=""
         fi
 
         mvn clean install $TEST_PARAM
@@ -50,4 +48,4 @@ runs:
           TAG="archiving-infrastructure_${APP_NAME}:latest"
           docker build --tag $TAG .
         fi
-        cd -
+        cd "$orig_path"
