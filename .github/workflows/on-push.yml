@@ -3,7 +3,7 @@ on:
   push:
 
 env:
-  IMAGE: "ghcr.io/${{ github.repository }}/innsending-system-tests:latest"
+  docker_image: ghcr.io/${{ github.repository }}/innsending-system-tests:latest
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
         run: mvn install --file system-tests/pom.xml -DskipTests
       - uses: docker/build-push-action@v3
         with:
-          context: .
+          context: system-tests
           push: true
           tags: ${{ env.docker_image }}
 
