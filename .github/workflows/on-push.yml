@@ -51,3 +51,4 @@ jobs:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: system-tests/.nais/preprod-teamsoknad.yml
+          VAR: image=${{ env.docker_image }}
