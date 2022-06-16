@@ -115,8 +115,11 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	private fun createInnsendingMetricsSerde(): SpecificAvroSerde<InnsendingMetrics> = createAvroSerde()
 
 	private fun <T : SpecificRecord> createAvroSerde(): SpecificAvroSerde<T> {
-		val serdeConfig =
-			hashMapOf(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to kafkaConfig.schemaRegistry.url)
+		val serdeConfig = hashMapOf(
+			AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to kafkaConfig.schemaRegistry.url,
+			SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO",
+			SchemaRegistryClientConfig.USER_INFO_CONFIG to "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
+		)
 		return SpecificAvroSerde<T>().also { it.configure(serdeConfig, false) }
 	}
 
