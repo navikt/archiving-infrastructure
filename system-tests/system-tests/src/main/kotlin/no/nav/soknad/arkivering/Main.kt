@@ -11,8 +11,6 @@ fun main() {
 
 	try {
 		logger.info("Starting the Load Tests")
-		logger.info("APA BEPA - ${loadTests.kafkaConfig.topics.mainTopic}")
-		logger.info("APA BEPA - ${loadTests.kafkaConfig.security.enabled}")
 
 		loadTests.`100 simultaneous entities, 2 times 2 MB each`()
 		loadTests.`100 simultaneous entities, 20 times 1 MB each`()
