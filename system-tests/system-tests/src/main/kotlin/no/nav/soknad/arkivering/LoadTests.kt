@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
+class LoadTests(config: Config, val kafkaConfig: KafkaConfig) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	/*
 	Nils-Arne, 2020-12-11:
