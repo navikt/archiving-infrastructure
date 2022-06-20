@@ -1,6 +1,6 @@
 package no.nav.soknad.arkivering
 
-const val defaultSoknadsfillagerUsername = "sender"
+const val defaultSoknadsfillagerUsername = "innsending"
 const val defaultSoknadsfillagerPassword = "password"
 const val defaultSoknadsmottakerUsername = "innsending"
 const val defaultSoknadsmottakerPassword = "password"
