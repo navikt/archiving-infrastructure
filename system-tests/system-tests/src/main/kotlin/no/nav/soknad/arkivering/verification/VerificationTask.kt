@@ -46,7 +46,7 @@ class VerificationTask<T> private constructor(
 		Timer("VerificationTaskTimer", false).schedule(timeoutInMs) {
 			if (presence == Presence.ABSENCE) {
 				// Verify absence - send satisfied signal after timeout.
-				logger.info("$key: Verifying absence - sending Satisfied signal")
+				logger.info("$key: Verifying absence  - sending Satisfied signal")
 				sendSatisfiedSignal()
 			} else {
 				// Verify presence - send dissatisfied signal after timeout.

@@ -64,22 +64,22 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArchiveEntity>(json) }
-			.peek { key, entity -> log("$key: Archive Entities  - $entity") }
+			.peek { key, entity -> log("$key: Archive Entities   - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
-			.peek { key, entity -> log("$key: Metrics received  - $entity") }
+			.peek { key, entity -> log("$key: Metrics received   - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
 
 		numberOfCallsStream
-			.peek { key, numberOfCalls -> log("$key: Number of Calls   - $numberOfCalls") }
+			.peek { key, numberOfCalls -> log("$key: Number of Calls    - $numberOfCalls") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
 		processingEventTopicStream
-			.peek { key, entity -> log("$key: Processing Events - $entity") }
+			.peek { key, entity -> log("$key: Processing Events  - $entity") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
 	}
@@ -156,7 +156,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	@Suppress("unused")
 	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers        .add(consumer)
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)       = entityConsumers         .add(consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)     = entityConsumers         .add(consumer)
 	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
 	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers.add(consumer)
 }
