@@ -97,7 +97,7 @@ services:
       - soknadsfillager
       - arkiv-mock
     environment:
-      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_PROFILES_ACTIVE=endtoend
       - FILESTORAGE_HOST=http://soknadsfillager:9042
       - JOARK_HOST=http://arkiv-mock:8092
       - KAFKA_BROKERS=kafka-broker:29092
