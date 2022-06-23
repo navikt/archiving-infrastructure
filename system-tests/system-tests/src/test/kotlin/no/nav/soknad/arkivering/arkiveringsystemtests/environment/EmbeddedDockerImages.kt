@@ -136,7 +136,7 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(
 				hashMapOf(
-					"SPRING_PROFILES_ACTIVE"  to "test",
+					"SPRING_PROFILES_ACTIVE"  to "endtoend",
 					"BOOTSTRAPPING_TIMEOUT"   to "60",
 					"TASK_STARTUP_INIT_DELAY" to "8",
 					"KAFKA_BROKERS"           to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
