@@ -77,7 +77,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		numberOfEntities: Int,
 		numberOfFilesPerEntity: Int,
 		file: String,
-		timeoutInMinutes: Int = 5
+		timeoutInMinutes: Int = 10
 	) {
 		logger.info("Starting test: $testName")
 
