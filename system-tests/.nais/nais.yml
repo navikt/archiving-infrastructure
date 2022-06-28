@@ -5,6 +5,8 @@ metadata:
     team: team-soknad
   name: innsending-system-tests
   namespace: team-soknad
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "320M"
 spec:
   schedule: "0 6 * * MON" # Every Monday at 6 am
   #  schedule: "0 */5 * * *" # Every five hours
