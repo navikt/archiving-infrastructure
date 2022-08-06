@@ -22,7 +22,7 @@
 		<kafka-streams-avro-serde.version>7.1.1</kafka-streams-avro-serde.version>
 		<kafka.version>3.2.0</kafka.version>
 		<testcontainers.version>1.17.2</testcontainers.version>
-		<postgresql.version>42.3.6</postgresql.version>
+		<postgresql.version>42.4.1</postgresql.version>
 		<okhttp3.version>4.9.3</okhttp3.version>
 		<jackson.version>2.13.3</jackson.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
