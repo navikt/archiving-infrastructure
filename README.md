@@ -28,6 +28,9 @@ Upon pull request, GitHub Actions will automatically run the end-to-end tests. I
 ### cronjob
 The load tests are run by a cronjob on scheduled times. They will test the upper limits of concurrent load, both with having many simultaneous requests, as well as fewer but heavier. The load tests take almost 1.5 hours to complete, and therefore they are not part of the normal build-chain. Instead, they are run on scheduled times to verify that the system performance has not degraded.
 
+The load tests can be started ad-hoc at any time by running the following command:
+`kubectl create job --namespace=team-soknad --from=cronjobs/innsending-system-tests innsending-load-tests`
+
 ## Scripts
 * Run `./run-end-to-end-tests.sh` to build all applications and run the end-to-end tests. This will use testcontainers to start the applications and their dependencies, as described above. By running `./run-end-to-end-tests.sh no-testcontainers`, the applications will start up in "external" Docker containers, and the tests will run against the containers. Running this script is all it takes to run the end-to-end tests; the other scripts will be called by this script.
 * Run `./build.sh` to build all applications and create docker images from them.
