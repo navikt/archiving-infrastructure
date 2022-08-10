@@ -37,7 +37,21 @@ class SoknadsfillagerApi(config: Config) {
 	}
 
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String, payload: ByteArray) {
+		val maxTries = 3
 		val files = listOf(FileData(fileId, payload, OffsetDateTime.now(ZoneOffset.UTC)))
-		filesApi.addFiles(files, innsendingId)
+
+		for (i in 1 .. maxTries) {
+			try {
+				filesApi.addFiles(files, innsendingId)
+				break
+
+			} catch (e: Exception) {
+				logger.error("$i / $maxTries: Failed to send to Filestorage", e)
+				if (i == maxTries) {
+					logger.error("Too many failed attempts; giving up")
+					throw e
+				}
+			}
+		}
 	}
 }
