@@ -92,7 +92,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
-		it[ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 50
+		it[StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 50
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
