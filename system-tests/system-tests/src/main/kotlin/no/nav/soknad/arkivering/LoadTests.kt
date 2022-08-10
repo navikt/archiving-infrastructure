@@ -54,7 +54,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 	@Suppress("FunctionName")
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 10_000
+		val numberOfEntities = 1000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
 
