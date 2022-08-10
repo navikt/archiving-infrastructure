@@ -58,8 +58,8 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-		val metricsStream              = streamsBuilder.stream(kafkaConfig.topics.metricsTopic,       Consumed.with(stringSerde, createInnsendingMetricsSerde()))
 		val processingEventTopicStream = streamsBuilder.stream(kafkaConfig.topics.processingTopic,    Consumed.with(stringSerde, createProcessingEventSerde()))
+/*		val metricsStream              = streamsBuilder.stream(kafkaConfig.topics.metricsTopic,       Consumed.with(stringSerde, createInnsendingMetricsSerde()))
 		val entitiesStream             = streamsBuilder.stream(kafkaConfig.topics.entitiesTopic,      Consumed.with(stringSerde, stringSerde))
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaConfig.topics.numberOfCallsTopic, Consumed.with(stringSerde, intSerde))
 
@@ -78,7 +78,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 			.peek { key, numberOfCalls -> log("$key: Number of Calls    - $numberOfCalls") }
 			.transform({ TimestampExtractor() })
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
-
+*/
 		processingEventTopicStream
 			.peek { key, entity -> log("$key: Processing Events  - $entity") }
 			.transform({ TimestampExtractor() })
@@ -93,7 +93,6 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
 		it[StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 10
-	//	it[StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 50
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
