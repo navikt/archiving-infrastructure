@@ -168,12 +168,12 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
 		val atomicInteger = AtomicInteger()
-		logger.info("I am blocking before sending to soknadmottaker")
+		logger.info("Is blocking before sending to soknadmottaker")
 		val soknader = (0 until numberOfEntities).map {
 			val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
 			sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
 		}
-    logger.info("I am unblocking after soknadmottaker")
+    logger.info("Is unblocking after sending to soknadmottaker")
 		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
 		logger.info("Sent $numberOfEntities entities to Soknadsmottaker in $timeTaken ms")
 		return soknader
