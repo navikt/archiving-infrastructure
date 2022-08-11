@@ -64,7 +64,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 	@Suppress("FunctionName")
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 10_000
+		val numberOfEntities = 2000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
 
@@ -169,11 +169,9 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 
 		val atomicInteger = AtomicInteger()
 		logger.info("I am blocking before sending to soknadmottaker")
-		val soknader = runBlocking {
-			(0 until numberOfEntities).map {
-				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
-				sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
-			}
+		val soknader = (0 until numberOfEntities).map {
+			val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
+			sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
 		}
     logger.info("I am unblocking after soknadmottaker")
 		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
@@ -181,14 +179,10 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		return soknader
 	}
 
-	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): Soknad {
-		return withContext(Dispatchers.Default) {
-
-			val soknad = createSoknad(innsendingKey, fileIds)
-
-			sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = false)
-			soknad
-		}
+	private fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): Soknad {
+		val soknad = createSoknad(innsendingKey, fileIds)
+		sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = false)
+ 		return soknad
 	}
 
 	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad, verbose: Boolean) {
