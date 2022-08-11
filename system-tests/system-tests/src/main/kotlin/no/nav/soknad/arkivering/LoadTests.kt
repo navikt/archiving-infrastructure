@@ -64,7 +64,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 	@Suppress("FunctionName")
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 10_000
+		val numberOfEntities = 5000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
 
@@ -168,13 +168,14 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
 		val atomicInteger = AtomicInteger()
+		logger.info("I am blocking before sending to soknadmottaker")
 		val soknader = runBlocking {
 			(0 until numberOfEntities).map {
 				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
 				sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
 			}
 		}
-
+    logger.info("I am unblocking after soknadmottaker")
 		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
 		logger.info("Sent $numberOfEntities entities to Soknadsmottaker in $timeTaken ms")
 		return soknader

@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.verification
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 
 /**
  * This class is for asynchronously verifying [VerificationTask]s that complete at some point in the future.
@@ -10,6 +11,8 @@ import kotlinx.coroutines.runBlocking
  * When calling [assertAllTasksSucceeds], the class will block and wait for all the registered tasks to complete.
  */
 class VerificationTaskManager {
+
+	private val logger = LoggerFactory.getLogger(javaClass)
 
 	/**
 	 * A [Channel] through which [VerificationTask]s will notify this class when the task is finished.
@@ -29,6 +32,7 @@ class VerificationTaskManager {
 	}
 
 	fun assertAllTasksSucceeds() {
+		logger.info("blocking before recieving events from channel")
 		runBlocking {
 			repeat(tasks.size) {
 				val result = channel.receive()
@@ -37,6 +41,7 @@ class VerificationTaskManager {
 				}
 			}
 		}
+		logger.info("un blocking before recieving events from channel")
 	}
 
 	fun getChannel() = channel

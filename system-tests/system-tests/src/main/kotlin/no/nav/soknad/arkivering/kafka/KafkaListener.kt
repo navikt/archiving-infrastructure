@@ -81,7 +81,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 		processingEventTopicStream
 			.peek { key, entity -> log("$key: Processing Events  - $entity") }
-			.transform({ TimestampExtractor() })
+			.transform({ TimestampExtractor() }).
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
 	}
 
