@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.verification
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -33,7 +34,7 @@ class VerificationTaskManager {
 
 	fun assertAllTasksSucceeds() {
 		logger.info("Blocking before receiving events from channel")
-		runBlocking {
+		runBlocking(Dispatchers.IO) {
 			repeat(tasks.size) {
 				val result = channel.receive()
 				if (!result.second) {

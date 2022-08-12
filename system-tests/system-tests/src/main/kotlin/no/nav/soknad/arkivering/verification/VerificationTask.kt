@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.verification
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
@@ -102,7 +103,7 @@ class VerificationTask<T> private constructor(
 	private fun sendSignal(text: String, value: Boolean) {
 		if (hasSentSignalToChannel.get().not()) {
 			hasSentSignalToChannel.set(true)
-			runBlocking {
+			runBlocking(Dispatchers.IO) {
 				channel.send(text to value)
 			}
 		}
