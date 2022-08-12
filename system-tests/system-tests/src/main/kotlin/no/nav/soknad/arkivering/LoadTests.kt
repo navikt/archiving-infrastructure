@@ -63,7 +63,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 
 	@Suppress("FunctionName")
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
-		val testName = Thread.currentThread().stackTrace[1].methodName + "_6"
+		val testName = Thread.currentThread().stackTrace[1].methodName + "_7"
 		val numberOfEntities = 2000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
@@ -116,7 +116,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		var filesPerEntityCounter = 0
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
 
-		runBlocking {
+		runBlocking(Dispatchers.IO) {
 			(0 until numberOfEntities * numberOfFilesPerEntity)
 				.chunked(chunks)
 				.forEach { ids ->
@@ -167,11 +167,13 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		val startTimeSendingToSoknadsmottaker = System.currentTimeMillis()
 		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
-		val atomicInteger = AtomicInteger()
 		logger.info("Is blocking before sending to soknadmottaker")
-		val soknader = (0 until numberOfEntities).map {
-			val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
-			sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
+		val soknader = runBlocking {
+			val atomicInteger = AtomicInteger()
+			(0 until numberOfEntities).map {
+				val fileIds = (0 until numberOfFilesPerEntity).map { atomicInteger.getAndIncrement().toString() }
+				sendDataToSoknadsmottakerAsync(innsendingKeys[it], fileIds)
+			}
 		}
     logger.info("Is unblocking after sending to soknadmottaker")
 		val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
@@ -179,10 +181,14 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		return soknader
 	}
 
-	private fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): Soknad {
-		val soknad = createSoknad(innsendingKey, fileIds)
-		sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = false)
- 		return soknad
+	private suspend fun sendDataToSoknadsmottakerAsync(innsendingKey: String, fileIds: List<String>): Soknad {
+		return withContext(Dispatchers.Default) {
+
+			val soknad = createSoknad(innsendingKey, fileIds)
+
+			sendDataToSoknadsmottaker(innsendingKey, soknad, verbose = false)
+			soknad
+		}
 	}
 
 	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad, verbose: Boolean) {
