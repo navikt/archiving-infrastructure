@@ -3,7 +3,7 @@ on:
   push:
 
 env:
-  docker_image: ghcr.io/${{ github.repository }}/innsending-system-tests:latest
+  docker_image: ghcr.io/${{ github.repository }}/innsending-system-tests:${{ github.sha }}
 
 jobs:
   build:
