@@ -100,7 +100,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
 		it[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = LogAndContinueExceptionHandler::class.java
-//		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 5
+		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 5
 
 		if (kafkaConfig.security.enabled) {
 			it[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
