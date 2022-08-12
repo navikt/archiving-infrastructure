@@ -1,6 +1,8 @@
 package no.nav.soknad.arkivering.verification
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
 import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
 import no.nav.soknad.arkivering.verification.VerificationTask.Presence
@@ -100,9 +102,11 @@ class VerificationTask<T> private constructor(
 	private fun sendSignal(text: String, value: Boolean) {
 		val hasAlreadySent = hasSentSignalToChannel.getAndSet(true)
 		if (!hasAlreadySent) {
-			logger.info("$key: Sending to channel: $value - $text")
-			channel.trySend(text to value)
-			logger.info("$key: Sent to channel")
+			runBlocking(Dispatchers.IO) {
+				logger.info("$key: Sending to channel: $value - $text")
+				channel.trySend(text to value)
+				logger.info("$key: Sent to channel")
+			}
 		}
 	}
 
