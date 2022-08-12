@@ -103,7 +103,9 @@ class VerificationTask<T> private constructor(
 		val hasSentAlready = hasSentSignalToChannel.compareAndSet(false, true)
 		if (hasSentAlready) {
 			runBlocking(Dispatchers.IO) {
+				logger.info("$key: Sending to channel: $value - $text")
 				channel.send(text to value)
+				logger.info("$key: Sent to channel")
 			}
 		}
 	}
