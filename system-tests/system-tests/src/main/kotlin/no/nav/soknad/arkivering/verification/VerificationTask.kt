@@ -99,10 +99,9 @@ class VerificationTask<T> private constructor(
 		sendSignal(keyText + text, false)
 	}
 
-	@Synchronized
 	private fun sendSignal(text: String, value: Boolean) {
-		if (hasSentSignalToChannel.get().not()) {
-			hasSentSignalToChannel.set(true)
+		val hasSentAlready = hasSentSignalToChannel.compareAndSet(false, true)
+		if (hasSentAlready) {
 			runBlocking(Dispatchers.IO) {
 				channel.send(text to value)
 			}
