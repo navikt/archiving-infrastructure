@@ -33,7 +33,6 @@ class VerificationTaskManager {
 	}
 
 	fun assertAllTasksSucceeds() {
-		logger.info("Blocking before receiving events from channel")
 		runBlocking(Dispatchers.IO) {
 			repeat(tasks.size) {
 				val result = channel.receive()
@@ -42,7 +41,6 @@ class VerificationTaskManager {
 				}
 			}
 		}
-		logger.info("Unblocking before receiving events from channel")
 	}
 
 	fun getChannel() = channel
