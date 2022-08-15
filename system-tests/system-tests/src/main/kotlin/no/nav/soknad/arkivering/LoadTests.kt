@@ -1,8 +1,6 @@
 package no.nav.soknad.arkivering
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
 import no.nav.soknad.arkivering.kafka.KafkaListener
@@ -63,7 +61,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 
 	@Suppress("FunctionName")
 	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
-		val testName = Thread.currentThread().stackTrace[1].methodName + "_11"
+		val testName = Thread.currentThread().stackTrace[1].methodName + "_12"
 		val numberOfEntities = 2000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
@@ -168,7 +166,7 @@ class LoadTests(config: Config, kafkaConfig: KafkaConfig) {
 		logger.info("About to send $numberOfEntities entities to Soknadsmottaker")
 
 		logger.info("Is blocking before sending to soknadmottaker")
-		runBlocking {
+		GlobalScope.launch {
 			val atomicInteger = AtomicInteger()
 
 			(0 until numberOfEntities).map {
