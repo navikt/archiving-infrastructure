@@ -12,7 +12,6 @@ import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.dto.ArchiveEntity
 import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
@@ -92,8 +91,6 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
-		it[StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.MAX_POLL_RECORDS_CONFIG] = 10
-//		it[StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 50
 		it[StreamsConfig.NUM_STREAM_THREADS_CONFIG] = 10
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
