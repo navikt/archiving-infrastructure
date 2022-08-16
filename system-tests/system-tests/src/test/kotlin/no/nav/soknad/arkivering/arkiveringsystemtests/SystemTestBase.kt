@@ -31,10 +31,9 @@ abstract class SystemTestBase {
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
 	lateinit var config: Config
-	lateinit var kafkaConfig: KafkaConfig
 	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
-	private lateinit var kafkaListener: KafkaListener
+	lateinit var kafkaListener: KafkaListener
 
 
 	fun setUp() {
@@ -48,7 +47,7 @@ abstract class SystemTestBase {
 		} else {
 			Config()
 		}
-		kafkaConfig = if (dockerImages != null) {
+		val kafkaConfig = if (dockerImages != null) {
 			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker(), schemaRegistry = SchemaRegistry(url = dockerImages.getUrlForSchemaRegistry()))
 		} else {
 			KafkaConfig()

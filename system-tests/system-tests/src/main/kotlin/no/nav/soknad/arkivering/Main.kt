@@ -1,12 +1,13 @@
 package no.nav.soknad.arkivering
 
+import no.nav.soknad.arkivering.kafka.KafkaListener
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
 private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 fun main() {
-	val loadTests = LoadTests(Config(), KafkaConfig())
+	val loadTests = LoadTests(Config(), KafkaListener(KafkaConfig()))
 	var exitStatus = 0
 
 	try {
