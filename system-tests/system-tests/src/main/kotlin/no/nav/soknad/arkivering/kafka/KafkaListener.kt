@@ -91,13 +91,13 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
-		it[StreamsConfig.NUM_STREAM_THREADS_CONFIG] = 10
+		//it[StreamsConfig.NUM_STREAM_THREADS_CONFIG] = 10
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
 		it[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = LogAndContinueExceptionHandler::class.java
-		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 5
+		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 1000
 
 		if (kafkaConfig.security.enabled) {
 			it[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
