@@ -9,6 +9,7 @@ import no.nav.soknad.arkivering.soknadsfillager.model.FileData
 import org.slf4j.LoggerFactory
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.TimeUnit
 
 class SoknadsfillagerApi(config: Config) {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -51,6 +52,7 @@ class SoknadsfillagerApi(config: Config) {
 					logger.error("Too many failed attempts; giving up")
 					throw e
 				}
+				TimeUnit.SECONDS.sleep(i * 5L)
 			}
 		}
 	}
