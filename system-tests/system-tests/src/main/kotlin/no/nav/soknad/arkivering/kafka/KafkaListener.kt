@@ -24,16 +24,17 @@ import org.apache.kafka.streams.kstream.Transformer
 import org.apache.kafka.streams.processor.ProcessorContext
 import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 	private val verbose = true
 
-	private val entityConsumers          = mutableListOf<KafkaEntityConsumer<ArchiveEntity>>()
-	private val metricsConsumers         = mutableListOf<KafkaEntityConsumer<InnsendingMetrics>>()
-	private val numberOfCallsConsumers   = mutableListOf<KafkaEntityConsumer<Int>>()
-	private val processingEventConsumers = mutableListOf<KafkaEntityConsumer<ProcessingEvent>>()
+	private val entityConsumers          = CopyOnWriteArrayList<KafkaEntityConsumer<ArchiveEntity>>()
+	private val metricsConsumers         = CopyOnWriteArrayList<KafkaEntityConsumer<InnsendingMetrics>>()
+	private val numberOfCallsConsumers   = CopyOnWriteArrayList<KafkaEntityConsumer<Int>>()
+	private val processingEventConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<ProcessingEvent>>()
 
 	private val kafkaStreams: KafkaStreams
 
@@ -91,7 +92,6 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 	private fun kafkaConfig() = Properties().also {
 		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
-		//it[StreamsConfig.NUM_STREAM_THREADS_CONFIG] = 10
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
