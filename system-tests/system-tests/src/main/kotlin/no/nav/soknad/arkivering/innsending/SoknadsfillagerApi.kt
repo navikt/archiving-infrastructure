@@ -22,8 +22,9 @@ class SoknadsfillagerApi(config: Config) {
 		filesApi = FilesApi(config.soknadsfillagerUrl)
 	}
 
-	fun checkFilesInFileStorage(innsendingId: String, fileId: String) {
-		filesApi.checkFilesByIds(listOf(fileId), innsendingId)
+
+	fun getFiles(innsendingId: String, fileId: String,metadataOnly: Boolean?) : List<FileData> {
+		return filesApi.findFilesByIds(ids = listOf(fileId), xInnsendingId = innsendingId,metadataOnly =metadataOnly)
 	}
 
 	fun sendFilesToFileStorage(innsendingId: String, fileId: String) {

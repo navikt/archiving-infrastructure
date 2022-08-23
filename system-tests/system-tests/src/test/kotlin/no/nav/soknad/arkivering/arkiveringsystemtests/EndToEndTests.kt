@@ -12,6 +12,7 @@ import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
 import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
@@ -325,7 +326,9 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 	private fun verifyPresenceInFileStorage(innsendingId: String, fileId: String) {
-		soknadsfillagerApi.checkFilesInFileStorage(innsendingId, fileId)
+		val fileData = soknadsfillagerApi.getFiles(innsendingId,fileId,true)
+		Assertions.assertTrue(fileData.size == 1)
+		Assertions.assertTrue(fileData.first().status == "ok")
 	}
 
 	private fun verifyAbsenceInFileStorage(innsendingId: String, fileId: String, expectedStatusCode: Int = 410) {
@@ -333,20 +336,9 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 	private fun getNumberOfFilesInFilestorage(innsendingId: String, fileId: String, expectedStatusCode: Int): Int {
-		return try {
-			verifyPresenceInFileStorage(innsendingId, fileId)
-			1 // Files are present
-		} catch (e: ClientException) {
-			if (e.statusCode == expectedStatusCode)
-				0 // No files are present
-			else {
-				logger.error("Unexpected status code: ${e.statusCode}", e)
-				-1 // Return -1 as an error code
-			}
-		} catch (e: Exception) {
-			logger.error("Unexpected exception", e)
-			-1 // Return -1 as an error code
-		}
+
+			val files = soknadsfillagerApi.getFiles(fileId,innsendingId,true)
+			return if (files.size == 1 && files.first().status == "ok")  1 else 0
 	}
 
 	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad) {
