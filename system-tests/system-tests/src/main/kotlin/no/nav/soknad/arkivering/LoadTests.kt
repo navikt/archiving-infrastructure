@@ -98,30 +98,22 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 		testName: String
 	) {
 
-		val chunks = 2
 		var keyIndex = 0
 		var filesPerEntityCounter = 0
 		val fileContent = LoadTests::class.java.getResource(filename)!!.readBytes()
 
-		runBlocking(Dispatchers.IO) {
-			(0 until numberOfEntities * numberOfFilesPerEntity)
-				.chunked(chunks)
-				.forEach { ids ->
-					ids.forEach { id ->
-						withContext(Dispatchers.Default) {
+		(0 until numberOfEntities * numberOfFilesPerEntity)
+			.forEach { id ->
 
-							sendFilesToFileStorage(innsendingKeys[keyIndex], id.toString(), fileContent,
-								"${innsendingKeys[keyIndex]}: Uploading file with id $id for test '$testName'")
+				sendFilesToFileStorage(innsendingKeys[keyIndex], id.toString(), fileContent,
+					"${innsendingKeys[keyIndex]}: Uploading file with id $id for test '$testName'")
 
-							filesPerEntityCounter += 1
-							if (filesPerEntityCounter % numberOfFilesPerEntity == 0) {
-								keyIndex += 1
-								filesPerEntityCounter = 0
-							}
-						}
-					}
+				filesPerEntityCounter += 1
+				if (filesPerEntityCounter % numberOfFilesPerEntity == 0) {
+					keyIndex += 1
+					filesPerEntityCounter = 0
 				}
-		}
+			}
 	}
 
 
