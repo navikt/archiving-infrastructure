@@ -5,14 +5,12 @@ import no.nav.soknad.arkivering.avroschemas.EventTypes.*
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
 import no.nav.soknad.arkivering.innsending.performPutCall
-import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ClientException
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
 import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
@@ -62,7 +60,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -80,7 +78,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -106,8 +104,8 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId0)
-		verifyAbsenceInFileStorage(key, fileId1)
+		verifyFileDeletedInFileStorage(key, fileId0)
+		verifyFileDeletedInFileStorage(key, fileId1)
 	}
 
 	@Test
@@ -117,13 +115,13 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = createSoknad(key, fileId)
 		setNormalArchiveBehaviour(key)
 
-		verifyAbsenceInFileStorage(key, fileId, 404)
+		verifyFileNotFoundInFileStorage(key, fileId)
 		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId, 404)
+		verifyFileNotFoundInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -148,8 +146,8 @@ class EndToEndTests : SystemTestBase() {
 		assertThatArkivMock()
 			.hasNoEntityInArchive(key)
 			.verify()
-		verifyPresenceInFileStorage(key, fileId0)
-		verifyPresenceInFileStorage(key, fileId1)
+		verifyFilePresentInFileStorage(key, fileId0)
+		verifyFilePresentInFileStorage(key, fileId1)
 	}
 
 	@Test
@@ -167,7 +165,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -185,7 +183,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -203,7 +201,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -221,7 +219,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = attemptsThanSoknadsarkivererWillPerform)
 			.verify()
-		verifyPresenceInFileStorage(key, fileId)
+		verifyFilePresentInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -241,7 +239,7 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -262,7 +260,7 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -287,7 +285,7 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyAbsenceInFileStorage(key, fileId)
+		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -316,8 +314,8 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyPresenceInFileStorage(newKey, finishedFileId)
-		verifyAbsenceInFileStorage(newKey, newFileId)
+		verifyFilePresentInFileStorage(newKey, finishedFileId)
+		verifyFileDeletedInFileStorage(newKey, newFileId)
 	}
 
 
@@ -325,20 +323,21 @@ class EndToEndTests : SystemTestBase() {
 		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId)
 	}
 
-	private fun verifyPresenceInFileStorage(innsendingId: String, fileId: String) {
-		val fileData = soknadsfillagerApi.getFiles(innsendingId,fileId,true)
-		Assertions.assertTrue(fileData.size == 1)
-		Assertions.assertTrue(fileData.first().status == "ok")
+	private fun verifyFilePresentInFileStorage(innsendingId: String, fileId: String) {
+		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "ok") })
 	}
 
-	private fun verifyAbsenceInFileStorage(innsendingId: String, fileId: String, expectedStatusCode: Int = 410) {
-		loopAndVerify(0, { getNumberOfFilesInFilestorage(innsendingId, fileId, expectedStatusCode) })
+	private fun verifyFileNotFoundInFileStorage(innsendingId: String, fileId: String) {
+		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "not-found") })
 	}
 
-	private fun getNumberOfFilesInFilestorage(innsendingId: String, fileId: String, expectedStatusCode: Int): Int {
+	private fun verifyFileDeletedInFileStorage(innsendingId: String, fileId: String) {
+		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "deleted") })
+	}
 
-			val files = soknadsfillagerApi.getFiles(fileId,innsendingId,true)
-			return if (files.size == 1 && files.first().status == "ok")  1 else 0
+	private fun getNumberOfFilesInFilestorage(innsendingId: String, fileId: String, expectedStatus: String): Int {
+			val files = soknadsfillagerApi.getFiles(innsendingId, fileId, true)
+			return files.filter { it.status == expectedStatus }.size
 	}
 
 	private fun sendDataToSoknadsmottaker(key: String, soknad: Soknad) {

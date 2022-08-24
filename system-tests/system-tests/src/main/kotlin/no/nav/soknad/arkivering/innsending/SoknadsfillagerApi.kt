@@ -24,8 +24,8 @@ class SoknadsfillagerApi(config: Config) {
 	}
 
 
-	fun getFiles(innsendingId: String, fileId: String,metadataOnly: Boolean?) : List<FileData> {
-		return filesApi.findFilesByIds(ids = listOf(fileId), xInnsendingId = innsendingId,metadataOnly =metadataOnly)
+	fun getFiles(innsendingId: String, fileId: String, metadataOnly: Boolean?) : List<FileData> {
+		return filesApi.findFilesByIds(ids = listOf(fileId), xInnsendingId = innsendingId, metadataOnly = metadataOnly)
 	}
 
 	fun sendFilesToFileStorage(innsendingId: String, fileId: String) {
