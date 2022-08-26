@@ -73,6 +73,16 @@ data class SecurityConfig(
 	val trustStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
 )
 
+data class Oauth2Config(
+	val tokenEndpointUrl:String = getProperty("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"),
+  val grantType:String = "client_credentials",
+	val scopeSoknadsfillager:String = "api://dev-gcp.team-soknad.soknadsfillager-loadtests/.default",
+	val scopeSoknadsmottaker: String = "api://dev-gcp.team-soknad.soknadsmottaker-loadtests/.default",
+	val clientId:String = getProperty("AZURE_APP_CLIENT_ID"),
+	val clientSecret:String = getProperty("AZURE_APP_CLIENT_SECRET"),
+	val clientAuthMethod:String = "client_secret_basic"
+)
+
 data class Topics(
 	val mainTopic: String = getProperty("KAFKA_MAIN_TOPIC"),
 	val processingTopic: String = getProperty("KAFKA_PROCESSING_TOPIC"),

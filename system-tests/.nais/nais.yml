@@ -11,10 +11,17 @@ spec:
   schedule: "0 6 * * MON" # Every Monday at 6 am
   #  schedule: "0 */5 * * *" # Every five hours
   #  schedule: "30 * * * *"  # Once an hour, at 30 past
-
+  azure:
+    application:
+      enabled: true
   accessPolicy:
+    inbound:
+      rules:
+        - application: soknadsadmins
     outbound:
       rules:
+        - application: soknadsmottaker
+        - application: soknadsfillager
         - application: arkiv-mock
   envFrom:
     - secret: shared-innsending-secret
