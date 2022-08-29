@@ -15,14 +15,10 @@ spec:
     application:
       enabled: true
   accessPolicy:
-    inbound:
-      rules:
-        - application: soknadsadmins
     outbound:
       rules:
-        - application: soknadsmottaker
-        - application: soknadsfillager
-        - application: arkiv-mock
+        - application: soknadsmottaker-loadtests
+        - application: soknadsfillager-loadtests
   envFrom:
     - secret: shared-innsending-secret
       metadata:
