@@ -1,6 +1,7 @@
 package no.nav.soknad.arkivering.tokensupport
 
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.security.token.support.client.core.OAuth2ClientException
 import no.nav.security.token.support.client.core.http.OAuth2HttpClient
@@ -28,6 +29,7 @@ class DefaultOAuth2HttpClient(private val client: OkHttpClient) : OAuth2HttpClie
 
 		val response = client.newCall(request).execute()
 		val mapper = ObjectMapper()
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false)
 
 		return mapper.readValue(response.body?.bytes(),OAuth2AccessTokenResponse::class.java)
 
