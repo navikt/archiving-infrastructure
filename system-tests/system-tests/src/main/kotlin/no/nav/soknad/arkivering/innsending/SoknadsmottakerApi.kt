@@ -36,7 +36,8 @@ class SoknadsmottakerApi(config: Config) {
 
 		val okHttpClientTokenService  = OkHttpClient().newBuilder().addInterceptor {
 				val token =	tokenService.getToken()
-			  val bearerRequest = it.request().newBuilder().headers(it.request().headers).header("Bearer",token).build()
+			  val bearerRequest = it.request().newBuilder().headers(it.request().headers).header("Authorization", "Bearer " + token
+				).build()
 
 			it.proceed(bearerRequest)
 		}.build()
