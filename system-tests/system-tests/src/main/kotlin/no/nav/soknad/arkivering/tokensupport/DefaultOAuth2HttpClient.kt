@@ -8,12 +8,13 @@ import no.nav.security.token.support.client.core.http.OAuth2HttpClient
 import no.nav.security.token.support.client.core.http.OAuth2HttpRequest
 import no.nav.security.token.support.client.core.oauth2.OAuth2AccessTokenResponse
 import okhttp3.*
+import org.slf4j.LoggerFactory
 import java.net.URL
 
 
 class DefaultOAuth2HttpClient(private val client: OkHttpClient) : OAuth2HttpClient {
 
-
+	private val logger = LoggerFactory.getLogger(javaClass)
 
 	override fun post(oAuth2HttpRequest: OAuth2HttpRequest): OAuth2AccessTokenResponse {
 
@@ -30,7 +31,7 @@ class DefaultOAuth2HttpClient(private val client: OkHttpClient) : OAuth2HttpClie
 		val response = client.newCall(request).execute()
 		val mapper = ObjectMapper()
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false)
-
+		logger.info("Response body from Oauth2 exchange is " + response.body)
 		return mapper.readValue(response.body?.bytes(),OAuth2AccessTokenResponse::class.java)
 
 	}
