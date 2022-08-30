@@ -47,7 +47,7 @@ class SoknadsfillagerApi(config: Config) {
 		val okHttpClientTokenService  = OkHttpClient().newBuilder().addInterceptor {
 			val token =	tokenService.getToken()
 			logger.info("Adding header to request with token " + token)
-			val bearerRequest = it.request().newBuilder().headers(it.request().headers).header("Authorization", "Bearer$token"
+			val bearerRequest = it.request().newBuilder().headers(it.request().headers).header("Authorization", "Bearer " + token
 			).build()
 
 			it.proceed(bearerRequest)
