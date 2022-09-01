@@ -7,5 +7,5 @@ class TokenService(
 	private val clientProperties: ClientProperties,
 	private val oAuth2AccessTokenService: OAuth2AccessTokenService
 ) {
-	fun getToken() = oAuth2AccessTokenService.getAccessToken(clientProperties).accessToken
+	fun getToken(): String = oAuth2AccessTokenService.getAccessToken(clientProperties).accessToken
 }
