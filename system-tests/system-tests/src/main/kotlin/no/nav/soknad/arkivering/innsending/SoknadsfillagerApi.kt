@@ -1,23 +1,14 @@
 package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod
-import no.nav.security.token.support.client.core.ClientAuthenticationProperties
-import no.nav.security.token.support.client.core.ClientProperties
-import no.nav.security.token.support.client.core.OAuth2GrantType
-import no.nav.security.token.support.client.core.oauth2.ClientCredentialsTokenClient
-import no.nav.security.token.support.client.core.oauth2.OAuth2AccessTokenService
 import no.nav.soknad.arkivering.Config
-import no.nav.soknad.arkivering.Oauth2Config
+import no.nav.soknad.arkivering.OAuth2Config
 import no.nav.soknad.arkivering.soknadsfillager.api.FilesApi
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ApiClient
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.Serializer.jacksonObjectMapper
 import no.nav.soknad.arkivering.soknadsfillager.model.FileData
-import no.nav.soknad.arkivering.tokensupport.DefaultOAuth2HttpClient
-import no.nav.soknad.arkivering.tokensupport.TokenService
-import okhttp3.OkHttpClient
+import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
 import org.slf4j.LoggerFactory
-import java.net.URI
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
@@ -31,33 +22,14 @@ class SoknadsfillagerApi(config: Config) {
 		jacksonObjectMapper.registerModule(JavaTimeModule())
 		ApiClient.username = config.soknadsfillagerUsername
 		ApiClient.password = config.soknadsfillagerPassword
-		val auth2Conf = Oauth2Config()
-		val okHttpClientOauth2  = OkHttpClient()
-		val OAuth2AccessTokenService = OAuth2AccessTokenService(null,null, ClientCredentialsTokenClient(
-			DefaultOAuth2HttpClient(okHttpClientOauth2)
-		),null)
-		val clientProperties = ClientProperties(
-			URI.create(auth2Conf.tokenEndpointUrl),
-			null, OAuth2GrantType(auth2Conf.grantType) ,
-			listOf(auth2Conf.scopeSoknadsfillager),
-			ClientAuthenticationProperties(auth2Conf.clientId,
-				ClientAuthenticationMethod(auth2Conf.clientAuthMethod),auth2Conf.clientSecret,null),null,null)
-		val tokenService = TokenService(clientProperties,OAuth2AccessTokenService)
 
-		val okHttpClientTokenService  = OkHttpClient().newBuilder().addInterceptor {
-			val token =	tokenService.getToken()
-			logger.info("Adding header to request with token " + token)
-			val bearerRequest = it.request().newBuilder().headers(it.request().headers).header("Authorization", "Bearer " + token
-			).build()
+		val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsfillager) }
 
-			it.proceed(bearerRequest)
-		}.build()
-
-		filesApi = FilesApi(config.soknadsfillagerUrl,okHttpClientTokenService)
+		filesApi = FilesApi(config.soknadsfillagerUrl, createOkHttpAuthorizationClient(scopesProvider))
 	}
 
 
-	fun getFiles(innsendingId: String, fileId: String, metadataOnly: Boolean?) : List<FileData> {
+	fun getFiles(innsendingId: String, fileId: String, metadataOnly: Boolean?): List<FileData> {
 		return filesApi.findFilesByIds(ids = listOf(fileId), xInnsendingId = innsendingId, metadataOnly = metadataOnly)
 	}
 
@@ -75,7 +47,7 @@ class SoknadsfillagerApi(config: Config) {
 		val maxTries = 3
 		val files = listOf(FileData(fileId, payload, OffsetDateTime.now(ZoneOffset.UTC)))
 
-		for (i in 1 .. maxTries) {
+		for (i in 1..maxTries) {
 			val startTime = System.currentTimeMillis()
 			try {
 				filesApi.addFiles(files, innsendingId)
