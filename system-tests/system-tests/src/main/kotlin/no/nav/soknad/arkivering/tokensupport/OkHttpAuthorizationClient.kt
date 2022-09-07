@@ -9,6 +9,7 @@ import no.nav.security.token.support.client.core.oauth2.OAuth2AccessTokenService
 import no.nav.soknad.arkivering.OAuth2Config
 import okhttp3.OkHttpClient
 import java.net.URI
+import java.util.concurrent.TimeUnit
 
 fun createOkHttpAuthorizationClient(scopesProvider: (OAuth2Config) -> List<String>): OkHttpClient {
 	val oauth2Conf = OAuth2Config()
@@ -31,13 +32,15 @@ fun createOkHttpAuthorizationClient(scopesProvider: (OAuth2Config) -> List<Strin
 	)
 	val tokenService = TokenService(clientProperties, oauth2AccessTokenService)
 
-	val okHttpClientTokenService = OkHttpClient().newBuilder().addInterceptor {
-		val token = tokenService.getToken()
-		val bearerRequest = it.request().newBuilder().headers(it.request().headers)
-			.header("Authorization", "Bearer $token").build()
+	val okHttpClientTokenService = OkHttpClient().newBuilder()
+		.callTimeout(5, TimeUnit.MINUTES)
+		.addInterceptor {
+			val token = tokenService.getToken()
+			val bearerRequest = it.request().newBuilder().headers(it.request().headers)
+				.header("Authorization", "Bearer $token").build()
 
-		it.proceed(bearerRequest)
-	}.build()
+			it.proceed(bearerRequest)
+		}.build()
 
 	return okHttpClientTokenService
 }
