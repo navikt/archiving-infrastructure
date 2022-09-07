@@ -33,6 +33,9 @@ fun createOkHttpAuthorizationClient(scopesProvider: (OAuth2Config) -> List<Strin
 	val tokenService = TokenService(clientProperties, oauth2AccessTokenService)
 
 	val okHttpClientTokenService = OkHttpClient().newBuilder()
+		.connectTimeout(5, TimeUnit.MINUTES)
+		.writeTimeout(5, TimeUnit.MINUTES)
+		.readTimeout(5, TimeUnit.MINUTES)
 		.callTimeout(5, TimeUnit.MINUTES)
 		.addInterceptor {
 			val token = tokenService.getToken()
