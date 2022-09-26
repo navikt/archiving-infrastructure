@@ -23,6 +23,6 @@ class SoknadsmottakerApi(config: Config) {
 	}
 
 	fun sendDataToSoknadsmottaker(soknad: Soknad) {
-		soknadApi.receive(soknad)
+		soknadApi.receive(soknad, "disabled")
 	}
 }

@@ -50,7 +50,7 @@ class SoknadsfillagerApi(config: Config) {
 		for (i in 1..maxTries) {
 			val startTime = System.currentTimeMillis()
 			try {
-				filesApi.addFiles(files, innsendingId)
+				filesApi.addFiles(files, innsendingId, "disabled")
 				break
 
 			} catch (e: Exception) {
