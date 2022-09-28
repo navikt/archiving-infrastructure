@@ -9,20 +9,25 @@ import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.Serializer
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
 
-class SoknadsmottakerApi(config: Config) {
-	private val soknadApi: SoknadApi
-
-	init {
-		Serializer.jacksonObjectMapper.registerModule(JavaTimeModule())
-		ApiClient.username = config.soknadsmottakerUsername
-		ApiClient.password = config.soknadsmottakerPassword
-
-		val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsmottaker) }
-
-		soknadApi = SoknadApi(config.soknadsmottakerUrl, createOkHttpAuthorizationClient(scopesProvider))
-	}
-
+class SoknadsmottakerApi(private val soknadApi: SoknadApi) {
 	fun sendDataToSoknadsmottaker(soknad: Soknad) {
-		soknadApi.receive(soknad, "disabled")
+		soknadApi.receive(soknad)
 	}
+}
+
+fun soknadApiWithOAuth2(config: Config): SoknadApi {
+	Serializer.jacksonObjectMapper.registerModule(JavaTimeModule())
+	ApiClient.username = config.soknadsmottakerUsername
+	ApiClient.password = config.soknadsmottakerPassword
+
+	val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsmottaker) }
+	return SoknadApi(config.soknadsmottakerUrl, createOkHttpAuthorizationClient(scopesProvider))
+}
+
+fun soknadApiWithoutOAuth2(config: Config): SoknadApi {
+	Serializer.jacksonObjectMapper.registerModule(JavaTimeModule())
+	ApiClient.username = config.soknadsmottakerUsername
+	ApiClient.password = config.soknadsmottakerPassword
+
+	return SoknadApi(config.soknadsmottakerUrl)
 }

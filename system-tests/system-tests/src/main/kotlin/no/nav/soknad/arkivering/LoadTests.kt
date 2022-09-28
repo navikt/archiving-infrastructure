@@ -1,8 +1,13 @@
 package no.nav.soknad.arkivering
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
 import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
+import no.nav.soknad.arkivering.innsending.filesApiWithOAuth2
+import no.nav.soknad.arkivering.innsending.soknadApiWithOAuth2
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
@@ -24,8 +29,8 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 	* Gjennomsnitt filstørrelse 0,67MB
 	*/
 
-	private val soknadsfillagerApi = SoknadsfillagerApi(config)
-	private val soknadsmottakerApi = SoknadsmottakerApi(config)
+	private val soknadsfillagerApi = SoknadsfillagerApi(filesApiWithOAuth2(config))
+	private val soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithOAuth2(config))
 
 
 	@Suppress("FunctionName")

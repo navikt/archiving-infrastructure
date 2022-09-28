@@ -13,20 +13,8 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
 
-class SoknadsfillagerApi(config: Config) {
+class SoknadsfillagerApi(private val filesApi: FilesApi) {
 	private val logger = LoggerFactory.getLogger(javaClass)
-
-	private val filesApi: FilesApi
-
-	init {
-		jacksonObjectMapper.registerModule(JavaTimeModule())
-		ApiClient.username = config.soknadsfillagerUsername
-		ApiClient.password = config.soknadsfillagerPassword
-
-		val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsfillager) }
-
-		filesApi = FilesApi(config.soknadsfillagerUrl, createOkHttpAuthorizationClient(scopesProvider))
-	}
 
 
 	fun getFiles(innsendingId: String, fileId: String, metadataOnly: Boolean?): List<FileData> {
@@ -50,7 +38,7 @@ class SoknadsfillagerApi(config: Config) {
 		for (i in 1..maxTries) {
 			val startTime = System.currentTimeMillis()
 			try {
-				filesApi.addFiles(files, innsendingId, "disabled")
+				filesApi.addFiles(files, innsendingId)
 				break
 
 			} catch (e: Exception) {
@@ -65,4 +53,21 @@ class SoknadsfillagerApi(config: Config) {
 			}
 		}
 	}
+}
+
+fun filesApiWithOAuth2(config: Config): FilesApi {
+	jacksonObjectMapper.registerModule(JavaTimeModule())
+	ApiClient.username = config.soknadsfillagerUsername
+	ApiClient.password = config.soknadsfillagerPassword
+
+	val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsfillager) }
+	return FilesApi(config.soknadsfillagerUrl, createOkHttpAuthorizationClient(scopesProvider))
+}
+
+fun filesApiWithoutOAuth2(config: Config): FilesApi {
+	jacksonObjectMapper.registerModule(JavaTimeModule())
+	ApiClient.username = config.soknadsfillagerUsername
+	ApiClient.password = config.soknadsfillagerPassword
+
+	return FilesApi(config.soknadsfillagerUrl)
 }

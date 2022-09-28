@@ -2,9 +2,7 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
-import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
-import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
-import no.nav.soknad.arkivering.innsending.performPutCall
+import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
@@ -32,8 +30,8 @@ class EndToEndTests : SystemTestBase() {
 		}
 
 		setUp()
-		soknadsfillagerApi = SoknadsfillagerApi(config)
-		soknadsmottakerApi = SoknadsmottakerApi(config)
+		soknadsfillagerApi = SoknadsfillagerApi(filesApiWithoutOAuth2(config))
+		soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
 	}
 
 	@AfterAll
