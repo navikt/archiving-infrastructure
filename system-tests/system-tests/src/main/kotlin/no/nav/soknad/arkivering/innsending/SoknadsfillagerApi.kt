@@ -4,7 +4,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.OAuth2Config
 import no.nav.soknad.arkivering.soknadsfillager.api.FilesApi
-import no.nav.soknad.arkivering.soknadsfillager.infrastructure.ApiClient
 import no.nav.soknad.arkivering.soknadsfillager.infrastructure.Serializer.jacksonObjectMapper
 import no.nav.soknad.arkivering.soknadsfillager.model.FileData
 import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
@@ -57,17 +56,11 @@ class SoknadsfillagerApi(private val filesApi: FilesApi) {
 
 fun filesApiWithOAuth2(config: Config): FilesApi {
 	jacksonObjectMapper.registerModule(JavaTimeModule())
-	ApiClient.username = config.soknadsfillagerUsername
-	ApiClient.password = config.soknadsfillagerPassword
-
 	val scopesProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeSoknadsfillager) }
 	return FilesApi(config.soknadsfillagerUrl, createOkHttpAuthorizationClient(scopesProvider))
 }
 
 fun filesApiWithoutOAuth2(config: Config): FilesApi {
 	jacksonObjectMapper.registerModule(JavaTimeModule())
-	ApiClient.username = config.soknadsfillagerUsername
-	ApiClient.password = config.soknadsfillagerPassword
-
 	return FilesApi(config.soknadsfillagerUrl)
 }

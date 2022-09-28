@@ -1,6 +1,7 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
-import no.nav.soknad.arkivering.*
+import no.nav.soknad.arkivering.defaultPorts
+import no.nav.soknad.arkivering.defaultProperties
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
@@ -86,8 +87,6 @@ class EmbeddedDockerImages {
 					"DATABASE_DATABASE"      to databaseName,
 					"DATABASE_USERNAME"      to postgresUsername,
 					"DATABASE_PASSWORD"      to postgresUsername,
-					"INNSENDING_USERNAME"    to defaultSoknadsfillagerUsername,
-					"INNSENDING_PASSWORD"    to defaultSoknadsfillagerPassword
 				)
 			)
 			.dependsOn(postgresContainer)
@@ -104,8 +103,6 @@ class EmbeddedDockerImages {
 					"KAFKA_SECURITY"         to "FALSE",
 					"KAFKA_SCHEMA_REGISTRY"  to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
 					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-					"INNSENDING_USERNAME"    to defaultSoknadsmottakerUsername,
-					"INNSENDING_PASSWORD"    to defaultSoknadsmottakerPassword
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer)

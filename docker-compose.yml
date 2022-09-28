@@ -57,8 +57,6 @@ services:
       - KAFKA_SECURITY=false
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - KAFKA_BROKERS=kafka-broker:29092
-      - INNSENDING_USERNAME=innsending
-      - INNSENDING_PASSWORD=password
 
   soknadsfillager:
     build: ../soknadsfillager
@@ -73,8 +71,6 @@ services:
       - DATABASE_DATABASE=postgres
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
-      - INNSENDING_USERNAME=innsending
-      - INNSENDING_PASSWORD=password
 
   arkiv-mock:
     build: ../arkiv-mock

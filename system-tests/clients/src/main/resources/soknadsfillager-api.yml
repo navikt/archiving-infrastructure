@@ -203,13 +203,6 @@ components:
           type: string
           description: current state of the file. Can be `deleted`, `not-found`, `ok`
           example: not-found
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
-
-security:
-  - basicAuth: []
 
 externalDocs:
   description: Documentation of the whole archiving system
