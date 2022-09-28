@@ -103,3 +103,4 @@ services:
       - KAFKA_BROKERS=kafka-broker:29092
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - BOOTSTRAPPING_TIMEOUT=1
+      - SEND_TO_JOARK=true
