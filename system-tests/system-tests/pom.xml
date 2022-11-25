@@ -14,24 +14,24 @@
 
 	<properties>
 		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
-		<token-support.version>2.1.7</token-support.version>
+		<token-support.version>2.1.8</token-support.version>
 
 		<coroutines.version>1.6.4</coroutines.version>
-		<logback.version>1.4.4</logback.version>
+		<logback.version>1.4.5</logback.version>
 		<logstash.version>7.2</logstash.version>
-		<slf4j.version>2.0.3</slf4j.version>
-		<kafka-streams-avro-serde.version>7.2.2</kafka-streams-avro-serde.version>
+		<slf4j.version>2.0.4</slf4j.version>
+		<kafka-streams-avro-serde.version>7.3.0</kafka-streams-avro-serde.version>
 		<kafka.version>3.3.1</kafka.version>
-		<testcontainers.version>1.17.5</testcontainers.version>
+		<testcontainers.version>1.17.6</testcontainers.version>
 		<postgresql.version>42.5.0</postgresql.version>
 		<okhttp3.version>4.10.0</okhttp3.version>
-		<jackson.version>2.13.4</jackson.version>
+		<jackson.version>2.14.1</jackson.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>
 
 		<maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
 		<java.version>17</java.version>
 		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-		<kotlin.version>1.7.20</kotlin.version>
+		<kotlin.version>1.7.21</kotlin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 

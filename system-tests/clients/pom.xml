@@ -13,13 +13,13 @@
 	<description>Clients used by system-tests</description>
 
 	<properties>
-		<jackson.version>2.13.4</jackson.version>
+		<jackson.version>2.14.1</jackson.version>
 		<okhttp3.version>4.10.0</okhttp3.version>
 
-		<openapi-generator-maven-plugin.version>6.2.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>6.2.1</openapi-generator-maven-plugin.version>
 		<remote-comparer-maven-plugin.version>1.0.5</remote-comparer-maven-plugin.version>
 
-		<kotlin.version>1.7.20</kotlin.version>
+		<kotlin.version>1.7.21</kotlin.version>
 		<java.version>17</java.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
