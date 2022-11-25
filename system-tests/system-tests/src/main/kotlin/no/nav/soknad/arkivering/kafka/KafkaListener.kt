@@ -15,13 +15,11 @@ import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams
-import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler
 import org.apache.kafka.streams.kstream.Consumed
-import org.apache.kafka.streams.kstream.Transformer
-import org.apache.kafka.streams.processor.ProcessorContext
+import org.apache.kafka.streams.processor.api.*
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
@@ -66,22 +64,22 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArchiveEntity>(json) }
 			.peek { key, entity -> log("$key: Archive Entities   - $entity") }
-			.transform({ TimestampExtractor() })
+			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
 			.peek { key, entity -> log("$key: Metrics received   - $entity") }
-			.transform({ TimestampExtractor() })
+			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
 
 		numberOfCallsStream
 			.peek { key, numberOfCalls -> log("$key: Number of Calls    - $numberOfCalls") }
-			.transform({ TimestampExtractor() })
+			.processValues({ TimestampExtractor() })
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
 		processingEventTopicStream
 			.peek { key, entity -> log("$key: Processing Events  - $entity") }
-			.transform({ TimestampExtractor() })
+			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
 	}
 
@@ -127,14 +125,14 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	/**
 	 * This class is just boilerplate for extracting a timestamp from a Kafka record.
 	 */
-	class TimestampExtractor<T> : Transformer<String, T, KeyValue<String, KafkaTimestampedEntity<T>>> {
-		private lateinit var context: ProcessorContext
-		override fun init(context: ProcessorContext) {
+	class TimestampExtractor<T> : FixedKeyProcessor<String, T, KafkaTimestampedEntity<T>> {
+		private lateinit var context: FixedKeyProcessorContext<String, KafkaTimestampedEntity<T>>
+		override fun init(context: FixedKeyProcessorContext<String, KafkaTimestampedEntity<T>>) {
 			this.context = context
 		}
 
-		override fun transform(key: String, value: T): KeyValue<String, KafkaTimestampedEntity<T>> {
-			return KeyValue(key, KafkaTimestampedEntity(value, context.timestamp()))
+		override fun process(record: FixedKeyRecord<String, T>) {
+			context.forward(record.withValue(KafkaTimestampedEntity(record.value(), record.timestamp())))
 		}
 
 		override fun close() {
