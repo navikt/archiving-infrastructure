@@ -9,9 +9,9 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "320M"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
 spec:
-  schedule: "0 6 * * MON" # Every Monday at 6 am
-  #  schedule: "0 */5 * * *" # Every five hours
-  #  schedule: "30 * * * *"  # Once an hour, at 30 past
+#  schedule: "0 6 * * MON" # Every Monday at 6 am
+#  schedule: "0 */5 * * *" # Every five hours
+  schedule: "30 * * * *"  # Once an hour, at 30 past
   accessPolicy:
     outbound:
       rules:
