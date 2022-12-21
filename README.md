@@ -23,7 +23,7 @@ The end-to-end tests can be run without using testcontainers, and instead runnin
 This mode is especially useful for debugging. The downsides are that the user needs to stop the containers manually afterwards. Also, not all of the end-to-end tests will be run; some of them rely on shutting containers down and starting them up (to simulate pods going down), and this can only be done when running with testcontainers, not in this mode.
 
 ### GitHub Actions
-Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for soknadsmottaker, soknadsfillager, soknadsarkiverer and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
+Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for soknadsmottaker, soknadsfillager, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
 
 ### cronjob
 The load tests are run by a cronjob on scheduled times. They will test the upper limits of concurrent load, both with having many simultaneous requests, as well as fewer but heavier. The load tests take almost 1.5 hours to complete, and therefore they are not part of the normal build-chain. Instead, they are run on scheduled times to verify that the system performance has not degraded.
