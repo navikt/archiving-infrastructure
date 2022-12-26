@@ -6,7 +6,7 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_CREATE_TOPICS: "privat-soknadinnsending-v1-dev:1:1,privat-soknadinnsending-processingeventlog-v1-dev:1:1,privat-soknadinnsending-messages-v1-dev:1:1,privat-soknadinnsending-metrics-v1-dev:1:1,privat-soknadinnsending-systemtests-entities:1:1,privat-soknadinnsending-systemtests-numberofcalls:1:1,min-side.aapen-brukernotifikasjon-done-v1:1:1,min-side.aapen-brukernotifikasjon-beskjed-v1:1:1,min-side.aapen-brukernotifikasjon-oppgave-v1:1:1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
       # For more details see https://rmoff.net/2018/08/02/kafka-listeners-explained/
       KAFKA_LISTENERS: INTERNAL://kafka-broker:29092,EXTERNAL://kafka-broker:9092
