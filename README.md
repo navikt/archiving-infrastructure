@@ -38,6 +38,15 @@ The load tests can be started ad-hoc at any time by running the following comman
 
 If you lack permission to execute the scripts, run `chmod +x *.sh`.
 
+## Kubectl commands
+In order to define new or change a kafka topics run the command:
+* kubectl apply -f <topic-configuration-and-acl.json>
+
+PS. Note that it is NOT possible to change the number of partitions on an existing topic.
+
+In order to list configuration of an existing topic, e.g. privat-soknadinnsending-v2-dev:
+* kubectl describe topic privat-soknadinnsending-v2-dev -n team-soknad
+
 ## Inquiries
 Questions regarding the code or the project can be asked to the team by [raising an issue on the repo](https://github.com/navikt/archiving-infrastructure/issues).
 
