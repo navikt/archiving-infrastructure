@@ -43,6 +43,7 @@ In order to define new or change a kafka topics run the command:
 * kubectl apply -f <topic-configuration-and-acl.json>
 
 PS. Note that it is NOT possible to change the number of partitions on an existing topic.
+See https://github.com/navikt/soknadarkiv-schema/tree/main/topicconfig for examples of *_v2.json configuration files. 
 
 In order to list configuration of an existing topic, e.g. privat-soknadinnsending-v2-dev:
 * kubectl describe topic privat-soknadinnsending-v2-dev -n team-soknad
