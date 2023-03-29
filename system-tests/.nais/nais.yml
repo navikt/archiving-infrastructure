@@ -38,9 +38,9 @@ spec:
     - name: KAFKA_NUMBER_OF_CALLS_TOPIC
       value: team-soknad.privat-soknadinnsending-systemtests-numberofcalls
     - name: SOKNADSFILLAGER_URL
-      value: https://soknadsfillager-gcp-loadtests.dev.intern.nav.no
+      value: https://soknadsfillager-gcp-loadtests.intern.dev.nav.no
     - name: SOKNADSMOTTAKER_URL
-      value: https://soknadsmottaker-gcp-loadtests.dev.intern.nav.no
+      value: https://soknadsmottaker-gcp-loadtests.intern.dev.nav.no
 
   image: {{image}}
   ttlSecondsAfterFinished: 3600
