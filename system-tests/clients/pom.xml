@@ -12,20 +12,18 @@
 	<name>${project.artifactId}</name>
 	<description>Clients used by system-tests</description>
 
-	<properties>
-		<jackson.version>2.14.1</jackson.version>
-		<okhttp3.version>4.10.0</okhttp3.version>
-
-		<openapi-generator-maven-plugin.version>6.2.1</openapi-generator-maven-plugin.version>
-		<remote-comparer-maven-plugin.version>1.0.5</remote-comparer-maven-plugin.version>
-
-		<kotlin.version>1.7.22</kotlin.version>
-		<java.version>17</java.version>
-
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>6.0.11</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webflux</artifactId>
+			<version>6.0.11</version>
+		</dependency>
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib</artifactId>
@@ -42,13 +40,49 @@
 			<artifactId>jackson-module-kotlin</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.expediagroup</groupId>
+			<artifactId>graphql-kotlin-spring-client</artifactId>
+			<version>${graphql-kotlin.version}</version>
+			<scope>compile</scope>
+<!--
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-webflux</artifactId>
+				</exclusion>
+			</exclusions>
+-->
+		</dependency>
 	</dependencies>
 
 
 	<build>
 		<finalName>${project.artifactId}</finalName>
+<!--
 		<sourceDirectory>target/generated-sources/openapi</sourceDirectory>
+-->
 		<plugins>
+
+			<plugin>
+				<groupId>com.expediagroup</groupId>
+				<artifactId>graphql-kotlin-maven-plugin</artifactId>
+				<version>${graphql-kotlin.version}</version>
+				<executions>
+					<execution>
+						<id>generate-saf-client</id>
+						<goals>
+							<goal>generate-client</goal>
+						</goals>
+						<configuration>
+							<queryFileDirectory>${project.basedir}/src/main/resources/graphql/saf</queryFileDirectory>
+							<schemaFile>${project.basedir}/src/main/resources/graphql/saf/saf.graphqls</schemaFile>
+							<packageName>no.nav.soknad.arkivering.saf.generated</packageName>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
@@ -61,6 +95,7 @@
 						</goals>
 						<configuration>
 							<inputSpec>${project.basedir}/src/main/resources/soknadsfillager-api.yml</inputSpec>
+							<output>target/generated-sources/openapi</output>
 							<generatorName>kotlin</generatorName>
 							<apiPackage>no.nav.soknad.arkivering.soknadsfillager.api</apiPackage>
 							<modelPackage>no.nav.soknad.arkivering.soknadsfillager.model</modelPackage>
@@ -81,6 +116,7 @@
 						</goals>
 						<configuration>
 							<inputSpec>${project.basedir}/src/main/resources/soknadsmottaker-api.yml</inputSpec>
+							<output>target/generated-sources/openapi</output>
 							<generatorName>kotlin</generatorName>
 							<apiPackage>no.nav.soknad.arkivering.soknadsmottaker.api</apiPackage>
 							<modelPackage>no.nav.soknad.arkivering.soknadsmottaker.model</modelPackage>
@@ -127,6 +163,57 @@
 					</execution>
 				</executions>
 			</plugin>
+
+<!--
+			<plugin>
+				<groupId>org.jetbrains.kotlin</groupId>
+				<artifactId>kotlin-maven-plugin</artifactId>
+				<version>${kotlin.version}</version>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>test-compile</id>
+						<goals>
+							<goal>test-compile</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<nowarn>true</nowarn>
+					<args>
+						<arg>-Xjsr305=strict</arg>
+					</args>
+					<compilerPlugins>
+						<plugin>spring</plugin>
+						<plugin>jpa</plugin>
+						<plugin>kotlinx-serialization</plugin>
+					</compilerPlugins>
+					<jvmTarget>${java.version}</jvmTarget>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-allopen</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-noarg</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-serialization</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+-->
 
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>

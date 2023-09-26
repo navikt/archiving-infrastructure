@@ -96,6 +96,7 @@ services:
       - SPRING_PROFILES_ACTIVE=endtoend
       - FILESTORAGE_HOST=http://soknadsfillager:9042
       - JOARK_HOST=http://arkiv-mock:8092
+      - SAF_URL=http://arkiv-mock:8092
       - KAFKA_BROKERS=kafka-broker:29092
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - BOOTSTRAPPING_TIMEOUT=1

@@ -1,6 +1,7 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
+import no.nav.soknad.arkivering.arkiveringsystemtests.environment.setupMockedNetworkServices
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
@@ -32,6 +33,7 @@ class EndToEndTests : SystemTestBase() {
 		setUp()
 		soknadsfillagerApi = SoknadsfillagerApi(filesApiWithoutOAuth2(config))
 		soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
+		//setupMockedNetworkServices(8093, "/graphql")
 	}
 
 	@AfterAll

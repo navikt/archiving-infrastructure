@@ -17,7 +17,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty
  * the Gatling Machine Gun, the Kjellman Load Tests can be seen as a less sophisticated product than the Gatling
  * Load Tests.
  */
-@DisplayName("Kjellman Load Tests")
+@DisplayName("Load-Tests")
 @EnabledIfSystemProperty(named = "runLoadtests", matches = "true")
 class KjellmanLoadTests : SystemTestBase() {
 

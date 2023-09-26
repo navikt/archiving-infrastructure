@@ -206,4 +206,5 @@ check_if_docker_is_running
 
 clean_docker > /dev/null
 build_components_and_show_progress || { echo "Failed to build, exiting."; exit 1; }
+echo "skal starte å bygge docker komponenter"
 build-docker

@@ -12,29 +12,6 @@
 	<name>End-to-end-tests and Load-tests</name>
 	<description>End-to-end-tests and Load-tests</description>
 
-	<properties>
-		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
-		<token-support.version>3.0.0</token-support.version>
-
-		<coroutines.version>1.6.4</coroutines.version>
-		<logback.version>1.4.5</logback.version>
-		<logstash.version>7.2</logstash.version>
-		<slf4j.version>2.0.6</slf4j.version>
-		<kafka-streams-avro-serde.version>7.3.0</kafka-streams-avro-serde.version>
-		<kafka.version>3.3.1</kafka.version>
-		<testcontainers.version>1.17.6</testcontainers.version>
-		<postgresql.version>42.5.1</postgresql.version>
-		<okhttp3.version>4.10.0</okhttp3.version>
-		<jackson.version>2.14.1</jackson.version>
-		<junit-jupiter.version>5.9.1</junit-jupiter.version>
-
-		<maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
-		<java.version>17</java.version>
-		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-		<kotlin.version>1.7.22</kotlin.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>no.nav.soknad.arkivering</groupId>
@@ -119,6 +96,18 @@
 			<groupId>com.github.navikt</groupId>
 			<artifactId>soknadarkiv-schema</artifactId>
 			<version>${arkivering-schemas.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.expediagroup</groupId>
+			<artifactId>graphql-kotlin-spring-client</artifactId>
+			<version>${graphql-kotlin.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.tomakehurst</groupId>
+			<artifactId>wiremock-standalone</artifactId>
+			<version>${wiremock.version}</version>
+			<scope>test</scope>
 		</dependency>
 
 
