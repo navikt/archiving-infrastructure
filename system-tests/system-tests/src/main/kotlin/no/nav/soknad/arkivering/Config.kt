@@ -30,6 +30,7 @@ val defaultProperties = mapOf(
 	"KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"    to "min-side.aapen-brukernotifikasjon-done-v1",
 	"KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC" to "min-side.aapen-brukernotifikasjon-beskjed-v1",
 	"KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC" to "min-side.aapen-brukernotifikasjon-oppgave-v1",
+	"KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"  to "min-side.aapen-utkast-v1",
 
 	"SOKNADSMOTTAKER_URL" to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"SOKNADSFILLAGER_URL" to "http://localhost:${defaultPorts["soknadsfillager"]}",
@@ -80,6 +81,7 @@ data class Topics(
 	val brukernotifikasjonDoneTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"),
 	val brukernotifikasjonBeskjedTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"),
 	val brukernotifikasjonOppgaveTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"),
+	val brukernotifikasjonUtkastTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"),
 )
 
 data class SchemaRegistry(
