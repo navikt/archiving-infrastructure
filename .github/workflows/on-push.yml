@@ -8,6 +8,9 @@ env:
 jobs:
   build:
     name: Build tests, package tests in docker image and push docker image
+    permissions:
+      contents: "read"
+      id-token: "write"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -33,11 +36,18 @@ jobs:
           GITHUB_USERNAME: x-access-token
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn install --file system-tests/pom.xml -DskipTests
-      - uses: docker/build-push-action@v3
+  
+      - name: Build and push Docker image
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
         with:
-          context: system-tests
-          push: true
-          tags: ${{ env.docker_image }}
+          team: team-soknad
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+          image_suffix: ${{ github.event.inputs.environment }}
+          byosbom: target/bom.json
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
 
   deploy-load-tests-cron-job:
     name: Deploy load-tests as a CronJob
@@ -51,4 +61,4 @@ jobs:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: system-tests/.nais/nais.yml
-          VAR: image=${{ env.docker_image }}
+          VAR: image=${{needs.build.outputs.image}}
