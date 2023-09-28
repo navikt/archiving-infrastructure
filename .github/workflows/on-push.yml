@@ -33,6 +33,7 @@ jobs:
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           image_suffix: dev
           byosbom: target/bom.json
+          dockerfile: system-tests/DockerFile
     outputs:
       image: ${{ steps.docker-build-push.outputs.image }}
 
