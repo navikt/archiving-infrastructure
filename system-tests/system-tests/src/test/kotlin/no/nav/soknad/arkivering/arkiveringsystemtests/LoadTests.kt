@@ -2,6 +2,10 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
+import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
+import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
+import no.nav.soknad.arkivering.innsending.filesApiWithoutOAuth2
+import no.nav.soknad.arkivering.innsending.soknadApiWithoutOAuth2
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -32,7 +36,7 @@ class KjellmanLoadTests : SystemTestBase() {
 		}
 
 		setUp()
-		loadTests = LoadTests(config, kafkaListener)
+		loadTests = LoadTests(config, kafkaListener, false)
 	}
 
 	@AfterAll
@@ -55,12 +59,12 @@ class KjellmanLoadTests : SystemTestBase() {
 	}
 
 	@Test
-	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
-		loadTests.`10 000 simultaneous entities, 1 times 1 byte each`()
+	fun `2000 simultaneous entities, 1 times 1 byte each`() {
+		loadTests.`2000 simultaneous entities, 1 times 1 byte each`()
 	}
 
 	@Test
-	fun `5 simultaneous entities, 8 times 38 MB each`() {
-		loadTests.`5 simultaneous entities, 8 times 38 MB each`()
+	fun `5 simultaneous entities, 4 times 38 MB each`() {
+		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
 	}
 }

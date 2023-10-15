@@ -143,7 +143,9 @@ class EmbeddedDockerImages {
 					"JOARK_HOST"              to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"SEND_TO_JOARK"           to "true",
 					"INNSENDING_API_HOST"     to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
-					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}"
+					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
+					"AZURE_APP_WELL_KNOWN_URL" to "http://metadata",
+					"AZURE_APP_CLIENT_ID"			to "aud-localhost"
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)

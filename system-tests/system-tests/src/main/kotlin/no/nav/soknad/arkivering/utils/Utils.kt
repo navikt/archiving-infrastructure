@@ -43,9 +43,9 @@ fun createSoknad(innsendingId: String, fileIds: List<String>) = Soknad(
 )
 
 fun createDocuments(fileId: String, erHovedskjema: Boolean) = DocumentData(
-	"NAV 10-07.40",
+	"NAV 11-12.10",
 	erHovedskjema,
-	"Søknad om stønad til anskaffelse av motorkjøretøy",
+	"Kjøreliste for godkjent bruk av egen bil",
 	listOf(createVarianter(fileId))
 )
 
