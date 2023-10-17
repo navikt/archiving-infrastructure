@@ -80,9 +80,6 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	) {
 		logger.info("Starting test: $testName")
 
-		if (!useOAuth) {
-			Thread.sleep(30_000) // Vent litt slik at infrastrukturen er oppe og går før testene kjører
-		}
 		val innsendingKeys = (0 until numberOfEntities).map { UUID.randomUUID().toString() }
 		uploadData(innsendingKeys, numberOfEntities, numberOfFilesPerEntity, file, testName)
 		warmupArchivingChain()

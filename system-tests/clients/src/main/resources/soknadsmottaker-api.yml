@@ -367,13 +367,6 @@ components:
           description: Spesifiserer en tittel på epost dersom det sendes varsel via epost.
           example: Notifikasjon fra NAV
 
-  securitySchemes:
-    basicAuth:
-      type: http
-      scheme: basic
-
-security:
-  - basicAuth: []
 
 externalDocs:
   description: Documentation of the whole archiving system

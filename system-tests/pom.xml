@@ -49,8 +49,6 @@
 		<postgresql.version>42.5.1</postgresql.version>
 		<jackson.version>2.15.2</jackson.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>
-		<graphql-kotlin.version>6.5.3</graphql-kotlin.version>
-		<wiremock.version>2.27.2</wiremock.version>
 
 
 		<!-- Plugins -->

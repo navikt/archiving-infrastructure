@@ -92,6 +92,7 @@ services:
       - kafka-schema-registry
       - soknadsfillager
       - arkiv-mock
+# Note the arkiv-mock application is used for mocking JOARK, SAF and Innsendings-api
     environment:
       - SPRING_PROFILES_ACTIVE=endtoend
       - FILESTORAGE_HOST=http://soknadsfillager:9042

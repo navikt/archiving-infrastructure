@@ -2,6 +2,7 @@
 This repository contains scripts to run the entire archiving system locally. It also contains end-to-end tests and load tests. For a description of the whole archiving system, see [the documentation](https://github.com/navikt/archiving-infrastructure/wiki).
 
 As is evident by their names, the end-to-end tests will perform various tests on the system as a whole from the outside and test various behaviours of the system. The load tests will make many simultaneous requests to the system and make sure that the components can handle the load without breaking.
+Note that in order to simulate the external interfaces, JOARK, SAF and innsending-api, to the archiving system uses an application, archive-mock, is used.
 
 ### Repository overview
 * **docs**: Documentation resources.

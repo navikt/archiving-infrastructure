@@ -43,11 +43,6 @@ fi
 
 echo "Initialisert komponentlisten"
 
-#build-docker() {
-#	echo "Building docker ..."
-#	docker-compose build
-#}
-
 check_sufficient_java_version() {
 	local result
 	local java_cmd

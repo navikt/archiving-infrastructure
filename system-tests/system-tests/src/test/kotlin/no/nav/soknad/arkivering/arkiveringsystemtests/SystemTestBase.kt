@@ -58,14 +58,14 @@ abstract class SystemTestBase {
 
 	private fun checkThatDependenciesAreUp() {
 		val dependencies = HashMap<String, String>().also {
-			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()
-			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()
-			it["soknadsfillager"]  = env.getUrlForSoknadsfillager()
-			it["arkiv-mock"]       = env.getUrlForArkivMock()
+			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
+			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
+			it["soknadsfillager"]  = env.getUrlForSoknadsfillager()+"/internal/health"
+			it["arkiv-mock"]       = env.getUrlForArkivMock()+"/internal/health"
 		}
 		for (dep in dependencies) {
 			try {
-				val url = "${dep.value}/internal/health"
+				val url = "${dep.value}"
 
 				val bytes = performGetCall(url)
 				val health = objectMapper.readValue(bytes, Health::class.java)

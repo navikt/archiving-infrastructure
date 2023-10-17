@@ -1,7 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
-import no.nav.soknad.arkivering.arkiveringsystemtests.environment.setupMockedNetworkServices
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
@@ -59,7 +58,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -77,7 +75,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -103,8 +100,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId0)
-		//verifyFileDeletedInFileStorage(key, fileId1)
 	}
 
 	@Test
@@ -164,7 +159,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -182,7 +176,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -200,7 +193,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -238,7 +230,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -259,7 +250,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -284,7 +274,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		//verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -314,7 +303,6 @@ class EndToEndTests : SystemTestBase() {
 
 		verifier.verify()
 		verifyFilePresentInFileStorage(newKey, finishedFileId)
-		//verifyFileDeletedInFileStorage(newKey, newFileId)
 	}
 
 
@@ -328,10 +316,6 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun verifyFileNotFoundInFileStorage(innsendingId: String, fileId: String) {
 		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "not-found") })
-	}
-
-	private fun verifyFileDeletedInFileStorage(innsendingId: String, fileId: String) {
-		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "deleted") })
 	}
 
 	private fun getNumberOfFilesInFilestorage(innsendingId: String, fileId: String, expectedStatus: String): Int {

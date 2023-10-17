@@ -2,10 +2,6 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
-import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
-import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
-import no.nav.soknad.arkivering.innsending.filesApiWithoutOAuth2
-import no.nav.soknad.arkivering.innsending.soknadApiWithoutOAuth2
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -36,7 +32,8 @@ class KjellmanLoadTests : SystemTestBase() {
 		}
 
 		setUp()
-		loadTests = LoadTests(config, kafkaListener, false)
+		Thread.sleep(10_000) // Vent litt slik at infrastrukturen er oppe og går før testene kjører
+		loadTests = LoadTests(config, kafkaListener, targetEnvironment != "embedded")
 	}
 
 	@AfterAll

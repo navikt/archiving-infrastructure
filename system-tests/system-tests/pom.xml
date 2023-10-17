@@ -98,12 +98,6 @@
 			<version>${arkivering-schemas.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.expediagroup</groupId>
-			<artifactId>graphql-kotlin-spring-client</artifactId>
-			<version>${graphql-kotlin.version}</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.github.tomakehurst</groupId>
 			<artifactId>wiremock-standalone</artifactId>
 			<version>${wiremock.version}</version>
@@ -194,7 +188,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.6</version>
+				<version>3.6.0</version>
 				<executions>
 					<execution>
 						<id>make-assembly</id>
