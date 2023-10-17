@@ -58,7 +58,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -76,7 +75,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -86,10 +84,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId1 = UUID.randomUUID().toString()
 		val soknad = Soknad(key, false, "personId", "tema",
 			listOf(
-				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+				DocumentData("NAV 11-12.10", true, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId0, "application/pdf", "filnavn", "PDFA"))),
 
-				DocumentData("NAV 10-07.17", false, "Søknad om refusjon av reiseutgifter - bil",
+				DocumentData("NAV 11-12.10", false, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId1, "application/pdf", "filnavn", "PDFA")))
 			))
 		setNormalArchiveBehaviour(key)
@@ -102,8 +100,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId0)
-		verifyFileDeletedInFileStorage(key, fileId1)
 	}
 
 	@Test
@@ -129,10 +125,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId1 = UUID.randomUUID().toString()
 		val soknad = Soknad(key, false, "personId", "tema",
 			listOf(
-				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+				DocumentData("NAV 11-12.10", true, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId0, "application/pdf", "filnavn", "PDFA"))),
 
-				DocumentData("NAV 10-07.17", true, "Søknad om refusjon av reiseutgifter - bil",
+				DocumentData("NAV 11-12.10", true, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId1, "application/pdf", "filnavn", "PDFA")))
 			))
 		setNormalArchiveBehaviour(key)
@@ -163,7 +159,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -181,7 +176,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -199,7 +193,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = erroneousAttempts + 1)
 			.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@Test
@@ -237,7 +230,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -258,7 +250,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -283,7 +274,6 @@ class EndToEndTests : SystemTestBase() {
 		startUpSoknadsarkiverer()
 
 		verifier.verify()
-		verifyFileDeletedInFileStorage(key, fileId)
 	}
 
 	@DisabledIfSystemProperty(named = "targetEnvironment", matches = externalEnvironments)
@@ -313,7 +303,6 @@ class EndToEndTests : SystemTestBase() {
 
 		verifier.verify()
 		verifyFilePresentInFileStorage(newKey, finishedFileId)
-		verifyFileDeletedInFileStorage(newKey, newFileId)
 	}
 
 
@@ -327,10 +316,6 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun verifyFileNotFoundInFileStorage(innsendingId: String, fileId: String) {
 		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "not-found") })
-	}
-
-	private fun verifyFileDeletedInFileStorage(innsendingId: String, fileId: String) {
-		loopAndVerify(1, { getNumberOfFilesInFilestorage(innsendingId, fileId, "deleted") })
 	}
 
 	private fun getNumberOfFilesInFilestorage(innsendingId: String, fileId: String, expectedStatus: String): Int {

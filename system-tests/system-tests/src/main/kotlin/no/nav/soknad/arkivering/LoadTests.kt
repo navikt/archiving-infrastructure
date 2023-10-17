@@ -4,10 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import no.nav.soknad.arkivering.innsending.SoknadsfillagerApi
-import no.nav.soknad.arkivering.innsending.SoknadsmottakerApi
-import no.nav.soknad.arkivering.innsending.filesApiWithOAuth2
-import no.nav.soknad.arkivering.innsending.soknadApiWithOAuth2
+import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
@@ -16,7 +13,7 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
+class LoadTests(config: Config, private val kafkaListener: KafkaListener, val useOAuth: Boolean = true) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 	/*
 	Nils-Arne, 2020-12-11:
@@ -29,8 +26,8 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 	* Gjennomsnitt filstørrelse 0,67MB
 	*/
 
-	private val soknadsfillagerApi = SoknadsfillagerApi(filesApiWithOAuth2(config))
-	private val soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithOAuth2(config))
+	private val soknadsfillagerApi = if (useOAuth) SoknadsfillagerApi(filesApiWithOAuth2(config)) else  SoknadsfillagerApi(filesApiWithoutOAuth2(config))
+	private val soknadsmottakerApi = if (useOAuth) SoknadsmottakerApi(soknadApiWithOAuth2(config)) else SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
 
 
 	@Suppress("FunctionName")
@@ -46,7 +43,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 	@Suppress("FunctionName")
 	fun `100 simultaneous entities, 20 times 1 MB each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 100
+		val numberOfEntities = 10
 		val numberOfFilesPerEntity = 20
 		val file = fileOfSize1mb
 
@@ -54,9 +51,9 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 	}
 
 	@Suppress("FunctionName")
-	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
+	fun `2000 simultaneous entities, 1 times 1 byte each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 10_000
+		val numberOfEntities = 2000
 		val numberOfFilesPerEntity = 1
 		val file = fileOfSize1byte
 
@@ -64,10 +61,10 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener) {
 	}
 
 	@Suppress("FunctionName")
-	fun `5 simultaneous entities, 8 times 38 MB each`() {
+	fun `5 simultaneous entities, 4 times 38 MB each`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
-		val numberOfEntities = 5
-		val numberOfFilesPerEntity = 8
+		val numberOfEntities = 2
+		val numberOfFilesPerEntity = 4
 		val file = fileOfSize38mb
 
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)

@@ -41,9 +41,9 @@ else
   done
 fi
 
+echo "Initialisert komponentlisten"
 
 check_sufficient_java_version() {
-
 	local result
 	local java_cmd
 	if [[ -n $(type -p java) ]]; then
@@ -194,16 +194,15 @@ clean_docker() {
 	fi
 }
 
-build-docker() {
-	echo "Building docker ..."
-	docker-compose build
-}
 
-
+echo "i build.sh"
 check_if_components_exists
 check_sufficient_java_version
 check_if_docker_is_running
 
 clean_docker > /dev/null
 build_components_and_show_progress || { echo "Failed to build, exiting."; exit 1; }
-build-docker
+echo "skal starte å bygge docker komponenter"
+#build-docker
+docker-compose build
+

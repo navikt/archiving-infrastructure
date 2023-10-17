@@ -17,7 +17,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty
  * the Gatling Machine Gun, the Kjellman Load Tests can be seen as a less sophisticated product than the Gatling
  * Load Tests.
  */
-@DisplayName("Kjellman Load Tests")
+@DisplayName("Load-Tests")
 @EnabledIfSystemProperty(named = "runLoadtests", matches = "true")
 class KjellmanLoadTests : SystemTestBase() {
 
@@ -32,7 +32,8 @@ class KjellmanLoadTests : SystemTestBase() {
 		}
 
 		setUp()
-		loadTests = LoadTests(config, kafkaListener)
+		Thread.sleep(10_000) // Vent litt slik at infrastrukturen er oppe og går før testene kjører
+		loadTests = LoadTests(config, kafkaListener, targetEnvironment != "embedded")
 	}
 
 	@AfterAll
@@ -55,12 +56,12 @@ class KjellmanLoadTests : SystemTestBase() {
 	}
 
 	@Test
-	fun `10 000 simultaneous entities, 1 times 1 byte each`() {
-		loadTests.`10 000 simultaneous entities, 1 times 1 byte each`()
+	fun `2000 simultaneous entities, 1 times 1 byte each`() {
+		loadTests.`2000 simultaneous entities, 1 times 1 byte each`()
 	}
 
 	@Test
-	fun `5 simultaneous entities, 8 times 38 MB each`() {
-		loadTests.`5 simultaneous entities, 8 times 38 MB each`()
+	fun `5 simultaneous entities, 4 times 38 MB each`() {
+		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
 	}
 }

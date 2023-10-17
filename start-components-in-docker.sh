@@ -17,7 +17,7 @@ wait_for_service_to_start() {
 
 	for i in {1..250}
 	do
-		if [[ $(curl -s -XGET $url) == {\"status\":\"UP\"* ]]; then
+		if [[ $(curl -s -XGET $url) == \"status\":\"UP\"* ]]; then
 			echo -e "${GREEN}Started $component${NOCOLOUR}"
 			return
 		fi
