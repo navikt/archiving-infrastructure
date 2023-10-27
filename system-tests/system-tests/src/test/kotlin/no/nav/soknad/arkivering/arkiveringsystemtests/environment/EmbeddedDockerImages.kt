@@ -104,6 +104,7 @@ class EmbeddedDockerImages {
 					"DATABASE_DATABASE"      to databaseName,
 					"DATABASE_USERNAME"      to postgresUsername,
 					"DATABASE_PASSWORD"      to postgresUsername,
+					"STATUS_LOG_URL"				 to "https://logs.adeo.no"
 				)
 			)
 			.dependsOn(postgresContainer)
@@ -145,7 +146,10 @@ class EmbeddedDockerImages {
 					"INNSENDING_API_HOST"     to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"AZURE_APP_WELL_KNOWN_URL" to "http://metadata",
-					"AZURE_APP_CLIENT_ID"			to "aud-localhost"
+					"AZURE_APP_CLIENT_ID"			to "aud-localhost",
+					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://metadata",
+					"AZURE_APP_CLIENT_SECRET" to "secret",
+					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)
