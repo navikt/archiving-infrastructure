@@ -103,3 +103,12 @@ services:
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - BOOTSTRAPPING_TIMEOUT=1
       - SEND_TO_JOARK=true
+      - AZURE_APP_WELL_KNOWN_URL=http://metadata
+      - AZURE_APP_CLIENT_ID=aud-localhost
+      - AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=http://localhost:8181/oauth2/v2.0/token
+      - SOKNADSFILLAGER_SCOPE=scope
+      - INNSENDING_API_SCOPE=scope
+      - DOKARKIV_SCOPE=scope
+      - SAF_SCOPE=scope
+      - AZURE_APP_CLIENT_ID=testclient
+      - AZURE_APP_CLIENT_SECRET=testsecret
