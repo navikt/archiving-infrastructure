@@ -5,21 +5,18 @@ on:
 
 jobs:
   run-end-to-end-tests:
+    permissions:
+      contents: "read"
+      id-token: "write"
     runs-on: ubuntu-latest
     steps:
-      - name: Read/save .m2 cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
+      - uses: actions/checkout@v4
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
-
+          cache: 'maven'
 
       - name: 'Build the code for soknadsmottaker'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
