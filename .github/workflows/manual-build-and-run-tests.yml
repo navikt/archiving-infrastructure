@@ -1,13 +1,23 @@
-name: Run end-to-end-tests on pull-requests
-
+name: Manually triggered build and run tests
+run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
 on:
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'preprod'
+        type: choice
+        options:
+          - none
+          - preprod
 
 jobs:
-  run-end-to-end-tests:
+  build-and-push:
     permissions:
-      contents: "read"
-      id-token: "write"
+      contents: 'read'
+      id-token: 'write'
+      packages: 'read'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -47,5 +47,7 @@ runs:
           APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
           TAG="archiving-infrastructure_${APP_NAME}:latest"
           docker build --tag $TAG .
+          docker images
+          docker context ls
         fi
         cd "$orig_path"

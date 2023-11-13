@@ -37,7 +37,7 @@ abstract class SystemTestBase {
 
 
 	fun setUp() {
-		logger.info("Target Environment: $targetEnvironment")
+		logger.info("****Target Environment: $targetEnvironment")
 		if (isExternalEnvironment)
 			checkThatDependenciesAreUp()
 

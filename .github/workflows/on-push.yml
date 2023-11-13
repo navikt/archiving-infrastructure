@@ -2,9 +2,6 @@ name: Register load-tests cron-job on push
 on:
   push:
 
-env:
-  docker_image: ghcr.io/${{ github.repository }}/innsending-system-tests:${{ github.sha }}
-
 jobs:
   build-and-push:
     name: Build tests, package tests in docker image and push docker image
@@ -18,7 +15,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'maven'
 
       - name: Build with maven
