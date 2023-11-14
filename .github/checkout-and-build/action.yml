@@ -45,7 +45,7 @@ runs:
 
         if [[ ${{ inputs.run_docker_build }} = "true" ]]; then
           APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
-          TAG="archiving-infrastructure_${APP_NAME}:latest"
+          TAG="archiving-infrastructure-${APP_NAME}:latest"
           docker build --tag $TAG .
           docker images
           docker context ls
