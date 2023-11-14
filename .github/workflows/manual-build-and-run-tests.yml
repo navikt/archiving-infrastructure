@@ -28,6 +28,11 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
+      - name: 'Build the code for arkiv-mock'
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        with:
+          component_name: arkiv-mock
+
       - name: 'Build the code for soknadsmottaker'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
@@ -43,11 +48,5 @@ jobs:
         with:
           component_name: soknadsarkiverer
 
-      - name: 'Build the code for arkiv-mock'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
-        with:
-          component_name: arkiv-mock
-
       - name: 'Build and run the end-to-end-tests'
         run: mvn install --file system-tests/pom.xml
-
