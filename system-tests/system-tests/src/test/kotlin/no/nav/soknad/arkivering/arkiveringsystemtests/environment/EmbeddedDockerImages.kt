@@ -75,6 +75,21 @@ class EmbeddedDockerImages {
 
 		schemaRegistryContainer.start()
 
+		arkivMockContainer = KGenericContainer("archiving-infrastructure-arkiv-mock")
+			.withNetworkAliases("arkiv-mock")
+			.withExposedPorts(defaultPorts["arkiv-mock"])
+			.withNetwork(network)
+			.withEnv(
+				hashMapOf(
+					"SPRING_PROFILES_ACTIVE" to "docker",
+					"KAFKA_SECURITY"         to "FALSE",
+					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+				)
+			)
+			.dependsOn(kafkaContainer)
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+
+		arkivMockContainer.start()
 
 		soknadsfillagerContainer = KGenericContainer("archiving-infrastructure-soknadsfillager")
 			.withNetworkAliases("soknadsfillager")
@@ -140,22 +155,6 @@ class EmbeddedDockerImages {
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
 		soknadsarkivererContainer.start()
-
-		arkivMockContainer = KGenericContainer("archiving-infrastructure-arkiv-mock")
-			.withNetworkAliases("arkiv-mock")
-			.withExposedPorts(defaultPorts["arkiv-mock"])
-			.withNetwork(network)
-			.withEnv(
-				hashMapOf(
-					"SPRING_PROFILES_ACTIVE" to "docker",
-					"KAFKA_SECURITY"         to "FALSE",
-					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
-				)
-			)
-			.dependsOn(kafkaContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
-
-		arkivMockContainer.start()
 
 	}
 
