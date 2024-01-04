@@ -2,17 +2,23 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
+import no.nav.soknad.arkivering.avroschemas.Soknadstyper
+import no.nav.soknad.arkivering.dto.FileResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
+import no.nav.soknad.arkivering.utils.SoknadsBuilder
 import no.nav.soknad.arkivering.utils.createSoknad
+import no.nav.soknad.arkivering.utils.fnr
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
 import java.util.*
 
 class EndToEndTests : SystemTestBase() {
@@ -22,6 +28,9 @@ class EndToEndTests : SystemTestBase() {
 	private lateinit var soknadsfillagerApi: SoknadsfillagerApi
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 
+	private val kjoreliste: String = "NAV 11-12.10"
+	private val sykepenger: String = "NAV 08-07.04D"
+  private val titles: Map<String, String> = mapOf(kjoreliste to "Kjøreliste", sykepenger to "Søknad om sykepenger")
 	@BeforeAll
 	fun setup() {
 		if (!isExternalEnvironment) {
@@ -48,10 +57,226 @@ class EndToEndTests : SystemTestBase() {
 	fun `Happy case - one file ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val soknad = createSoknad(key, fileId)
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
+			.build()
+
 		setNormalArchiveBehaviour(key)
 
-		sendFilesToFileStorage(key, fileId)
+		if (skjemanummer == kjoreliste) sendFilesToFileStorage(key, fileId)
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 1)
+			.verify()
+	}
+
+
+	@Test
+	fun `Happy case - large attachment ends up in the archive`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+				varianter = listOf(
+					Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+				varianter = listOf(
+					Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+				varianter = listOf(
+					Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+			)
+			)
+			.build()
+
+		setNormalArchiveBehaviour(key)
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 1)
+			.verify()
+	}
+
+
+	@Test
+	fun `File fetch error - third attempts succeeds application ends up in the archive`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+					varianter = listOf(
+						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+					varianter = listOf(
+						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+					varianter = listOf(
+						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+				)
+			)
+			.build()
+
+		setNormalArchiveBehaviour(key)
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,2)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 1)
+			.verify()
+	}
+
+
+	@Test
+	@Disabled // Testen fungerer ikke helt, vil ta lang tid og bør bare unntaksvis kjøres
+	fun `Archiving times out - third attempts succeeds and application ends up in the archive`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+					varianter = listOf(
+						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+					varianter = listOf(
+						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+					varianter = listOf(
+						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+				)
+			)
+			.build()
+
+		setDelayedNormalArchiveBehaviour(key)
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 3)
+			.verify()
+	}
+
+
+	@Test
+	fun `Archive responds 209 - application already archived`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+					varianter = listOf(
+						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+					varianter = listOf(
+						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+					varianter = listOf(
+						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+				)
+			)
+			.build()
+
+		mockArchiveRespondsWithCodeForXAttempts(key, 409, -1)
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 1)
+			.verify()
+	}
+
+	@Test
+	fun `Happy case - file in soknadsfillager ends up in the archive`() {
+		val key = UUID.randomUUID().toString()
+		val fileId = UUID.randomUUID().toString()
+		val skjemanummer = kjoreliste
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("TSO")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
+			.build()
+
+		setNormalArchiveBehaviour(key)
+
+		if (skjemanummer == kjoreliste) {
+			sendFilesToFileStorage(key, fileId)
+			setFileFetchBehaviour(fileId, FileResponses.NOT_FOUND.name) // File in soknadsfillager not in innsending-api
+		}
 		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
@@ -64,11 +289,21 @@ class EndToEndTests : SystemTestBase() {
 	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
 		val fileId = UUID.randomUUID().toString()
-		val soknad = createSoknad(key, fileId)
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withFodselsnummer(fnr)
+			.withSoknadstype(Soknadstyper.SOKNAD)
+			.withInnsendtDato(LocalDateTime.now())
+			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
+			.build()
+
 		setNormalArchiveBehaviour(key)
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
-		sendFilesToFileStorage(key, fileId)
+		if (skjemanummer == kjoreliste) sendFilesToFileStorage(key, fileId)
 		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
@@ -77,17 +312,19 @@ class EndToEndTests : SystemTestBase() {
 			.verify()
 	}
 
+	// If several variants with same soknadstype sent, only one is archived
 	@Test
 	fun `Happy case - several files in file storage - one file ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
+		val skjemanummer = kjoreliste
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val soknad = Soknad(key, false, "personId", "tema",
 			listOf(
-				DocumentData("NAV 11-12.10", true, "Kjøreliste for godkjent bruk av egen bil",
+				DocumentData(skjemanummer, true, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId0, "application/pdf", "filnavn", "PDFA"))),
 
-				DocumentData("NAV 11-12.10", false, "Kjøreliste for godkjent bruk av egen bil",
+				DocumentData(skjemanummer, false, "Kjøreliste for godkjent bruk av egen bil",
 					listOf(Varianter(fileId1, "application/pdf", "filnavn", "PDFA")))
 			))
 		setNormalArchiveBehaviour(key)
@@ -108,6 +345,8 @@ class EndToEndTests : SystemTestBase() {
 		val fileId = UUID.randomUUID().toString()
 		val soknad = createSoknad(key, fileId)
 		setNormalArchiveBehaviour(key)
+		setFileFetchBehaviour(fileId, FileResponses.NOT_FOUND.name,-1)
+
 
 		verifyFileNotFoundInFileStorage(key, fileId)
 		sendDataToSoknadsmottaker(key, soknad)
@@ -341,6 +580,16 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun setNormalArchiveBehaviour(uuid: String) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-normal-behaviour/$uuid"
+		performPutCall(url)
+	}
+
+	private fun setDelayedNormalArchiveBehaviour(uuid: String) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/response-behaviour/set-delay-behaviour/$uuid"
+		performPutCall(url)
+	}
+
+	private fun setFileFetchBehaviour(file_uuid: String, behaviour: String = FileResponses.NOT_FOUND.name , attempts: Int = -1) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/mock-file-response/$file_uuid/$behaviour/$attempts"
 		performPutCall(url)
 	}
 

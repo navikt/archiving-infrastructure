@@ -34,6 +34,7 @@ val defaultProperties = mapOf(
 
 	"SOKNADSMOTTAKER_URL" to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"SOKNADSFILLAGER_URL" to "http://localhost:${defaultPorts["soknadsfillager"]}",
+	"ARKIVMOCK_URL" to "http://localhost:${defaultPorts["arkiv-mock"]}",
 )
 
 
@@ -43,6 +44,7 @@ fun getProperty(propName: String, defaultValue: String = ""): String =
 data class Config(
 	val soknadsmottakerUrl: String = getProperty("SOKNADSMOTTAKER_URL"),
 	val soknadsfillagerUrl: String = getProperty("SOKNADSFILLAGER_URL"),
+	val arkivMockUrl: String = getProperty("ARKIVMOCK_URL"),
 )
 
 data class KafkaConfig(

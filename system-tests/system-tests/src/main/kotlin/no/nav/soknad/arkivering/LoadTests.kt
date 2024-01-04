@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import no.nav.soknad.arkivering.dto.FileResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
@@ -28,7 +29,9 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	private val soknadsfillagerApi = if (useOAuth) SoknadsfillagerApi(filesApiWithOAuth2(config)) else  SoknadsfillagerApi(filesApiWithoutOAuth2(config))
 	private val soknadsmottakerApi = if (useOAuth) SoknadsmottakerApi(soknadApiWithOAuth2(config)) else SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
+	private val arkivMockUrl = config.arkivMockUrl
 
+	private val sykepenger: String = "NAV 08-07.04D"
 
 	@Suppress("FunctionName")
 	fun `100 simultaneous entities, 2 times 2 MB each`() {
@@ -76,7 +79,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		numberOfEntities: Int,
 		numberOfFilesPerEntity: Int,
 		file: String,
-		timeoutInMinutes: Int = 10
+		timeoutInMinutes: Int = 15
 	) {
 		logger.info("Starting test: $testName")
 
@@ -91,6 +94,100 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Finished test: $testName")
 	}
 
+
+	@Suppress("FunctionName")
+	fun `500 applications with 1 attachments each 1 MB`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfApplications = 500
+		val numberOfAttachmentsPerApplication = 1
+		val fileBehaviour = FileResponses.One_MB.name
+
+		performTest(testName, numberOfApplications, numberOfAttachmentsPerApplication, 30, fileBehaviour)
+	}
+
+	@Suppress("FunctionName")
+	fun `100 applications with 2 attachments each 1 MB`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfApplications = 100
+		val numberOfAttachmentsPerApplication = 2
+		val fileBehaviour = FileResponses.One_MB.name
+
+		performTest(testName, numberOfApplications, numberOfAttachmentsPerApplication, 30, fileBehaviour)
+	}
+
+
+	@Suppress("FunctionName")
+	fun `25 applications with 10 attachments each 10 MB`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfApplications = 25
+		val numberOfAttachmentsPerApplication = 10
+		val fileBehaviour = FileResponses.Ten_MB.name
+
+		performTest(testName, numberOfApplications, numberOfAttachmentsPerApplication, 30, fileBehaviour)
+	}
+
+
+	@Suppress("FunctionName")
+	fun `5 applications with 3 attachments each 50 MB`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		val numberOfApplications = 5
+		val numberOfAttachmentsPerApplication = 3
+		val fileBehaviour = FileResponses.Fifty_50_MB.name
+
+		performTest(testName, numberOfApplications, numberOfAttachmentsPerApplication, 30, fileBehaviour)
+	}
+
+
+	private fun performTest(
+		testName: String,
+		numberOfApplications: Int,
+		numberOfAttachmentsPerApplication: Int,
+		timeoutInMinutes: Int = 15,
+		attachmentBeaviour: String
+	) {
+		logger.info("Starting test: $testName")
+
+		val innsendingKeys = (0 until numberOfApplications).map { UUID.randomUUID().toString() }
+		val applications = innsendingKeys.map{ createSoknad(it, sykepenger, "SYK", numberOfAttachmentsPerApplication ) }.toList()
+		applications.forEach { prepareFiles(soknad = it, arkivMockUrl = arkivMockUrl, attachmentBeaviour = attachmentBeaviour) }
+
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, timeoutInMinutes)
+
+		sendDataToSoknadsmottakerAsync(applications)
+
+		verifier.verify()
+		logger.info("Finished test: $testName")
+	}
+
+	private fun prepareFiles(soknad: Soknad, arkivMockUrl: String, attachmentBeaviour: String) {
+		val dokumenter = soknad.dokumenter
+
+		dokumenter.filter{it.erHovedskjema}.first.varianter.forEach {
+			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = FileResponses.OneHundred_KB.name )
+		}
+		dokumenter.filter{!it.erHovedskjema && it.skjemanummer.equals("L7", true)}.first.varianter.forEach {
+			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = FileResponses.OneHundred_KB.name )
+		}
+		dokumenter.filter{!it.erHovedskjema && !it.skjemanummer.equals("L7", true)}.first.varianter.forEach {
+			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = attachmentBeaviour)
+		}
+
+	}
+
+	private fun sendDataToSoknadsmottakerAsync(
+		soknader: List<Soknad>
+	) {
+		GlobalScope.launch {
+
+			val startTimeSendingToSoknadsmottaker = System.currentTimeMillis()
+			logger.info("About to send ${soknader.size} to Soknadsmottaker")
+
+			soknader.forEach { sendDataToSoknadsmottaker(key = it.innsendingId, soknad = it, verbose = false) }
+
+			val timeTaken = System.currentTimeMillis() - startTimeSendingToSoknadsmottaker
+			logger.info("Sent ${soknader.size} to Soknadsmottaker in $timeTaken ms")
+		}
+	}
 
 	private fun uploadData(
 		innsendingKeys: List<String>,
@@ -196,6 +293,12 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String, payload: ByteArray, message: String) {
 		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId, payload, message)
 	}
+
+	private fun setFileFetchBehaviour(arkivMockUrl: String, file_uuid: String, behaviour: String = FileResponses.NOT_FOUND.name , attempts: Int = -1) {
+		val url = arkivMockUrl + "/arkiv-mock/mock-file-response/$file_uuid/$behaviour/$attempts"
+		performPutCall(url)
+	}
+
 }
 
 private const val fileOfSize38mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"

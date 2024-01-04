@@ -43,7 +43,7 @@ abstract class SystemTestBase {
 
 		val dockerImages = env.embeddedDockerImages
 		config = if (dockerImages != null) {
-			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker())
+			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker(), arkivMockUrl = dockerImages.getUrlForArkivMock())
 		} else {
 			Config()
 		}

@@ -17,6 +17,7 @@ spec:
       rules:
         - application: soknadsmottaker-loadtests
         - application: soknadsfillager-loadtests
+        - application: archive-mock
   envFrom:
     - secret: shared-innsending-secret
       metadata:
@@ -41,6 +42,8 @@ spec:
       value: https://soknadsfillager-gcp-loadtests.intern.dev.nav.no
     - name: SOKNADSMOTTAKER_URL
       value: https://soknadsmottaker-gcp-loadtests.intern.dev.nav.no
+    - name: ARKIVMOCK_URL
+      value: https://arkiv-mock-gcp.intern.dev.nav.no
 
   image: {{image}}
   ttlSecondsAfterFinished: 3600

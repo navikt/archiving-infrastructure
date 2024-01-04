@@ -64,4 +64,24 @@ class KjellmanLoadTests : SystemTestBase() {
 	fun `5 simultaneous entities, 4 times 38 MB each`() {
 		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
 	}
+
+	@Test
+	fun `500 applications with 1 attachments each 1 MB`() {
+		loadTests.`500 applications with 1 attachments each 1 MB`()
+	}
+
+	@Test
+	fun `100 applications with 2 attachments each 1 MB`() {
+		loadTests.`100 applications with 2 attachments each 1 MB`()
+	}
+
+	@Test
+	fun `25 applications with 10 attachments each 10 MB`() {
+		loadTests.`25 applications with 10 attachments each 10 MB`()
+	}
+
+	@Test
+	fun `5 applications with 3 attachments each 50 MB`() {
+		loadTests.`5 applications with 3 attachments each 50 MB`()
+	}
 }
