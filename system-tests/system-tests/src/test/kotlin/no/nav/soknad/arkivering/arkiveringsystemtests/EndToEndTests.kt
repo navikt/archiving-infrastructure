@@ -2,23 +2,20 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.avroschemas.EventTypes.*
-import no.nav.soknad.arkivering.avroschemas.Soknadstyper
 import no.nav.soknad.arkivering.dto.FileResponses
+import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
 import no.nav.soknad.arkivering.utils.SoknadsBuilder
 import no.nav.soknad.arkivering.utils.createSoknad
-import no.nav.soknad.arkivering.utils.fnr
 import no.nav.soknad.arkivering.utils.loopAndVerify
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
 import java.util.*
 
 class EndToEndTests : SystemTestBase() {
@@ -61,11 +58,7 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
-			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
+			.withMottatteDokumenter(listOf(fileId))
 			.build()
 
 		setNormalArchiveBehaviour(key)
@@ -90,9 +83,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
 			.withMottatteDokumenter(
 				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
 				varianter = listOf(
@@ -134,9 +124,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
 			.withMottatteDokumenter(
 				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
 					varianter = listOf(
@@ -169,8 +156,7 @@ class EndToEndTests : SystemTestBase() {
 
 
 	@Test
-	@Disabled // Testen fungerer ikke helt, vil ta lang tid og bør bare unntaksvis kjøres
-	fun `Archiving times out - third attempts succeeds and application ends up in the archive`() {
+	fun `Archive responds 409 - application already archived`() {
 		val key = UUID.randomUUID().toString()
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
@@ -179,53 +165,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-					varianter = listOf(
-						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-					varianter = listOf(
-						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-					varianter = listOf(
-						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-				)
-			)
-			.build()
-
-		setDelayedNormalArchiveBehaviour(key)
-
-		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
-		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
-		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
-
-		sendDataToSoknadsmottaker(key, soknad)
-
-		assertThatArkivMock()
-			.hasEntityInArchive(key)
-			.hasCallCountInArchive(key, expectedCount = 3)
-			.verify()
-	}
-
-
-	@Test
-	fun `Archive responds 209 - application already archived`() {
-		val key = UUID.randomUUID().toString()
-		val fileId0 = UUID.randomUUID().toString()
-		val fileId1 = UUID.randomUUID().toString()
-		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
-		val soknad = SoknadsBuilder()
-			.withBehandlingsid(key)
-			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
 			.withMottatteDokumenter(
 				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
 					varianter = listOf(
@@ -256,6 +195,87 @@ class EndToEndTests : SystemTestBase() {
 			.verify()
 	}
 
+
+	@Test
+	fun `SAF respond with journalpost - application already archived`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+					varianter = listOf(
+						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+					varianter = listOf(
+						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+					varianter = listOf(
+						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+				)
+			)
+			.build()
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
+
+		setSafFetchBehaviour(key, SafResponses.OK.name, -1)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			.hasFinishedEvent(key, 15*60*1000L)
+			.verify()
+	}
+
+	@Test
+	fun `Request responds with 408 - second attempt already archived from SAF`() {
+		val key = UUID.randomUUID().toString()
+		val fileId0 = UUID.randomUUID().toString()
+		val fileId1 = UUID.randomUUID().toString()
+		val fileId2 = UUID.randomUUID().toString()
+		val skjemanummer = sykepenger
+		val soknad = SoknadsBuilder()
+			.withBehandlingsid(key)
+			.withArkivtema("SYK")
+			.withMottatteDokumenter(
+				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
+					varianter = listOf(
+						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
+					varianter = listOf(
+						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
+				),
+				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
+					varianter = listOf(
+						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
+				)
+			)
+			.build()
+
+		setSafFetchBehaviour(key, SafResponses.NOT_FOUND.name, 1)
+		mockArchiveRespondsWithCodeForXAttempts(key, 408, 1)
+
+		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
+		setFileFetchBehaviour(fileId1, FileResponses.OneHundred_KB.name,-1)
+		setFileFetchBehaviour(fileId2, FileResponses.Fifty_50_MB.name,-1)
+
+		sendDataToSoknadsmottaker(key, soknad)
+
+		assertThatArkivMock()
+			//.hasEntityInArchive(key)
+			.hasCallCountInArchive(key, expectedCount = 1)
+			.verify()
+	}
+
 	@Test
 	fun `Happy case - file in soknadsfillager ends up in the archive`() {
 		val key = UUID.randomUUID().toString()
@@ -264,9 +284,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("TSO")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
 			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
 				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
 			.build()
@@ -293,9 +310,6 @@ class EndToEndTests : SystemTestBase() {
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withFodselsnummer(fnr)
-			.withSoknadstype(Soknadstyper.SOKNAD)
-			.withInnsendtDato(LocalDateTime.now())
 			.withMottatteDokumenter(DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
 				varianter = listOf(Varianter(id = fileId, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))))
 			.build()
@@ -590,6 +604,11 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun setFileFetchBehaviour(file_uuid: String, behaviour: String = FileResponses.NOT_FOUND.name , attempts: Int = -1) {
 		val url = env.getUrlForArkivMock() + "/arkiv-mock/mock-file-response/$file_uuid/$behaviour/$attempts"
+		performPutCall(url)
+	}
+
+	private fun setSafFetchBehaviour(uuid: String, behaviour: String = SafResponses.NOT_FOUND.name, attempts: Int = -1) {
+		val url = env.getUrlForArkivMock() + "/arkiv-mock/mock-saf-response/$uuid/$behaviour/$attempts"
 		performPutCall(url)
 	}
 
