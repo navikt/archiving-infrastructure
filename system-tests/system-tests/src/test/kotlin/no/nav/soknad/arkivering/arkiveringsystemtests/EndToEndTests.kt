@@ -79,24 +79,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-				varianter = listOf(
-					Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-				varianter = listOf(
-					Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-				varianter = listOf(
-					Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-			)
-			)
+			.withMottatteDokumenter(listOf(fileId0, fileId1, fileId2))
 			.build()
 
 		setNormalArchiveBehaviour(key)
@@ -120,24 +106,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-					varianter = listOf(
-						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-					varianter = listOf(
-						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-					varianter = listOf(
-						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-				)
-			)
+			.withMottatteDokumenter(listOf(fileId0, fileId1, fileId2))
 			.build()
 
 		setNormalArchiveBehaviour(key)
@@ -161,24 +133,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-					varianter = listOf(
-						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-					varianter = listOf(
-						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-					varianter = listOf(
-						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-				)
-			)
+			.withMottatteDokumenter(listOf(fileId0, fileId1, fileId2))
 			.build()
 
 		mockArchiveRespondsWithCodeForXAttempts(key, 409, -1)
@@ -202,24 +160,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-					varianter = listOf(
-						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-					varianter = listOf(
-						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-					varianter = listOf(
-						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-				)
-			)
+			.withMottatteDokumenter(listOf(fileId0, fileId1, fileId2))
 			.build()
 
 		setFileFetchBehaviour(fileId0, FileResponses.One_MB.name,-1)
@@ -241,24 +185,10 @@ class EndToEndTests : SystemTestBase() {
 		val fileId0 = UUID.randomUUID().toString()
 		val fileId1 = UUID.randomUUID().toString()
 		val fileId2 = UUID.randomUUID().toString()
-		val skjemanummer = sykepenger
 		val soknad = SoknadsBuilder()
 			.withBehandlingsid(key)
 			.withArkivtema("SYK")
-			.withMottatteDokumenter(
-				DocumentData(skjemanummer = skjemanummer, erHovedskjema = true, tittel = titles.get(sykepenger)?: "Dummy tittel",
-					varianter = listOf(
-						Varianter(id = fileId0, mediaType = "application/pdf", filnavn = "$sykepenger.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "L7", erHovedskjema = false, tittel = "Kvittering",
-					varianter = listOf(
-						Varianter(id = fileId1, mediaType = "application/pdf", filnavn = "kvittering.pdf", filtype = "PDFA"))
-				),
-				DocumentData(skjemanummer = "O2", erHovedskjema = false, tittel = "Vedlegg",
-					varianter = listOf(
-						Varianter(id = fileId2, mediaType = "application/pdf", filnavn = "vedlegg.pdf", filtype = "PDFA"))
-				)
-			)
+			.withMottatteDokumenter(listOf(fileId0, fileId1, fileId2))
 			.build()
 
 		setSafFetchBehaviour(key, SafResponses.NOT_FOUND.name, 1)
@@ -271,7 +201,6 @@ class EndToEndTests : SystemTestBase() {
 		sendDataToSoknadsmottaker(key, soknad)
 
 		assertThatArkivMock()
-			//.hasEntityInArchive(key)
 			.hasCallCountInArchive(key, expectedCount = 1)
 			.verify()
 	}
