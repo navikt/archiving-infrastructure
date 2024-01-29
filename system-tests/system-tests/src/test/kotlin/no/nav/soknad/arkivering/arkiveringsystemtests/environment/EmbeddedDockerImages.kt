@@ -57,6 +57,7 @@ class EmbeddedDockerImages {
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
 
 
 		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
