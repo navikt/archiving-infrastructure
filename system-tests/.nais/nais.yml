@@ -20,9 +20,6 @@ spec:
         - application: archive-mock
   envFrom:
     - secret: shared-innsending-secret
-      metadata:
-        annotations:
-          reloader.stakater.com/match: "true"
   env:
     - name: KAFKA_SECURITY
       value: "TRUE"
