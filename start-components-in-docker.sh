@@ -6,9 +6,9 @@ start-docker() {
 	echo ""
 	echo ""
 	echo "Starting docker ..."
-	docker-compose up -d kafka-broker soknadsfillager
+	docker compose up -d kafka-broker soknadsfillager
 	sleep 10  # Wait for kafka-broker to finish initialization before starting other containers
-	docker-compose up -d
+	docker compose up -d
 }
 
 wait_for_service_to_start() {
@@ -29,7 +29,7 @@ wait_for_service_to_start() {
 start-docker
 
 echo ""
-docker-compose ps
+docker compose ps
 echo ""
 
 echo "Waiting for services to start ..."

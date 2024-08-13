@@ -25,17 +25,24 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		kafkaListener.clearConsumers()
 	}
 
+	fun hasFinishedEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper =
+		processingEventIsPresent(timeoutInMs, key, EventTypes.FINISHED)
 
-	fun hasFinishedEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper {
+	fun hasFailureEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper =
+		processingEventIsPresent(timeoutInMs, key, EventTypes.FAILURE)
 
-		val finishedEventIsPresent: (ProcessingEvent) -> Boolean = { it.type == EventTypes.FINISHED }
-
+	private fun processingEventIsPresent(
+		timeoutInMs: Long,
+		key: String,
+		eventType: EventTypes
+	): AssertionHelper {
+		val eventIsPresent: (ProcessingEvent) -> Boolean = { it.type == eventType }
 		val verificationTask = VerificationTask.Builder<ProcessingEvent>()
 			.withManager(verificationTaskManager)
 			.withTimeout(timeoutInMs)
 			.forKey(key)
 			.verifyPresence()
-			.verifyThat(finishedEventIsPresent) { "Expected '$key' to have a FINISHED Processing Event, but saw none" }
+			.verifyThat(eventIsPresent) { "Expected '$key' to have a $eventType Processing Event, but saw none" }
 			.build()
 
 		verificationTaskManager.registerTask(verificationTask)

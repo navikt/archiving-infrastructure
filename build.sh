@@ -14,6 +14,7 @@ available_components+=("soknadsmottaker")
 available_components+=("soknadsarkiverer")
 available_components+=("soknadsfillager")
 available_components+=("arkiv-mock")
+available_components+=("innsending-api")
 
 components=()
 if [ $# -eq 1 ] && [ "$1" == "no-testcontainers" ] || [ $# -eq 0 ]; then
@@ -204,5 +205,5 @@ clean_docker > /dev/null
 build_components_and_show_progress || { echo "Failed to build, exiting."; exit 1; }
 echo "skal starte å bygge docker komponenter"
 #build-docker
-docker-compose build
+docker compose build
 

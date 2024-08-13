@@ -43,6 +43,14 @@ services:
     ports:
       - "5432:5432"
 
+  postgres-innsending:
+    image: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5433:5432"
 
   soknadsmottaker:
     build: ../soknadsmottaker
@@ -83,6 +91,31 @@ services:
       - KAFKA_SECURITY=false
       - KAFKA_BROKERS=kafka-broker:29092
 
+  innsending-api:
+    build: ../innsending-api
+    ports:
+      - "9064:9064"
+    depends_on:
+      - postgres-innsending
+      - kafka-broker
+      - soknadsmottaker
+    environment:
+      - SPRING_PROFILES_ACTIVE=endtoend
+      - DATABASE_PORT=5433
+      - DATABASE_HOST=postgres-innsending
+      - DATABASE_DATABASE=postgres
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka-broker:29092
+      - KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC=soknadinnsending-arkiveringstilbakemeldinger-v1-dev
+      - SOKNADSMOTTAKER_HOST=http://soknadsmottaker:8090
+      - SAF_URL=http://arkiv-mock:8092
+      - SAFSELVBETJENING_URL=http://arkiv-mock:8092
+      - AZURE_APP_WELL_KNOWN_URL=http://metadata
+      - AZURE_APP_CLIENT_ID=testclient
+      - AZURE_APP_CLIENT_SECRET=testsecret
+      - AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=http://localhost:8181/oauth2/v2.0/token
+
   soknadsarkiverer:
     build: ../soknadsarkiverer
     ports:
@@ -91,14 +124,15 @@ services:
       - kafka-broker
       - kafka-schema-registry
       - soknadsfillager
+      - innsending-api
       - arkiv-mock
-# Note the arkiv-mock application is used for mocking JOARK, SAF and Innsendings-api
+# Note the arkiv-mock application is used for mocking JOARK and SAF
     environment:
       - SPRING_PROFILES_ACTIVE=endtoend
       - FILESTORAGE_HOST=http://soknadsfillager:9042
       - JOARK_HOST=http://arkiv-mock:8092
       - SAF_URL=http://arkiv-mock:8092
-      - INNSENDING_API_HOST=http://arkiv-mock:8092
+      - INNSENDING_API_HOST=http://innsending-api:9064
       - KAFKA_BROKERS=kafka-broker:29092
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - BOOTSTRAPPING_TIMEOUT=1
