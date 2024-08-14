@@ -42,6 +42,7 @@ jobs:
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsarkiverer
+          branch: tech/arkiveringstilbakemeldinger-topic
 
       - name: 'Build the code for arkiv-mock'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
