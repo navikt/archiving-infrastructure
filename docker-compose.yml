@@ -34,15 +34,6 @@ services:
       - kafka-zookeeper
       - kafka-broker
 
-  postgres:
-    image: postgres
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - "5432:5432"
-
   postgres-innsending:
     image: postgres
     environment:
@@ -65,20 +56,6 @@ services:
       - KAFKA_SECURITY=false
       - KAFKA_SCHEMA_REGISTRY=http://kafka-schema-registry:8081
       - KAFKA_BROKERS=kafka-broker:29092
-
-  soknadsfillager:
-    build: ../soknadsfillager
-    ports:
-      - "9042:9042"
-    depends_on:
-      - postgres
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - DATABASE_PORT=5432
-      - DATABASE_HOST=postgres
-      - DATABASE_DATABASE=postgres
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=postgres
 
   arkiv-mock:
     build: ../arkiv-mock
@@ -123,13 +100,11 @@ services:
     depends_on:
       - kafka-broker
       - kafka-schema-registry
-      - soknadsfillager
       - innsending-api
       - arkiv-mock
 # Note the arkiv-mock application is used for mocking JOARK and SAF
     environment:
       - SPRING_PROFILES_ACTIVE=endtoend
-      - FILESTORAGE_HOST=http://soknadsfillager:9042
       - JOARK_HOST=http://arkiv-mock:8092
       - SAF_URL=http://arkiv-mock:8092
       - INNSENDING_API_HOST=http://innsending-api:9064
@@ -140,7 +115,6 @@ services:
       - AZURE_APP_WELL_KNOWN_URL=http://metadata
       - AZURE_APP_CLIENT_ID=aud-localhost
       - AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=http://localhost:8181/oauth2/v2.0/token
-      - SOKNADSFILLAGER_SCOPE=scope
       - INNSENDING_API_SCOPE=scope
       - DOKARKIV_SCOPE=scope
       - SAF_SCOPE=scope

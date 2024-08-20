@@ -54,27 +54,6 @@
 				<version>${openapi-generator-maven-plugin.version}</version>
 				<executions>
 					<execution>
-						<id>Generate soknadsfillager client</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<inputSpec>${project.basedir}/src/main/resources/soknadsfillager-api.yml</inputSpec>
-							<output>target/generated-sources/openapi</output>
-							<generatorName>kotlin</generatorName>
-							<apiPackage>no.nav.soknad.arkivering.soknadsfillager.api</apiPackage>
-							<modelPackage>no.nav.soknad.arkivering.soknadsfillager.model</modelPackage>
-							<configOptions>
-								<serializationLibrary>jackson</serializationLibrary>
-								<omitGradlePluginVersions>true</omitGradlePluginVersions>
-								<groupId>no.nav.soknad.arkivering</groupId>
-								<artifactId>soknadsfillager-client</artifactId>
-								<packageName>no.nav.soknad.arkivering.soknadsfillager</packageName>
-							</configOptions>
-						</configuration>
-					</execution>
-
-					<execution>
 						<id>Generate soknadsmottaker client</id>
 						<goals>
 							<goal>generate</goal>

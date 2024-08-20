@@ -18,12 +18,10 @@ class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 
-	private lateinit var postgresContainer: KPostgreSQLContainer
 	private lateinit var postgresInnsendingContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
 	private lateinit var schemaRegistryContainer: KGenericContainer
 	private lateinit var arkivMockContainer: KGenericContainer
-	private lateinit var soknadsfillagerContainer: KGenericContainer
 	private lateinit var innsendingApiContainer: KGenericContainer
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
@@ -34,14 +32,6 @@ class EmbeddedDockerImages {
 	@Suppress("HttpUrlsUsage")
 	fun startContainers() {
 		val network = Network.newNetwork()
-
-		postgresContainer = KPostgreSQLContainer()
-			.withNetworkAliases("postgres")
-			.withExposedPorts(defaultPorts["database"])
-			.withNetwork(network)
-			.withUsername(postgresUsername)
-			.withPassword(postgresUsername)
-			.withDatabaseName(databaseName)
 
 		postgresInnsendingContainer = KPostgreSQLContainer()
 			.withNetworkAliases("postgres-innsending")
@@ -55,7 +45,6 @@ class EmbeddedDockerImages {
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
-		postgresContainer.start()
 		postgresInnsendingContainer.start()
 		kafkaContainer.start()
 
@@ -102,24 +91,6 @@ class EmbeddedDockerImages {
 
 		arkivMockContainer.start()
 
-		soknadsfillagerContainer = KGenericContainer("archiving-infrastructure-soknadsfillager")
-			.withNetworkAliases("soknadsfillager")
-			.withExposedPorts(defaultPorts["soknadsfillager"])
-			.withNetwork(network)
-			.withEnv(
-				hashMapOf(
-					"SPRING_PROFILES_ACTIVE" to "docker",
-					"DATABASE_PORT"          to defaultPorts["database"].toString(),
-					"DATABASE_HOST"          to postgresContainer.networkAliases[0],
-					"DATABASE_DATABASE"      to databaseName,
-					"DATABASE_USERNAME"      to postgresUsername,
-					"DATABASE_PASSWORD"      to postgresUsername,
-					"STATUS_LOG_URL"				 to "https://logs.adeo.no"
-				)
-			)
-			.dependsOn(postgresContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(2)))
-
 		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure-soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
 			.withExposedPorts(defaultPorts["soknadsmottaker"])
@@ -136,7 +107,6 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		soknadsfillagerContainer.start()
 		soknadsmottakerContainer.start()
 
 		innsendingApiContainer = KGenericContainer("archiving-infrastructure-innsending-api")
@@ -178,7 +148,6 @@ class EmbeddedDockerImages {
 					"TASK_STARTUP_INIT_DELAY" to "8",
 					"KAFKA_BROKERS"           to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 					"KAFKA_SCHEMA_REGISTRY"   to "http://${schemaRegistryContainer.networkAliases[0]}:${defaultPorts["schema-registry"]}",
-					"FILESTORAGE_HOST"        to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
 					"JOARK_HOST"              to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"SEND_TO_JOARK"           to "true",
 					"INNSENDING_API_HOST"     to "http://${innsendingApiContainer.networkAliases[0]}:${defaultPorts["innsending-api"]}",
@@ -190,7 +159,7 @@ class EmbeddedDockerImages {
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
-			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer, innsendingApiContainer)
+			.dependsOn(kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
 		soknadsarkivererContainer.start()
@@ -219,19 +188,16 @@ class EmbeddedDockerImages {
 			val box = "=".repeat(9 + name.length)
 			return "\n\n$box\n= Logs $name =\n$box\n"
 		}
-		logger.info(createHeader("soknadsfillager") + soknadsfillagerContainer.logs)
 		logger.info(createHeader("soknadsmottaker") + soknadsmottakerContainer.logs)
 		logger.info(createHeader("soknadsarkiverer") + soknadsarkivererContainer.logs)
 		logger.info(createHeader("arkiv-mock") + arkivMockContainer.logs)
 		logger.info(createHeader("innsending-api") + innsendingApiContainer.logs)
 
-		soknadsfillagerContainer.stop()
 		innsendingApiContainer.stop()
 		soknadsmottakerContainer.stop()
 		soknadsarkivererContainer.stop()
 		arkivMockContainer.stop()
 
-		postgresContainer.stop()
 		postgresInnsendingContainer.stop()
 		kafkaContainer.stop()
 		schemaRegistryContainer.stop()
@@ -248,7 +214,6 @@ class EmbeddedDockerImages {
 	}
 
 
-	fun getUrlForSoknadsfillager()  = "http://localhost:" + soknadsfillagerContainer .firstMappedPort
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
 	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
 	fun getUrlForSoknadsarkiverer() = "http://localhost:" + soknadsarkivererContainer.firstMappedPort

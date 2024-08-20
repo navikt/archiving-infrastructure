@@ -27,7 +27,6 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	* Gjennomsnitt filstørrelse 0,67MB
 	*/
 
-	private val soknadsfillagerApi = if (useOAuth) SoknadsfillagerApi(filesApiWithOAuth2(config)) else  SoknadsfillagerApi(filesApiWithoutOAuth2(config))
 	private val soknadsmottakerApi = if (useOAuth) SoknadsmottakerApi(soknadApiWithOAuth2(config)) else SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
 	private val arkivMockUrl = config.arkivMockUrl
 
@@ -287,11 +286,13 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	}
 
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String) {
-		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId)
+		// TODO send til innsending-api
+		// soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId)
 	}
 
 	private fun sendFilesToFileStorage(innsendingId: String, fileId: String, payload: ByteArray, message: String) {
-		soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId, payload, message)
+		// TODO send til innsending-api
+		// soknadsfillagerApi.sendFilesToFileStorage(innsendingId, fileId, payload, message)
 	}
 
 	private fun setFileFetchBehaviour(arkivMockUrl: String, file_uuid: String, behaviour: String = FileResponses.NOT_FOUND.name , attempts: Int = -1) {
