@@ -107,7 +107,7 @@ services:
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=postgres
       - KAFKA_BROKERS=kafka-broker:29092
-      - KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC=soknadinnsending-arkiveringstilbakemeldinger-v1-dev
+      - KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC=privat-soknadinnsending-arkiveringstilbakemeldinger-v1-dev
       - SOKNADSMOTTAKER_HOST=http://soknadsmottaker:8090
       - SAF_URL=http://arkiv-mock:8092
       - SAFSELVBETJENING_URL=http://arkiv-mock:8092
