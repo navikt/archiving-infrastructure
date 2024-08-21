@@ -24,7 +24,7 @@ val defaultProperties = mapOf(
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
-	"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"  to "soknadinnsending-arkiveringstilbakemeldinger-v1-dev",
+	"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"  to "privat-soknadinnsending-arkiveringstilbakemeldinger-v1-dev",
 	"KAFKA_METRICS_TOPIC"                    to "privat-soknadinnsending-metrics-v1-dev",
 	"KAFKA_ENTITIES_TOPIC"                   to "team-soknad.privat-soknadinnsending-systemtests-entities",
 	"KAFKA_NUMBER_OF_CALLS_TOPIC"            to "team-soknad.privat-soknadinnsending-systemtests-numberofcalls",
