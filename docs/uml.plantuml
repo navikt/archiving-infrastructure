@@ -1,23 +1,29 @@
 @startuml
 actor       ExternalService
+participant InnsendingApi
 participant Soknadsmottaker
-queue       Kafka
+queue       Soknadinnsending
 participant Soknadsarkiverer
 queue       ProcessingEvents
-database    Soknadsfillager
+queue       Arkiveringstilbakemeldinger
 database    Joark
-ExternalService  ->             Soknadsfillager  : Upload File (POST)
-ExternalService  ->             Soknadsfillager  : Upload File (POST)
-ExternalService  ->             Soknadsmottaker  : Archive Request (POST)
-Soknadsmottaker  ->             Kafka            : Queue
-Kafka            ->             Soknadsarkiverer : Queue
+ExternalService  ->             InnsendingApi    : Create application (POST)
+loop X times
+    ExternalService  ->             InnsendingApi    : LagreFil (POST)
+end
+ExternalService  ->             InnsendingApi    : SendInnSoknad (POST)
+InnsendingApi    ->             Soknadsmottaker  : Receive (POST)
+Soknadsmottaker  ->             Soknadinnsending            : Queue
+InnsendingApi    ->             ExternalService  : OK
+Soknadinnsending            ->             Soknadsarkiverer : Queue
 Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : RECEIVED
 Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : STARTED
-Soknadsarkiverer ->             Soknadsfillager  : Request Files (GET)
-Soknadsfillager  ->             Soknadsarkiverer : File Results
+Soknadsarkiverer ->             InnsendingApi    : Request Files (GET)
+InnsendingApi    ->             Soknadsarkiverer : File Results
 Soknadsarkiverer ->             Joark            : Archive (POST)
 Joark            ->             Soknadsarkiverer : Archive Response
 Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : ARCHIVED
-Soknadsarkiverer ->             Soknadsfillager  : Remove Files (DELETE)
+Soknadsarkiverer -[#0000FF]-//o Arkiveringstilbakemeldinger            : Archiving: OK
+Arkiveringstilbakemeldinger -> InnsendingApi    : Archiving: OK
 Soknadsarkiverer -[#0000FF]-//o ProcessingEvents : FINISHED
 @enduml
