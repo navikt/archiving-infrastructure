@@ -30,6 +30,8 @@ spec:
       value: team-soknad.privat-soknadinnsending-metrics-v1-loadtests
     - name: KAFKA_MESSAGE_TOPIC
       value: team-soknad.privat-soknadinnsending-messages-v1-loadtests
+    - name: KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC
+      value: team-soknad.privat-soknadinnsending-arkiveringstilbakemeldinger-v1-loadtests
     - name: KAFKA_ENTITIES_TOPIC
       value: team-soknad.privat-soknadinnsending-systemtests-entities
     - name: KAFKA_NUMBER_OF_CALLS_TOPIC
