@@ -42,7 +42,6 @@ jobs:
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsarkiverer
-          branch: tech/arkiveringstilbakemeldinger-topic
 
       - name: 'Build the code for arkiv-mock'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
@@ -53,7 +52,6 @@ jobs:
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: innsending-api
-          branch: tech/endtoend
 
       - name: 'Build and run the end-to-end-tests'
         run: mvn install --file system-tests/pom.xml
