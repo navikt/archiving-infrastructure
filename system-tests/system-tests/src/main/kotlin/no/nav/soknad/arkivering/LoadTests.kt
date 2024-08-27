@@ -28,6 +28,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	*/
 
 	private val soknadsmottakerApi = if (useOAuth) SoknadsmottakerApi(soknadApiWithOAuth2(config)) else SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
+	private val innsendingApi = InnsendingApi(config, useOAuth)
 	private val arkivMockUrl = config.arkivMockUrl
 
 	private val sykepenger: String = "NAV 08-07.04D"
@@ -70,6 +71,22 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		val file = fileOfSize38mb
 
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
+	}
+
+	fun `InnsendingApi basic test`() {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		logger.info("Starting test: $testName")
+		val file = fileOfSize38mb
+
+		val soknad = innsendingApi.opprettEttersending()
+
+		val innsendingKeys = listOf(soknad.innsendingsId)
+		soknad.vedleggsliste().verifyHasSize(1).lastOppFil(0, file)
+
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
+		innsendingApi.sendInn(soknad)
+		verifier.verify()
+		logger.info("Finished test: $testName")
 	}
 
 
@@ -161,13 +178,13 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	private fun prepareFiles(soknad: Soknad, arkivMockUrl: String, attachmentBeaviour: String) {
 		val dokumenter = soknad.dokumenter
 
-		dokumenter.filter{it.erHovedskjema}.first.varianter.forEach {
+		dokumenter.filter{it.erHovedskjema}.first().varianter.forEach {
 			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = FileResponses.OneHundred_KB.name )
 		}
-		dokumenter.filter{!it.erHovedskjema && it.skjemanummer.equals("L7", true)}.first.varianter.forEach {
+		dokumenter.filter{!it.erHovedskjema && it.skjemanummer.equals("L7", true)}.first().varianter.forEach {
 			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = FileResponses.OneHundred_KB.name )
 		}
-		dokumenter.filter{!it.erHovedskjema && !it.skjemanummer.equals("L7", true)}.first.varianter.forEach {
+		dokumenter.filter{!it.erHovedskjema && !it.skjemanummer.equals("L7", true)}.first().varianter.forEach {
 			setFileFetchBehaviour(arkivMockUrl = arkivMockUrl, file_uuid = it.id, behaviour = attachmentBeaviour)
 		}
 

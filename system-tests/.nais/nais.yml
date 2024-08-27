@@ -16,6 +16,7 @@ spec:
     outbound:
       rules:
         - application: soknadsmottaker-loadtests
+        - application: innsending-api-loadtests
         - application: archive-mock
   envFrom:
     - secret: shared-innsending-secret
@@ -38,6 +39,8 @@ spec:
       value: team-soknad.privat-soknadinnsending-systemtests-numberofcalls
     - name: SOKNADSMOTTAKER_URL
       value: https://soknadsmottaker-gcp-loadtests.intern.dev.nav.no
+    - name: INNSENDINGAPI_URL
+      value: https://innsending-api-loadtests.intern.dev.nav.no
     - name: ARKIVMOCK_URL
       value: https://arkiv-mock-gcp.intern.dev.nav.no
 
