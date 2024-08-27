@@ -7,6 +7,7 @@ import kotlin.system.exitProcess
 private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 fun main() {
+	logger.info("Initializing Load Tests...")
 	val loadTests = LoadTests(Config(), KafkaListener(KafkaConfig()))
 	var exitStatus = 0
 

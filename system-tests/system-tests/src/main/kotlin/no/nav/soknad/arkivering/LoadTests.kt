@@ -76,12 +76,11 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	fun `InnsendingApi basic test`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
-		val file = fileOfSize38mb
 
 		val soknad = innsendingApi.opprettEttersending()
 
 		val innsendingKeys = listOf(soknad.innsendingsId)
-		soknad.vedleggsliste().verifyHasSize(1).lastOppFil(0, file)
+		soknad.vedleggsliste().verifyHasSize(1).lastOppFil(0, "Ten_MB.pdf")
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
 		innsendingApi.sendInn(soknad)
