@@ -104,18 +104,6 @@
 				<version>${remote-comparer-maven-plugin.version}</version>
 				<executions>
 					<execution>
-						<id>compare Soknadsfillager OpenAPI spec</id>
-						<goals>
-							<goal>remote-compare</goal>
-						</goals>
-						<configuration>
-							<localFilePath>src/main/resources/soknadsfillager-api.yml</localFilePath>
-							<remoteFileUri>https://raw.githubusercontent.com/navikt/soknadsfillager/main/api/src/main/resources/soknadsfillager-api.yml</remoteFileUri>
-							<timeoutMs>20000</timeoutMs>
-						</configuration>
-					</execution>
-
-					<execution>
 						<id>compare Soknadsmottaker OpenAPI spec</id>
 						<goals>
 							<goal>remote-compare</goal>
