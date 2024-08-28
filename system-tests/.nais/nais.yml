@@ -39,7 +39,7 @@ spec:
     - name: SOKNADSMOTTAKER_URL
       value: https://soknadsmottaker-gcp-loadtests.intern.dev.nav.no
     - name: INNSENDINGAPI_URL
-      value: https://innsending-api-loadtests.intern.dev.nav.no
+      value: http://innsending-api-loadtests
     - name: ARKIVMOCK_URL
       value: https://arkiv-mock-gcp.intern.dev.nav.no
 
