@@ -19,8 +19,6 @@ spec:
         - application: soknadsmottaker-loadtests
         - application: innsending-api-loadtests
         - application: archive-mock
-  envFrom:
-    - secret: shared-innsending-secret
   env:
     - name: KAFKA_SECURITY
       value: "TRUE"
