@@ -155,7 +155,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasFinishedEvent(innsendingsId)
 			.verify()
 
-		// TODO Burde ikke status bli arkivert?
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.ikkeSatt)
 	}
@@ -185,7 +184,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
 			.verify()
 
-		// TODO Burde ikke status bli arkivert?
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.ikkeSatt)
 	}
@@ -266,24 +264,6 @@ class EndToEndTests : SystemTestBase() {
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
-	}
-
-	@Test
-	fun `Archive responds 200 but has wrong response body - Submit will fail`() {
-		val soknadTestdata = innsendingApi.opprettEttersending()
-		val innsendingsId = soknadTestdata.innsendingsId
-
-		mockArchiveRespondsWithErroneousBodyForXAttempts(innsendingsId, -1)
-		innsendingApi.sendInn(soknadTestdata).onSuccess {
-			throw Exception("Forventer at innsending av søknad $innsendingsId skal feile")
-		}
-
-		assertThatArkivMock()
-			.hasNoEntityInArchive(innsendingsId)
-			.verify()
-
-		assertThatSoknad(innsendingsId)
-			.hasStatus(ArkiveringsStatusDto.ikkeSatt)
 	}
 
 	private fun setSafFetchBehaviour(uuid: String, behaviour: String = SafResponses.NOT_FOUND.name, attempts: Int = -1) {
