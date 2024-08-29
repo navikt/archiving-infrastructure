@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering
 
 val defaultPorts = mapOf(
 	"soknadsfillager"  to 9042,
+	"innsending-api"   to 9064,
 	"soknadsmottaker"  to 8090,
 	"soknadsarkiverer" to 8091,
 	"arkiv-mock"       to 8092,
@@ -24,6 +25,7 @@ val defaultProperties = mapOf(
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
+	"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"  to "privat-soknadinnsending-arkiveringstilbakemeldinger-v1-dev",
 	"KAFKA_METRICS_TOPIC"                    to "privat-soknadinnsending-metrics-v1-dev",
 	"KAFKA_ENTITIES_TOPIC"                   to "team-soknad.privat-soknadinnsending-systemtests-entities",
 	"KAFKA_NUMBER_OF_CALLS_TOPIC"            to "team-soknad.privat-soknadinnsending-systemtests-numberofcalls",
@@ -33,6 +35,7 @@ val defaultProperties = mapOf(
 	"KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"  to "min-side.aapen-utkast-v1",
 
 	"SOKNADSMOTTAKER_URL" to "http://localhost:${defaultPorts["soknadsmottaker"]}",
+	"INNSENDINGAPI_URL" to "http://localhost:${defaultPorts["innsending-api"]}",
 	"SOKNADSFILLAGER_URL" to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"ARKIVMOCK_URL" to "http://localhost:${defaultPorts["arkiv-mock"]}",
 )
@@ -43,6 +46,7 @@ fun getProperty(propName: String, defaultValue: String = ""): String =
 
 data class Config(
 	val soknadsmottakerUrl: String = getProperty("SOKNADSMOTTAKER_URL"),
+	val innsendingApiUrl:   String = getProperty("INNSENDINGAPI_URL"),
 	val soknadsfillagerUrl: String = getProperty("SOKNADSFILLAGER_URL"),
 	val arkivMockUrl: String = getProperty("ARKIVMOCK_URL"),
 )
@@ -77,6 +81,7 @@ data class Topics(
 	val mainTopic: String = getProperty("KAFKA_MAIN_TOPIC"),
 	val processingTopic: String = getProperty("KAFKA_PROCESSING_TOPIC"),
 	val messageTopic: String = getProperty("KAFKA_MESSAGE_TOPIC"),
+	val arkiveringstilbakemeldingerTopic: String = getProperty("KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"),
 	val metricsTopic: String = getProperty("KAFKA_METRICS_TOPIC"),
 	val entitiesTopic: String = getProperty("KAFKA_ENTITIES_TOPIC"),
 	val numberOfCallsTopic: String = getProperty("KAFKA_NUMBER_OF_CALLS_TOPIC"),

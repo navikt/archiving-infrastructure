@@ -48,6 +48,11 @@ jobs:
         with:
           component_name: arkiv-mock
 
+      - name: 'Build the code for innsending-api'
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        with:
+          component_name: innsending-api
+
       - name: 'Build and run the end-to-end-tests'
         run: mvn install --file system-tests/pom.xml
 

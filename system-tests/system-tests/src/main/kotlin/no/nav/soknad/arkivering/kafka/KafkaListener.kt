@@ -33,6 +33,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	private val metricsConsumers         = CopyOnWriteArrayList<KafkaEntityConsumer<InnsendingMetrics>>()
 	private val numberOfCallsConsumers   = CopyOnWriteArrayList<KafkaEntityConsumer<Int>>()
 	private val processingEventConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<ProcessingEvent>>()
+	private val arkiveringstilbakemeldingerConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<String>>()
 
 	private val kafkaStreams: KafkaStreams
 
@@ -58,6 +59,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
 		val metricsStream              = streamsBuilder.stream(kafkaConfig.topics.metricsTopic,       Consumed.with(stringSerde, createInnsendingMetricsSerde()))
 		val processingEventTopicStream = streamsBuilder.stream(kafkaConfig.topics.processingTopic,    Consumed.with(stringSerde, createProcessingEventSerde()))
+		val arkiveringstilbakemeldingerStream = streamsBuilder.stream(kafkaConfig.topics.arkiveringstilbakemeldingerTopic,Consumed.with(stringSerde, stringSerde))
 		val entitiesStream             = streamsBuilder.stream(kafkaConfig.topics.entitiesTopic,      Consumed.with(stringSerde, stringSerde))
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaConfig.topics.numberOfCallsTopic, Consumed.with(stringSerde, intSerde))
 
@@ -81,6 +83,11 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 			.peek { key, entity -> log("$key: Processing Events  - $entity") }
 			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
+
+		arkiveringstilbakemeldingerStream
+			.peek { key, arkiveringstilbakemelding -> log("$key: Arkiveringstilbakemelding received  - $arkiveringstilbakemelding") }
+			.processValues({ TimestampExtractor() })
+			.foreach { key, entity -> arkiveringstilbakemeldingerConsumers.forEach { it.consume(key, entity)} }
 	}
 
 	private fun log(message: String) {
@@ -151,6 +158,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 		metricsConsumers.clear()
 		numberOfCallsConsumers.clear()
 		processingEventConsumers.clear()
+		arkiveringstilbakemeldingerConsumers.clear()
 	}
 
 	@Suppress("unused")
@@ -158,4 +166,5 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)     = entityConsumers         .add(consumer)
 	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
 	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers.add(consumer)
+	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>)   = arkiveringstilbakemeldingerConsumers.add(consumer)
 }

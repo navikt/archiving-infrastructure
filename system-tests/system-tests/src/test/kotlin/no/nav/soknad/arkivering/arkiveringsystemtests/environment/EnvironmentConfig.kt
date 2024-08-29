@@ -36,6 +36,7 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 
 			Profile.EMBEDDED -> when (attribute) {
 				"soknadsfillager.url"  -> embeddedDockerImages?.getUrlForSoknadsfillager()
+				"innsendingapi.url"    -> embeddedDockerImages?.getUrlForInnsendingApi()
 				"soknadsmottaker.url"  -> embeddedDockerImages?.getUrlForSoknadsmottaker()
 				"soknadsarkiverer.url" -> embeddedDockerImages?.getUrlForSoknadsarkiverer()
 				"arkiv-mock.url"       -> embeddedDockerImages?.getUrlForArkivMock()
@@ -52,6 +53,7 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 
 
 	fun getUrlForSoknadsfillager()  = getAttribute("soknadsfillager.url")
+	fun getUrlForInnsendingApi()    = getAttribute("innsendingapi.url")
 	fun getUrlForSoknadsmottaker()  = getAttribute("soknadsmottaker.url")
 	fun getUrlForSoknadsarkiverer() = getAttribute("soknadsarkiverer.url")
 	fun getUrlForArkivMock()        = getAttribute("arkiv-mock.url")

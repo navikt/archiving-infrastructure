@@ -19,10 +19,12 @@ class EmbeddedDockerImages {
 	private val databaseName = "postgres"
 
 	private lateinit var postgresContainer: KPostgreSQLContainer
+	private lateinit var postgresInnsendingContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
 	private lateinit var schemaRegistryContainer: KGenericContainer
 	private lateinit var arkivMockContainer: KGenericContainer
 	private lateinit var soknadsfillagerContainer: KGenericContainer
+	private lateinit var innsendingApiContainer: KGenericContainer
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
 
@@ -41,16 +43,26 @@ class EmbeddedDockerImages {
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
 
+		postgresInnsendingContainer = KPostgreSQLContainer()
+			.withNetworkAliases("postgres-innsending")
+			.withExposedPorts(defaultPorts["database"])
+			.withNetwork(network)
+			.withUsername(postgresUsername)
+			.withPassword(postgresUsername)
+			.withDatabaseName(databaseName)
+
 		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
 		postgresContainer.start()
+		postgresInnsendingContainer.start()
 		kafkaContainer.start()
 
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
@@ -127,6 +139,34 @@ class EmbeddedDockerImages {
 		soknadsfillagerContainer.start()
 		soknadsmottakerContainer.start()
 
+		innsendingApiContainer = KGenericContainer("archiving-infrastructure-innsending-api")
+			.withNetworkAliases("innsending-api")
+			.withExposedPorts(defaultPorts["innsending-api"])
+			.withNetwork(network)
+			.withEnv(
+				hashMapOf(
+					"SPRING_PROFILES_ACTIVE"                to "endtoend",
+					"DATABASE_PORT"                         to defaultPorts["database"].toString(),
+					"DATABASE_HOST"                         to postgresInnsendingContainer.networkAliases[0],
+					"DATABASE_DATABASE"                     to databaseName,
+					"DATABASE_USERNAME"                     to postgresUsername,
+					"DATABASE_PASSWORD"                     to postgresUsername,
+					"KAFKA_BROKERS"                         to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
+					"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC" to defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"],
+					"SOKNADSMOTTAKER_HOST"                  to "http://${soknadsmottakerContainer.networkAliases[0]}:${defaultPorts["soknadsmottaker"]}",
+					"SAF_URL"								                to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
+					"SAFSELVBETJENING_URL"								  to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
+					"AZURE_APP_WELL_KNOWN_URL"              to "http://metadata",
+					"AZURE_APP_CLIENT_ID"			              to "aud-localhost",
+					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
+					"AZURE_APP_CLIENT_SECRET"               to "secret",
+				)
+			)
+			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer)
+			.waitingFor(Wait.forHttp("/health/isAlive").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
+
+		innsendingApiContainer.start()
+
 		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure-soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
 			.withExposedPorts(defaultPorts["soknadsarkiverer"])
@@ -141,7 +181,7 @@ class EmbeddedDockerImages {
 					"FILESTORAGE_HOST"        to "http://${soknadsfillagerContainer.networkAliases[0]}:${defaultPorts["soknadsfillager"]}",
 					"JOARK_HOST"              to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"SEND_TO_JOARK"           to "true",
-					"INNSENDING_API_HOST"     to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
+					"INNSENDING_API_HOST"     to "http://${innsendingApiContainer.networkAliases[0]}:${defaultPorts["innsending-api"]}",
 					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"AZURE_APP_WELL_KNOWN_URL" to "http://metadata",
 					"AZURE_APP_CLIENT_ID"			to "aud-localhost",
@@ -150,7 +190,7 @@ class EmbeddedDockerImages {
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
-			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer)
+			.dependsOn(kafkaContainer, schemaRegistryContainer, soknadsfillagerContainer, arkivMockContainer, innsendingApiContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
 		soknadsarkivererContainer.start()
@@ -183,13 +223,16 @@ class EmbeddedDockerImages {
 		logger.info(createHeader("soknadsmottaker") + soknadsmottakerContainer.logs)
 		logger.info(createHeader("soknadsarkiverer") + soknadsarkivererContainer.logs)
 		logger.info(createHeader("arkiv-mock") + arkivMockContainer.logs)
+		logger.info(createHeader("innsending-api") + innsendingApiContainer.logs)
 
 		soknadsfillagerContainer.stop()
+		innsendingApiContainer.stop()
 		soknadsmottakerContainer.stop()
 		soknadsarkivererContainer.stop()
 		arkivMockContainer.stop()
 
 		postgresContainer.stop()
+		postgresInnsendingContainer.stop()
 		kafkaContainer.stop()
 		schemaRegistryContainer.stop()
 	}
@@ -206,6 +249,7 @@ class EmbeddedDockerImages {
 
 
 	fun getUrlForSoknadsfillager()  = "http://localhost:" + soknadsfillagerContainer .firstMappedPort
+	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
 	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
 	fun getUrlForSoknadsarkiverer() = "http://localhost:" + soknadsarkivererContainer.firstMappedPort
 	fun getUrlForSoknadsmottaker()  = "http://localhost:" + soknadsmottakerContainer .firstMappedPort

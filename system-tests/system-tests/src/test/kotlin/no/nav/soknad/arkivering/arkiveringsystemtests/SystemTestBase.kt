@@ -6,20 +6,16 @@ import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.KafkaConfig
 import no.nav.soknad.arkivering.SchemaRegistry
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
-import no.nav.soknad.arkivering.avroschemas.*
-import no.nav.soknad.arkivering.innsending.getStatusCodeForGetCall
+import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
-import no.nav.soknad.arkivering.utils.createSoknad
-import no.nav.soknad.arkivering.utils.loopAndVerify
 import no.nav.soknad.arkivering.verification.AssertionHelper
+import no.nav.soknad.arkivering.verification.SoknadAssertionHelper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class SystemTestBase {
@@ -35,7 +31,6 @@ abstract class SystemTestBase {
 	private lateinit var kafkaPublisher: KafkaPublisher
 	lateinit var kafkaListener: KafkaListener
 
-
 	fun setUp() {
 		logger.info("****Target Environment: $targetEnvironment")
 		if (isExternalEnvironment)
@@ -43,7 +38,7 @@ abstract class SystemTestBase {
 
 		val dockerImages = env.embeddedDockerImages
 		config = if (dockerImages != null) {
-			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker(), arkivMockUrl = dockerImages.getUrlForArkivMock())
+			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker(), arkivMockUrl = dockerImages.getUrlForArkivMock(), innsendingApiUrl = dockerImages.getUrlForInnsendingApi())
 		} else {
 			Config()
 		}
@@ -61,6 +56,7 @@ abstract class SystemTestBase {
 			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
 			it["soknadsfillager"]  = env.getUrlForSoknadsfillager()+"/internal/health"
+			it["innsendingapi"]    = env.getUrlForInnsendingApi()+"/health/isAlive"
 			it["arkiv-mock"]       = env.getUrlForArkivMock()+"/internal/health"
 		}
 		for (dep in dependencies) {
@@ -77,52 +73,16 @@ abstract class SystemTestBase {
 		}
 	}
 
-
-	fun tearDown() {
-		kafkaListener.close()
-	}
-
+	fun tearDown() = kafkaListener.close()
 
 	fun putPoisonPillOnKafkaTopic(key: String) {
 		logger.debug("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
 		kafkaPublisher.putDataOnTopic(key, "unserializableString")
 	}
 
-	fun putMainEventOnKafkaTopic(key: String, fileId: String) {
-		logger.debug("Main Event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		kafkaPublisher.putDataOnTopic(key, createSoknadarkivschema(key, fileId))
-	}
-
-	fun putProcessingEventOnKafkaTopic(key: String, vararg eventTypes: EventTypes) {
-		logger.debug("Processing event key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		eventTypes.forEach { eventType -> kafkaPublisher.putDataOnTopic(key, ProcessingEvent(eventType)) }
-	}
-
-
-	fun verifyComponentIsUp(url: String, componentName: String) {
-		val healthStatusCode = {
-			getStatusCodeForGetCall(url)
-		}
-		loopAndVerify(200, healthStatusCode) {
-			assertEquals(200, healthStatusCode.invoke(), "$componentName does not seem to be up")
-		}
-	}
-
-	private fun createSoknadarkivschema(innsendingsId: String, fileId: String): Soknadarkivschema {
-		val soknad = createSoknad(innsendingsId, fileId)
-		val document = soknad.dokumenter[0]
-		val variant = document.varianter[0]
-
-		val mottattVariant = listOf(MottattVariant(variant.id, variant.filnavn, variant.filtype, variant.mediaType))
-
-		val mottattDokument = listOf(MottattDokument(document.skjemanummer, document.erHovedskjema, document.tittel, mottattVariant))
-
-		return Soknadarkivschema(innsendingsId, soknad.personId, soknad.tema,
-			LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), Soknadstyper.SOKNAD, mottattDokument)
-	}
-
-
 	fun assertThatArkivMock() = AssertionHelper(kafkaListener)
+
+	fun assertThatSoknad(innsendingsId: String) = SoknadAssertionHelper(InnsendingApi(config), innsendingsId)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
