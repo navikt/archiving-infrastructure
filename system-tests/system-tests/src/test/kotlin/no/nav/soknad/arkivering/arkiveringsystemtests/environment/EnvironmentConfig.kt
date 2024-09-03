@@ -3,7 +3,6 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 import no.nav.soknad.arkivering.defaultPorts
 
 private val defaultProperties = mapOf(
-	"soknadsfillager.url"      to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"soknadsmottaker.url"      to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"soknadsarkiverer.url"     to "http://localhost:${defaultPorts["soknadsarkiverer"]}",
 	"arkiv-mock.url"           to "http://localhost:${defaultPorts["arkiv-mock"]}",
@@ -35,7 +34,6 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 			Profile.DOCKER -> defaultProperties[attribute]
 
 			Profile.EMBEDDED -> when (attribute) {
-				"soknadsfillager.url"  -> embeddedDockerImages?.getUrlForSoknadsfillager()
 				"innsendingapi.url"    -> embeddedDockerImages?.getUrlForInnsendingApi()
 				"soknadsmottaker.url"  -> embeddedDockerImages?.getUrlForSoknadsmottaker()
 				"soknadsarkiverer.url" -> embeddedDockerImages?.getUrlForSoknadsarkiverer()
@@ -52,7 +50,6 @@ class EnvironmentConfig(environmentToTarget: String? = null) {
 	}
 
 
-	fun getUrlForSoknadsfillager()  = getAttribute("soknadsfillager.url")
 	fun getUrlForInnsendingApi()    = getAttribute("innsendingapi.url")
 	fun getUrlForSoknadsmottaker()  = getAttribute("soknadsmottaker.url")
 	fun getUrlForSoknadsarkiverer() = getAttribute("soknadsarkiverer.url")

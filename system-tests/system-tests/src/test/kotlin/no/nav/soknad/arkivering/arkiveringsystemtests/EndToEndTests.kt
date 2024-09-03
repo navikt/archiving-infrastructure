@@ -11,7 +11,6 @@ import java.util.*
 
 class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
-	private lateinit var soknadsfillagerApi: SoknadsfillagerApi
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 	private lateinit var innsendingApi: InnsendingApi
 
@@ -23,7 +22,6 @@ class EndToEndTests : SystemTestBase() {
 		}
 
 		setUp()
-		soknadsfillagerApi = SoknadsfillagerApi(filesApiWithoutOAuth2(config))
 		soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
 		innsendingApi = InnsendingApi(config)
 	}

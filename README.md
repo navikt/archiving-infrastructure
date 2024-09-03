@@ -14,7 +14,7 @@ Note that in order to simulate the external interfaces, JOARK, SAF and innsendin
 The end-to-end and load tests can run in various different environments:
 
 ### testcontainers (default)
-The easiest way to run the end-to-end tests locally is with `./run-end-to-end-tests.sh`, which will build soknadsmottaker, soknadsfillager and soknadsarkiverer, create Docker images of them and pull external ones, and then execute the end-to-end tests. Once the Docker images are present on a machine, the end-to-end tests can instead be run with `mvn clean install` in the system-tests directory. This saves time compared to running the `./end-to-end-tests.sh` script. The downside of using Maven, however, is that the user manually needs to update the Docker images if local changes are made to the code bases of the applications. Therefore, it is easier to simply use the script directly.
+The easiest way to run the end-to-end tests locally is with `./run-end-to-end-tests.sh`, which will build innsending-api, soknadsmottaker and soknadsarkiverer, create Docker images of them and pull external ones, and then execute the end-to-end tests. Once the Docker images are present on a machine, the end-to-end tests can instead be run with `mvn clean install` in the system-tests directory. This saves time compared to running the `./end-to-end-tests.sh` script. The downside of using Maven, however, is that the user manually needs to update the Docker images if local changes are made to the code bases of the applications. Therefore, it is easier to simply use the script directly.
 
 The end-to-end tests are in this mode run in testcontainers, which means that the tests themselves will start up Docker containers and run the tests towards them. Apart from having the Docker images available locally, no further setup is needed in this mode. When the tests finish, the Docker containers running the applications are stopped.
 
@@ -24,7 +24,7 @@ The end-to-end tests can be run without using testcontainers, and instead runnin
 This mode is especially useful for debugging. The downsides are that the user needs to stop the containers manually afterwards. Also, not all of the end-to-end tests will be run; some of them rely on shutting containers down and starting them up (to simulate pods going down), and this can only be done when running with testcontainers, not in this mode.
 
 ### GitHub Actions
-Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for soknadsmottaker, soknadsfillager, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
+Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for innsending-api, soknadsmottaker, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
 
 ### cronjob
 The load tests are run by a cronjob on scheduled times. They will test the upper limits of concurrent load, both with having many simultaneous requests, as well as fewer but heavier. The load tests take almost 1.5 hours to complete, and therefore they are not part of the normal build-chain. Instead, they are run on scheduled times to verify that the system performance has not degraded.
