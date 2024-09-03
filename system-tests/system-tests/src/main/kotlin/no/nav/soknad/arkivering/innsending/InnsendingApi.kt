@@ -1,17 +1,33 @@
 package no.nav.soknad.arkivering.innsending
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Config
+import no.nav.soknad.arkivering.OAuth2Config
 import no.nav.soknad.arkivering.innsending.api.*
 import no.nav.soknad.arkivering.innsending.model.*
+import no.nav.soknad.arkivering.soknadsmottaker.infrastructure.Serializer
+import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
+import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
 
-class InnsendingApi(config: Config) {
+
+fun authorizationClient(): OkHttpClient {
+	Serializer.jacksonObjectMapper.registerModule(JavaTimeModule())
+	val scopeProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeInnsendingApi) }
+	return createOkHttpAuthorizationClient(scopeProvider)
+}
+
+class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private val ettersending = EttersendingApi(config.innsendingApiUrl)
-	private val sendInnSoknad = SendinnSoknadApi(config.innsendingApiUrl)
-	private val sendInnFil = SendinnFilApi(config.innsendingApiUrl)
-	private val endtoend = EndtoendApi(config.innsendingApiUrl)
+	private val authClient = if (useOauth == true) {
+		authorizationClient()
+	} else null
+
+	private val ettersending = if (authClient != null) EttersendingApi(config.innsendingApiUrl, authClient) else EttersendingApi(config.innsendingApiUrl)
+	private val sendInnSoknad = if (authClient != null) SendinnSoknadApi(config.innsendingApiUrl, authClient) else SendinnSoknadApi(config.innsendingApiUrl)
+	private val sendInnFil = if (authClient != null) SendinnFilApi(config.innsendingApiUrl, authClient) else SendinnFilApi(config.innsendingApiUrl)
+	private val endtoend = if (authClient != null) EndtoendApi(config.innsendingApiUrl, authClient) else EndtoendApi(config.innsendingApiUrl)
 
 	fun opprettEttersending(
 		skjemanr: String = "NAV 08-07.04D",

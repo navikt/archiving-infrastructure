@@ -38,7 +38,7 @@ abstract class SystemTestBase {
 
 		val dockerImages = env.embeddedDockerImages
 		config = if (dockerImages != null) {
-			Config(soknadsfillagerUrl = dockerImages.getUrlForSoknadsfillager(), soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker(), arkivMockUrl = dockerImages.getUrlForArkivMock(), innsendingApiUrl = dockerImages.getUrlForInnsendingApi())
+			Config(soknadsmottakerUrl = dockerImages.getUrlForSoknadsmottaker(), arkivMockUrl = dockerImages.getUrlForArkivMock(), innsendingApiUrl = dockerImages.getUrlForInnsendingApi())
 		} else {
 			Config()
 		}
@@ -55,7 +55,6 @@ abstract class SystemTestBase {
 		val dependencies = HashMap<String, String>().also {
 			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
-			it["soknadsfillager"]  = env.getUrlForSoknadsfillager()+"/internal/health"
 			it["innsendingapi"]    = env.getUrlForInnsendingApi()+"/health/isAlive"
 			it["arkiv-mock"]       = env.getUrlForArkivMock()+"/internal/health"
 		}

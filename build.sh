@@ -12,7 +12,6 @@ NOCOLOUR='\033[0m'
 available_components=()
 available_components+=("soknadsmottaker")
 available_components+=("soknadsarkiverer")
-available_components+=("soknadsfillager")
 available_components+=("arkiv-mock")
 available_components+=("innsending-api")
 

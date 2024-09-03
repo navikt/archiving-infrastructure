@@ -1,7 +1,6 @@
 package no.nav.soknad.arkivering
 
 val defaultPorts = mapOf(
-	"soknadsfillager"  to 9042,
 	"innsending-api"   to 9064,
 	"soknadsmottaker"  to 8090,
 	"soknadsarkiverer" to 8091,
@@ -36,7 +35,6 @@ val defaultProperties = mapOf(
 
 	"SOKNADSMOTTAKER_URL" to "http://localhost:${defaultPorts["soknadsmottaker"]}",
 	"INNSENDINGAPI_URL" to "http://localhost:${defaultPorts["innsending-api"]}",
-	"SOKNADSFILLAGER_URL" to "http://localhost:${defaultPorts["soknadsfillager"]}",
 	"ARKIVMOCK_URL" to "http://localhost:${defaultPorts["arkiv-mock"]}",
 )
 
@@ -47,7 +45,6 @@ fun getProperty(propName: String, defaultValue: String = ""): String =
 data class Config(
 	val soknadsmottakerUrl: String = getProperty("SOKNADSMOTTAKER_URL"),
 	val innsendingApiUrl:   String = getProperty("INNSENDINGAPI_URL"),
-	val soknadsfillagerUrl: String = getProperty("SOKNADSFILLAGER_URL"),
 	val arkivMockUrl: String = getProperty("ARKIVMOCK_URL"),
 )
 
@@ -70,8 +67,8 @@ data class SecurityConfig(
 data class OAuth2Config(
 	val tokenEndpointUrl: String = getProperty("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"),
 	val grantType: String = "client_credentials",
-	val scopeSoknadsfillager: String = "api://dev-gcp.team-soknad.soknadsfillager-loadtests/.default",
 	val scopeSoknadsmottaker: String = "api://dev-gcp.team-soknad.soknadsmottaker-loadtests/.default",
+	val scopeInnsendingApi: String = "api://dev-gcp.team-soknad.innsending-api-loadtests/.default",
 	val clientId: String = getProperty("AZURE_APP_CLIENT_ID"),
 	val clientSecret: String = getProperty("AZURE_APP_CLIENT_SECRET"),
 	val clientAuthMethod: String = "client_secret_basic"

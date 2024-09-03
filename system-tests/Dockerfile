@@ -1,6 +1,10 @@
 FROM gcr.io/distroless/java21-debian12:nonroot
 
-ENV APPLICATION_NAME=innsending-system-tests
-COPY system-tests/system-tests/target/*jar-with-dependencies.jar app.jar
+ENV TZ="Europe/Oslo"
+ENV JAVA_OPTS='-XX:MaxRAMPercentage=90'
 
-CMD java -jar app.jar
+COPY system-tests/system-tests/target/*jar-with-dependencies.jar /app/app.jar
+
+WORKDIR /app
+
+CMD ["app.jar"]
