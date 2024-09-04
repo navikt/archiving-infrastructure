@@ -29,8 +29,8 @@ class VedleggslisteTestdata(
 		if (expectedSize == vedleggIdListe.size) this
 		else throw Exception("Forventer $expectedSize vedlegg, men søknad har ${vedleggIdListe.size}.")
 
-	fun lastOppFil(index: Int, filNavn: String): VedleggslisteTestdata {
-		val file = File("src/test/resources/$filNavn")
+	fun lastOppFil(index: Int, filNavn: String, path: String = "src/test/resources"): VedleggslisteTestdata {
+		val file = File("$path/$filNavn")
 		sendinnFilApi.lagreFil(innsendingsId, vedleggIdListe[index].id, file)
 		return this
 	}

@@ -80,7 +80,9 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		val soknad = innsendingApi.opprettEttersending()
 
 		val innsendingKeys = listOf(soknad.innsendingsId)
-		soknad.vedleggsliste().verifyHasSize(1).lastOppFil(0, "Ten_MB.pdf")
+		soknad.vedleggsliste()
+			.verifyHasSize(1)
+			.lastOppFil(0, "Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png", "src/main/resources")
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
 		innsendingApi.sendInn(soknad)
