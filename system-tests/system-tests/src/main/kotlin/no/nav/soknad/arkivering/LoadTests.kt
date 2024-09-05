@@ -11,6 +11,7 @@ import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -82,12 +83,18 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		val innsendingKeys = listOf(soknad.innsendingsId)
 		soknad.vedleggsliste()
 			.verifyHasSize(1)
-			.lastOppFil(0, "Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png", "src/main/resources")
+			.lastOppFil(0, loadFile(fileOfSize38mb))
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
 		innsendingApi.sendInn(soknad)
 		verifier.verify()
 		logger.info("Finished test: $testName")
+	}
+
+	private fun loadFile(fileName: String): File {
+		val resource = LoadTests::class.java.getResource(fileName) ?: throw Exception("$fileName not found")
+		val file = File(resource.file)
+		return file
 	}
 
 

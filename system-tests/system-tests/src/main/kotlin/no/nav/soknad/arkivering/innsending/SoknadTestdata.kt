@@ -35,6 +35,11 @@ class VedleggslisteTestdata(
 		return this
 	}
 
+	fun lastOppFil(index: Int, file: File): VedleggslisteTestdata {
+		sendinnFilApi.lagreFil(innsendingsId, vedleggIdListe[index].id, file)
+		return this
+	}
+
 }
 
 data class VedleggTestdata(
