@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.createTempFile
 
 class LoadTests(config: Config, private val kafkaListener: KafkaListener, val useOAuth: Boolean = true) {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -77,13 +78,15 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	fun `InnsendingApi basic test`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
+		val file = loadFile(fileOfSize38mb)
+		println("file.exists: ${file.exists()}")
 
 		val soknad = innsendingApi.opprettEttersending()
 
 		val innsendingKeys = listOf(soknad.innsendingsId)
 		soknad.vedleggsliste()
 			.verifyHasSize(1)
-			.lastOppFil(0, loadFile(fileOfSize38mb))
+			.lastOppFil(0, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
 		innsendingApi.sendInn(soknad)
@@ -92,11 +95,15 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	}
 
 	private fun loadFile(fileName: String): File {
-		val resource = LoadTests::class.java.getResource(fileName) ?: throw Exception("$fileName not found")
-		val file = File(resource.file)
+		val resource = LoadTests::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
+		val file = createTempFile().toFile()
+		resource.use { input ->
+			file.outputStream().use { output ->
+				input.copyTo(output)
+			}
+		}
 		return file
 	}
-
 
 	private fun performTest(
 		testName: String,
