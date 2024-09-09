@@ -19,7 +19,6 @@ spec:
       rules:
         - application: soknadsmottaker-loadtests
         - application: innsending-api-loadtests
-        - application: archive-mock
   env:
     - name: KAFKA_SECURITY
       value: "TRUE"
