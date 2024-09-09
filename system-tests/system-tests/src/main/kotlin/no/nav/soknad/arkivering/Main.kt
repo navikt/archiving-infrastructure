@@ -18,7 +18,7 @@ fun main() {
 //		loadTests.`100 simultaneous entities, 20 times 1 MB each`()
 //		loadTests.`2000 simultaneous entities, 1 times 1 byte each`()
 //		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
-		loadTests.`InnsendingApi basic test`()
+		loadTests.`Innsending av 100 soknader, hver med to vedlegg`()
 
 		logger.info("Finished with the Load Tests")
 	} catch (t: Throwable) {

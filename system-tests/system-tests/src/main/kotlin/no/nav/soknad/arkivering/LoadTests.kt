@@ -75,21 +75,33 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
-	fun `InnsendingApi basic test`() {
+	fun `Innsending av 100 soknader, hver med to vedlegg`() {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
-		val file = loadFile(fileOfSize38mb)
-		println("file.exists: ${file.exists()}")
+		val file = loadFile(fileOfSize2mb)
 
-		val soknad = innsendingApi.opprettEttersending()
+		val listOfInnsendingIds = (0 until 100)
+			.map {
+				val soknad = innsendingApi.opprettEttersending(
+					skjemanr = "NAV 10-07.54",
+					tema = "HJE",
+					tittel = "Søknad om servicehund",
+					vedleggListe = listOf(
+						Vedlegg("L8", "Uttalelse fra fagpersonell"),
+						Vedlegg("L9", "Legeerklæring"),
+					)
+				)
 
-		val innsendingKeys = listOf(soknad.innsendingsId)
-		soknad.vedleggsliste()
-			.verifyHasSize(1)
-			.lastOppFil(0, file)
+				soknad.vedleggsliste()
+					.verifyHasSize(2)
+					.lastOppFil(0, file)
+					.lastOppFil(1, file)
 
-		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingKeys, 15)
-		innsendingApi.sendInn(soknad)
+				soknad.innsendingsId
+			}
+
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = listOfInnsendingIds, 30)
+		listOfInnsendingIds.forEach { innsendingApi.sendInn(it) }
 		verifier.verify()
 		logger.info("Finished test: $testName")
 	}
