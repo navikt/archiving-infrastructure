@@ -1,15 +1,13 @@
 package no.nav.soknad.arkivering
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import no.nav.soknad.arkivering.dto.FileResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
 import no.nav.soknad.arkivering.utils.skjemaliste
+import no.nav.soknad.arkivering.utils.vedleggsliste
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -76,34 +74,48 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
-	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg`() = runCatching {
-		val testName = Thread.currentThread().stackTrace[1].methodName
-		logger.info("Starting test: $testName")
-		val file = loadFile(fileOfSize2mb)
+	private fun opprettEttersending(antallVedlegg: Int, file: File): String {
+		val soknadDef = skjemaliste.random()
+		val soknad = innsendingApi.opprettEttersending(
+			skjemanr = soknadDef.skjemanr,
+			tema = soknadDef.tema,
+			tittel = soknadDef.tittel,
+			vedleggListe = vedleggsliste
+				.take(antallVedlegg)
+				.map { Vedlegg(it.vedleggKode, it.vedleggTittel) }
+		)
 
-		val listOfInnsendingIds = (0 until 10)
-			.map {
-				val randomSkjemadef = skjemaliste.random()
-				val soknad = innsendingApi.opprettEttersending(
-					skjemanr = randomSkjemadef.skjemanr,
-					tema = randomSkjemadef.tema,
-					tittel = randomSkjemadef.tittel,
-					vedleggListe = listOf(
-						Vedlegg("L8", "Uttalelse fra fagpersonell"),
-						Vedlegg("L9", "Legeerklæring"),
-					)
-				)
-
-				soknad.vedleggsliste()
-					.verifyHasSize(2)
-					.lastOppFil(0, file)
-					.lastOppFil(1, file)
-
-				soknad.innsendingsId
+		soknad.vedleggsliste()
+			.verifyHasSize(antallVedlegg)
+			.also { vedleggsliste ->
+				(0 until antallVedlegg)
+					.forEach { vedleggsliste.lastOppFil(it, file) }
 			}
 
-		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = listOfInnsendingIds, 30)
-		listOfInnsendingIds.forEach { innsendingApi.sendInn(it) }
+		return soknad.innsendingsId
+	}
+
+	private fun opprettSoknader(antallSoknader: Int, antallVedlegg: Int, file: File) = runBlocking {
+		(0 until antallSoknader)
+			.map { async { opprettEttersending(antallVedlegg, file)}  }
+			.awaitAll()
+	}
+
+	private fun sendInnSoknader(innsendingsIds: List<String>) = runBlocking {
+		innsendingsIds.map { async { innsendingApi.sendInn(it) }}.awaitAll()
+	}
+
+	@Suppress("FunctionName")
+	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`() = runCatching {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		logger.info("Starting test: $testName")
+
+		val file = loadFile(fileOfSize2mb)
+		val innsendingsIdListe: List<String> = opprettSoknader(10, 2, file)
+
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
+		sendInnSoknader(innsendingsIdListe)
+
 		verifier.verify()
 		logger.info("Finished test: $testName")
 	}
