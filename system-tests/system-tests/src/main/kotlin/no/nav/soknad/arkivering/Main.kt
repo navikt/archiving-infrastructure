@@ -20,11 +20,20 @@ fun main() {
 //		loadTests.`100 simultaneous entities, 20 times 1 MB each`()
 //		loadTests.`2000 simultaneous entities, 1 times 1 byte each`()
 //		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
-		loadTests.`Innsending av 100 soknader, hver med to vedlegg`()
+		val tc01Timer = metrics.testCaseDuration.startTimer()
+		val tc01 = loadTests.`TC01 - Innsending av 10 soknader, hver med to vedlegg`()
+		tc01
+			.onSuccess { tc01Timer.observeDurationWithExemplar("TC01", "success") }
+			.onFailure {
+				tc01Timer.observeDurationWithExemplar("TC01", "failure")
+				logger.error("Test case 01 failed", it)
+				exitStatus = 1
+			}
 
 		metrics.lastSuccess.setToCurrentTime()
 		logger.info("Finished with the Load Tests")
 	} catch (t: Throwable) {
+		metrics.lastFailure.setToCurrentTime()
 		logger.error("Load tests were erroneous", t)
 		exitStatus = 1
 	} finally {

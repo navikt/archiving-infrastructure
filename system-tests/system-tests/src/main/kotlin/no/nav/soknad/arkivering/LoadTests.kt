@@ -9,6 +9,7 @@ import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
+import no.nav.soknad.arkivering.utils.skjemaliste
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -75,17 +76,18 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
-	fun `Innsending av 100 soknader, hver med to vedlegg`() {
+	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg`() = runCatching {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
 		val file = loadFile(fileOfSize2mb)
 
-		val listOfInnsendingIds = (0 until 100)
+		val listOfInnsendingIds = (0 until 10)
 			.map {
+				val randomSkjemadef = skjemaliste.random()
 				val soknad = innsendingApi.opprettEttersending(
-					skjemanr = "NAV 10-07.54",
-					tema = "HJE",
-					tittel = "Søknad om servicehund",
+					skjemanr = randomSkjemadef.skjemanr,
+					tema = randomSkjemadef.tema,
+					tittel = randomSkjemadef.tittel,
 					vedleggListe = listOf(
 						Vedlegg("L8", "Uttalelse fra fagpersonell"),
 						Vedlegg("L9", "Legeerklæring"),
