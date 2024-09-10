@@ -19,6 +19,8 @@ spec:
       rules:
         - application: soknadsmottaker-loadtests
         - application: innsending-api-loadtests
+        - application: prometheus-pushgateway
+          namespace: nais-system
   env:
     - name: KAFKA_SECURITY
       value: "TRUE"
@@ -42,6 +44,8 @@ spec:
       value: http://innsending-api-loadtests
     - name: ARKIVMOCK_URL
       value: https://arkiv-mock-gcp.intern.dev.nav.no
+    - name: PUSH_GATEWAY_ADDRESS
+      value: prometheus-pushgateway.nais-system:9091
 
   image: {{image}}
   ttlSecondsAfterFinished: 3600
