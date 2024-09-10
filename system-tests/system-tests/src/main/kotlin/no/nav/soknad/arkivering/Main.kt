@@ -32,8 +32,8 @@ fun main() {
 				val timer = metrics.testCaseDuration.labels(testCaseId).startTimer()
 				testCaseFunction.value.invoke(loadTests)
 					.onSuccess {
-						timer.observeDuration()
-						logger.info("Test case $testCaseId completed successfully")
+						val elapsed = timer.observeDuration()
+						logger.info("Test case $testCaseId completed successfully in $elapsed seconds")
 					}
 					.onFailure {
 						logger.error("Test case $testCaseId failed", it)
