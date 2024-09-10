@@ -21,16 +21,15 @@ fun main() {
 //		loadTests.`2000 simultaneous entities, 1 times 1 byte each`()
 //		loadTests.`5 simultaneous entities, 4 times 38 MB each`()
 		val tc01Timer = metrics.testCaseDuration.labels("TC01").startTimer()
-		val tc01 = loadTests.`TC01 - Innsending av 10 soknader, hver med to vedlegg`()
-		tc01
+		loadTests.`TC01 - Innsending av 10 soknader, hver med to vedlegg`()
 			.onSuccess {
 				logger.info("Test case 01 completed successfully")
-				tc01Timer.observeDuration()
 			}
 			.onFailure {
 				logger.error("Test case 01 failed", it)
 				exitStatus = 1
 			}
+		tc01Timer.observeDuration()
 
 		metrics.lastSuccess.setToCurrentTime()
 		logger.info("Finished with the Load Tests")
