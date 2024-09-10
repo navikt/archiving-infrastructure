@@ -17,26 +17,26 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<kotlin.version>1.9.20</kotlin.version>
+		<kotlin.version>2.0.20</kotlin.version>
 		<maven.version>3.8.8</maven.version>
-		<maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.4.0</maven-surefire-plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<springframework.version>6.0.11</springframework.version>
+		<springframework.version>6.1.12</springframework.version>
 		<!--Kotlin -->
 		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-		<coroutines.version>1.7.3</coroutines.version>
+		<coroutines.version>1.8.1</coroutines.version>
 
 		<!-- Kafka -->
-		<kafka-streams-avro-serde.version>7.3.0</kafka-streams-avro-serde.version>
-		<kafka.version>3.5.0</kafka.version>
+		<kafka-streams-avro-serde.version>7.7.0</kafka-streams-avro-serde.version>
+		<kafka.version>3.8.0</kafka.version>
 		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
 
 		<!-- Logging -->
 		<logstash.version>7.4</logstash.version>
 
 		<!-- Test -->
-		<testcontainers.version>1.18.3</testcontainers.version>
+		<testcontainers.version>1.20.1</testcontainers.version>
 		<mockk.version>1.13.5</mockk.version>
 		<springmockk.version>4.0.2</springmockk.version>
 		<wiremock.version>2.27.2</wiremock.version>
@@ -44,11 +44,11 @@
 
 		<okhttp3.version>4.11.0</okhttp3.version>
 		<token-support.version>3.1.0</token-support.version>
-		<logback.version>1.4.5</logback.version>
-		<slf4j.version>2.0.7</slf4j.version>
-		<postgresql.version>42.5.1</postgresql.version>
-		<jackson.version>2.15.2</jackson.version>
-		<junit-jupiter.version>5.9.1</junit-jupiter.version>
+		<logback.version>1.5.8</logback.version>
+		<slf4j.version>2.0.16</slf4j.version>
+		<postgresql.version>42.7.4</postgresql.version>
+		<jackson.version>2.17.2</jackson.version>
+		<junit-jupiter.version>5.11.0</junit-jupiter.version>
 
 
 		<!-- Plugins -->
