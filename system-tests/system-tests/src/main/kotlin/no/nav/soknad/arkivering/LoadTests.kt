@@ -96,8 +96,10 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 						.forEach {
 							val filDelay =(5000L..120000L).random()
 							delay(filDelay)
-							logger.debug("Laster opp fil nr. ${it + 1} på søknad ${soknad.innsendingsId} (etter delay på ${filDelay/1000.0} sekunder)")
+							logger.debug("Laster opp fil nr. ${it + 1} for søknad ${soknad.innsendingsId} (etter delay på ${filDelay/1000.0} sekunder)")
+							val start = System.currentTimeMillis()
 							vedleggsliste.lastOppFil(it, file)
+							logger.info("Fullførte opplasting av fil nr. ${it + 1} for søknad ${soknad.innsendingsId} på ${(System.currentTimeMillis() - start)/1000.0} sekunder")
 						}
 				}
 
