@@ -74,25 +74,27 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
-	private fun opprettEttersending(antallVedlegg: Int, file: File): String {
-		val soknadDef = skjemaliste.random()
-		val soknad = innsendingApi.opprettEttersending(
-			skjemanr = soknadDef.skjemanr,
-			tema = soknadDef.tema,
-			tittel = soknadDef.tittel,
-			vedleggListe = vedleggsliste
-				.take(antallVedlegg)
-				.map { Vedlegg(it.vedleggKode, it.vedleggTittel) }
-		)
+	private suspend fun opprettEttersending(antallVedlegg: Int, file: File): String {
+		return withContext(Dispatchers.IO) {
+			val soknadDef = skjemaliste.random()
+			val soknad = innsendingApi.opprettEttersending(
+				skjemanr = soknadDef.skjemanr,
+				tema = soknadDef.tema,
+				tittel = soknadDef.tittel,
+				vedleggListe = vedleggsliste
+					.take(antallVedlegg)
+					.map { Vedlegg(it.vedleggKode, it.vedleggTittel) }
+			)
 
-		soknad.vedleggsliste()
-			.verifyHasSize(antallVedlegg)
-			.also { vedleggsliste ->
-				(0 until antallVedlegg)
-					.forEach { vedleggsliste.lastOppFil(it, file) }
-			}
+			soknad.vedleggsliste()
+				.verifyHasSize(antallVedlegg)
+				.also { vedleggsliste ->
+					(0 until antallVedlegg)
+						.forEach { vedleggsliste.lastOppFil(it, file) }
+				}
 
-		return soknad.innsendingsId
+			return@withContext soknad.innsendingsId
+		}
 	}
 
 	private fun opprettSoknader(antallSoknader: Int, antallVedlegg: Int, file: File) = runBlocking {
@@ -101,8 +103,14 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 			.awaitAll()
 	}
 
+	private suspend fun sendInnSoknad(innsendingsId: String) {
+		return withContext(Dispatchers.IO) {
+			innsendingApi.sendInn(innsendingsId)
+		}
+	}
+
 	private fun sendInnSoknader(innsendingsIds: List<String>) = runBlocking {
-		innsendingsIds.map { async { innsendingApi.sendInn(it) }}.awaitAll()
+		innsendingsIds.map { async { sendInnSoknad(it) }}.awaitAll()
 	}
 
 	@Suppress("FunctionName")
