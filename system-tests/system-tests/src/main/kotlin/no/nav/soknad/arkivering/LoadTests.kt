@@ -90,7 +90,10 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 				.verifyHasSize(antallVedlegg)
 				.also { vedleggsliste ->
 					(0 until antallVedlegg)
-						.forEach { vedleggsliste.lastOppFil(it, file) }
+						.forEach {
+							delay((5000L..10000L).random())
+							vedleggsliste.lastOppFil(it, file)
+						}
 				}
 
 			return@withContext soknad.innsendingsId
