@@ -52,8 +52,7 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		)
 		val soknad = ettersending.opprettEttersending(dto)
 		logger.info("Opprettet ettersending: $soknad")
-		val innsendingsId = soknad.innsendingsId!!
-		return SoknadTestdata(innsendingsId, sendInnSoknad, sendInnFil)
+		return SoknadTestdata(soknad, sendInnFil)
 	}
 
 	fun sendInn(soknad: SoknadTestdata) = runCatching {

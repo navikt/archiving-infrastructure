@@ -1,16 +1,18 @@
 package no.nav.soknad.arkivering.innsending
 
 import no.nav.soknad.arkivering.innsending.api.SendinnFilApi
-import no.nav.soknad.arkivering.innsending.api.SendinnSoknadApi
+import no.nav.soknad.arkivering.innsending.model.DokumentSoknadDto
 import java.io.File
 
 class SoknadTestdata(
-	val innsendingsId: String,
-	private val sendInnSoknadApi: SendinnSoknadApi,
+	private val soknad: DokumentSoknadDto,
 	private val sendinnFilApi: SendinnFilApi,
 ) {
+
+	val innsendingsId = soknad.innsendingsId!!
+
 	fun vedleggsliste(): VedleggslisteTestdata {
-		val vedleggsListe = sendInnSoknadApi.hentSoknad(innsendingsId).vedleggsListe
+		val vedleggsListe = soknad.vedleggsListe
 		return VedleggslisteTestdata(
 			innsendingsId,
 			vedleggsListe
