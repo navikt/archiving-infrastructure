@@ -138,7 +138,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize2mb)
-		val innsendingsIdListe: List<String> = opprettSoknaderAsync(10, 2, file)
+		val innsendingsIdListe: List<String> = opprettSoknaderSync(10, 2, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
