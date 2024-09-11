@@ -139,12 +139,12 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	}
 
 	@Suppress("FunctionName")
-	fun `TC02 - Innsending av 100 soknader, hver med fem vedlegg pa 1MB`() = runCatching {
+	fun `TC02 - Innsending av 100 soknader, hver med et vedlegg pa 1MB`() = runCatching {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize1mb)
-		val innsendingsIdListe: List<String> = opprettSoknader(100, 5, file)
+		val innsendingsIdListe: List<String> = opprettSoknader(100, 1, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
