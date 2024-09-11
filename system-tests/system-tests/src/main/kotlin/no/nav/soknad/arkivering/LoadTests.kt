@@ -77,6 +77,9 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	private suspend fun opprettEttersending(antallVedlegg: Int, file: File): String {
 		return withContext(Dispatchers.IO) {
 			val soknadDef = skjemaliste.random()
+			val soknadDelay = (2000L .. 60000L).random()
+			logger.debug("Venter ${soknadDelay/1000.0} sekunder før søknad opprettes..")
+			delay(soknadDelay)
 			val soknad = innsendingApi.opprettEttersending(
 				skjemanr = soknadDef.skjemanr,
 				tema = soknadDef.tema,
@@ -91,7 +94,9 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 				.also { vedleggsliste ->
 					(0 until antallVedlegg)
 						.forEach {
-							delay((5000L..10000L).random())
+							val filDelay =(5000L..120000L).random()
+							delay(filDelay)
+							logger.debug("Laster opp fil nr. ${it + 1} på søknad ${soknad.innsendingsId} (etter delay på ${filDelay/1000.0} sekunder)")
 							vedleggsliste.lastOppFil(it, file)
 						}
 				}
