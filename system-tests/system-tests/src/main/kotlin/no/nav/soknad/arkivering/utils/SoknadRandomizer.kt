@@ -237,4 +237,7 @@ val skjemaliste = listOf(
 val vedleggsliste: List<VedleggDef> = listOf(
 	VedleggDef("L8", "Uttalelse fra fagpersonell"),
 	VedleggDef("L9", "Legeerklæring"),
+	VedleggDef("W2", "Vedtak eller avtale om bidrag"),
+	VedleggDef("CC", "Avtale"),
+	VedleggDef("BJ", "Dokumentasjon på ekteskapsinngåelse"),
 )

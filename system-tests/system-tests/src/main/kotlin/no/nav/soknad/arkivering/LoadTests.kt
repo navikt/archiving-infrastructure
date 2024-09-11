@@ -120,6 +120,21 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Finished test: $testName")
 	}
 
+	@Suppress("FunctionName")
+	fun `TC02 - Innsending av 100 soknader, hver med fem vedlegg pa 1MB`() = runCatching {
+		val testName = Thread.currentThread().stackTrace[1].methodName
+		logger.info("Starting test: $testName")
+
+		val file = loadFile(fileOfSize1mb)
+		val innsendingsIdListe: List<String> = opprettSoknader(100, 5, file)
+
+		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
+		sendInnSoknader(innsendingsIdListe)
+
+		verifier.verify()
+		logger.info("Finished test: $testName")
+	}
+
 	private fun loadFile(fileName: String): File {
 		val resource = LoadTests::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
 		val file = createTempFile().toFile()

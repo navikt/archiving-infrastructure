@@ -10,6 +10,9 @@ private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 val testCases: Map<TestCase, KFunction1<LoadTests, Result<Unit>>> = mapOf(
 	TestCase.TC01 to LoadTests::`TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`,
+	TestCase.TC02 to LoadTests::`TC02 - Innsending av 100 soknader, hver med fem vedlegg pa 1MB`,
+//	TestCase.TC03 to ("Innsending av 1000 søknader, hver med to vedlegg på 1MB"),
+//	TestCase.TC04 to ("Innsending av 5 søknader, hver med fire vedlegg på 38MB"),
 )
 
 fun main() {
