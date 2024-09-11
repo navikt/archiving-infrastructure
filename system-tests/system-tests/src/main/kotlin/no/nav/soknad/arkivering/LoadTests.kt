@@ -74,12 +74,14 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		performTest(testName, numberOfEntities, numberOfFilesPerEntity, file, 30)
 	}
 
-	private suspend fun opprettEttersending(antallVedlegg: Int, file: File): String {
+	private suspend fun opprettEttersending(antallVedlegg: Int, file: File, doDelay: Boolean = false): String {
 		return withContext(Dispatchers.IO) {
 			val soknadDef = skjemaliste.random()
-			val soknadDelay = (2000L .. 60000L).random()
-			logger.debug("Venter ${soknadDelay/1000.0} sekunder før søknad opprettes..")
-			delay(soknadDelay)
+			if (doDelay) {
+				val soknadDelay = (2000L..60000L).random()
+				logger.debug("Venter ${soknadDelay / 1000.0} sekunder før søknad opprettes..")
+				delay(soknadDelay)
+			}
 			val soknad = innsendingApi.opprettEttersending(
 				skjemanr = soknadDef.skjemanr,
 				tema = soknadDef.tema,
@@ -94,9 +96,11 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 				.also { vedleggsliste ->
 					(0 until antallVedlegg)
 						.forEach {
-							val filDelay =(5000L..120000L).random()
-							delay(filDelay)
-							logger.debug("Laster opp fil nr. ${it + 1} for søknad ${soknad.innsendingsId} (etter delay på ${filDelay/1000.0} sekunder)")
+							val fileUploadDelay = if (doDelay) (5000L..120000L).random() else 0
+							if (doDelay) {
+								delay(fileUploadDelay)
+							}
+							logger.debug("Laster opp fil nr. ${it + 1} for søknad ${soknad.innsendingsId} (etter delay på ${fileUploadDelay/1000.0} sekunder)")
 							val start = System.currentTimeMillis()
 							vedleggsliste.lastOppFil(it, file)
 							logger.info("Fullførte opplasting av fil nr. ${it + 1} for søknad ${soknad.innsendingsId} på ${(System.currentTimeMillis() - start)/1000.0} sekunder")
@@ -107,10 +111,15 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		}
 	}
 
-	private fun opprettSoknader(antallSoknader: Int, antallVedlegg: Int, file: File) = runBlocking {
+	private fun opprettSoknaderAsync(antallSoknader: Int, antallVedlegg: Int, file: File) = runBlocking {
 		(0 until antallSoknader)
-			.map { async { opprettEttersending(antallVedlegg, file)}  }
+			.map { async { opprettEttersending(antallVedlegg, file, true)}  }
 			.awaitAll()
+	}
+
+	private fun opprettSoknaderSync(antallSoknader: Int, antallVedlegg: Int, file: File): List<String> = runBlocking {
+		(0 until antallSoknader)
+			.map { opprettEttersending(antallVedlegg, file) }
 	}
 
 	private suspend fun sendInnSoknad(innsendingsId: String) {
@@ -129,7 +138,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize2mb)
-		val innsendingsIdListe: List<String> = opprettSoknader(10, 2, file)
+		val innsendingsIdListe: List<String> = opprettSoknaderAsync(10, 2, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
@@ -139,12 +148,12 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	}
 
 	@Suppress("FunctionName")
-	fun `TC02 - Innsending av 100 soknader, hver med et vedlegg pa 1MB`() = runCatching {
+	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 1MB`() = runCatching {
 		val testName = Thread.currentThread().stackTrace[1].methodName
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize1mb)
-		val innsendingsIdListe: List<String> = opprettSoknader(100, 1, file)
+		val innsendingsIdListe: List<String> = opprettSoknaderSync(100, 3, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
