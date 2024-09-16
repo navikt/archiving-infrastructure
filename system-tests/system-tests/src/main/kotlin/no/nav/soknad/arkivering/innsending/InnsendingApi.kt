@@ -60,7 +60,7 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
 	}
 
-	fun sendInn(innsendingsId: String) = runCatching {
+	fun sendInn(innsendingsId: String) {
 		logger.info("Sender inn søknad: ${innsendingsId}")
 		sendInnSoknad.sendInnSoknad(innsendingsId)
 	}
