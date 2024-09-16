@@ -6,6 +6,7 @@ import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.utils.createSoknad
+import no.nav.soknad.arkivering.utils.retry
 import no.nav.soknad.arkivering.utils.skjemaliste
 import no.nav.soknad.arkivering.utils.vedleggsliste
 import no.nav.soknad.arkivering.verification.AssertionHelper
@@ -82,14 +83,16 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 				logger.debug("Venter ${soknadDelay / 1000.0} sekunder før søknad opprettes..")
 				delay(soknadDelay)
 			}
-			val soknad = innsendingApi.opprettEttersending(
-				skjemanr = soknadDef.skjemanr,
-				tema = soknadDef.tema,
-				tittel = soknadDef.tittel,
-				vedleggListe = vedleggsliste
-					.take(antallVedlegg)
-					.map { Vedlegg(it.vedleggKode, it.vedleggTittel) }
-			)
+			val soknad = retry(3) {
+				innsendingApi.opprettEttersending(
+					skjemanr = soknadDef.skjemanr,
+					tema = soknadDef.tema,
+					tittel = soknadDef.tittel,
+					vedleggListe = vedleggsliste
+						.take(antallVedlegg)
+						.map { Vedlegg(it.vedleggKode, it.vedleggTittel) }
+				)
+			}
 
 			soknad.vedleggsliste()
 				.verifyHasSize(antallVedlegg)
@@ -102,7 +105,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 							}
 							logger.debug("Laster opp fil nr. ${it + 1} for søknad ${soknad.innsendingsId} (etter delay på ${fileUploadDelay/1000.0} sekunder)")
 							val start = System.currentTimeMillis()
-							vedleggsliste.lastOppFil(it, file)
+							retry(3) { vedleggsliste.lastOppFil(it, file) }
 							logger.info("Fullførte opplasting av fil nr. ${it + 1} for søknad ${soknad.innsendingsId} på ${(System.currentTimeMillis() - start)/1000.0} sekunder")
 						}
 				}
@@ -124,7 +127,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	private suspend fun sendInnSoknad(innsendingsId: String) {
 		return withContext(Dispatchers.IO) {
-			innsendingApi.sendInn(innsendingsId)
+			retry(3) { innsendingApi.sendInn(innsendingsId) }
 		}
 	}
 

@@ -2,7 +2,6 @@ package no.nav.soknad.arkivering.innsending
 
 import no.nav.soknad.arkivering.innsending.api.SendinnFilApi
 import no.nav.soknad.arkivering.innsending.model.DokumentSoknadDto
-import no.nav.soknad.arkivering.utils.retry
 import java.io.File
 
 class SoknadTestdata(
@@ -39,7 +38,7 @@ class VedleggslisteTestdata(
 	}
 
 	fun lastOppFil(index: Int, file: File): VedleggslisteTestdata {
-		retry(3) { sendinnFilApi.lagreFil(innsendingsId, vedleggIdListe[index].id, file) }
+		sendinnFilApi.lagreFil(innsendingsId, vedleggIdListe[index].id, file)
 		return this
 	}
 
