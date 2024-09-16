@@ -116,7 +116,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	private fun opprettSoknaderAsync(antallSoknader: Int, antallVedlegg: Int, file: File) = runBlocking {
 		(0 until antallSoknader)
-			.map { async { opprettEttersending(antallVedlegg, file, true)}  }
+			.map { async { opprettEttersending(antallVedlegg, file, false)}  }
 			.awaitAll()
 	}
 
@@ -141,7 +141,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize2mb)
-		val innsendingsIdListe: List<String> = opprettSoknaderSync(10, 2, file)
+		val innsendingsIdListe: List<String> = opprettSoknaderAsync(10, 2, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
@@ -156,7 +156,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		logger.info("Starting test: $testName")
 
 		val file = loadFile(fileOfSize1mb)
-		val innsendingsIdListe: List<String> = opprettSoknaderSync(100, 3, file)
+		val innsendingsIdListe: List<String> = opprettSoknaderAsync(100, 3, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 30)
 		sendInnSoknader(innsendingsIdListe)
