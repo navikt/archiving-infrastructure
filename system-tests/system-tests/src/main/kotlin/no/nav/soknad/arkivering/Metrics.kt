@@ -2,7 +2,6 @@ package no.nav.soknad.arkivering
 
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
-import io.prometheus.client.Histogram
 import io.prometheus.client.exporter.PushGateway
 
 
@@ -26,10 +25,9 @@ class Metrics(
 		.help("Last time loadtests failed, in unixtime.")
 		.register(registry)
 
-	var testCaseDuration: Histogram = Histogram.build()
-		.name("innsendingloadtests_xtestcase_duration_seconds") // TODO remove x prefix, used during initial testing of metrics
+	val testCaseDuration: Gauge = Gauge.build()
+		.name("innsendingloadtests_ytestcase_duration_seconds") // TODO remove y prefix, used during initial testing of metrics
 		.help("Duration of test case in seconds.")
-		.exponentialBuckets(10.0, 2.0, 10)
 		.labelNames("testcase_id")
 		.register(registry)
 
