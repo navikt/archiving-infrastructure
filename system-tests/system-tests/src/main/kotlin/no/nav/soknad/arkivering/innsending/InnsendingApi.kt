@@ -7,6 +7,7 @@ import no.nav.soknad.arkivering.innsending.api.*
 import no.nav.soknad.arkivering.innsending.model.*
 import no.nav.soknad.arkivering.innsending.infrastructure.Serializer.jacksonObjectMapper
 import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
+import no.nav.soknad.arkivering.utils.retry
 import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
 
@@ -50,19 +51,19 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 				)
 			}
 		)
-		val soknad = ettersending.opprettEttersending(dto)
+		val soknad = retry(3) { ettersending.opprettEttersending(dto) }
 		logger.info("Opprettet ettersending: $soknad")
 		return SoknadTestdata(soknad, sendInnFil)
 	}
 
-	fun sendInn(soknad: SoknadTestdata) = runCatching {
+	fun sendInn(soknad: SoknadTestdata) {
 		logger.info("Sender inn søknad: ${soknad.innsendingsId}")
-		sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
+		retry(3) { sendInnSoknad.sendInnSoknad(soknad.innsendingsId) }
 	}
 
-	fun sendInn(innsendingsId: String) = runCatching {
+	fun sendInn(innsendingsId: String) {
 		logger.info("Sender inn søknad: ${innsendingsId}")
-		sendInnSoknad.sendInnSoknad(innsendingsId)
+		retry(3) { sendInnSoknad.sendInnSoknad(innsendingsId) }
 	}
 
 	fun getArkiveringsstatus(innsendingsId: String): ArkiveringsStatusDto {
