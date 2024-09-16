@@ -83,7 +83,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 				logger.debug("Venter ${soknadDelay / 1000.0} sekunder før søknad opprettes..")
 				delay(soknadDelay)
 			}
-			val soknad = retry(3) {
+			val soknad = retry(3, logThrowable = logThrowableAsWarning("Feil ved opprettelse av søknad: $soknadDef")) {
 				innsendingApi.opprettEttersending(
 					skjemanr = soknadDef.skjemanr,
 					tema = soknadDef.tema,
@@ -103,10 +103,10 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 							if (doDelay) {
 								delay(fileUploadDelay)
 							}
-							logger.debug("Laster opp fil nr. ${it + 1} for søknad ${soknad.innsendingsId} (etter delay på ${fileUploadDelay/1000.0} sekunder)")
+							logger.debug("${soknad.innsendingsId}: Laster opp fil nr. ${it + 1} for søknad (etter delay på ${fileUploadDelay/1000.0} sekunder)")
 							val start = System.currentTimeMillis()
-							retry(3) { vedleggsliste.lastOppFil(it, file) }
-							logger.info("Fullførte opplasting av fil nr. ${it + 1} for søknad ${soknad.innsendingsId} på ${(System.currentTimeMillis() - start)/1000.0} sekunder")
+							retry(3, logThrowable = logThrowableAsWarning("${soknad.innsendingsId}: Feil ved opplastning av fil")) { vedleggsliste.lastOppFil(it, file) }
+							logger.info("${soknad.innsendingsId}: Fullførte opplasting av fil nr. ${it + 1} for søknad på ${(System.currentTimeMillis() - start)/1000.0} sekunder")
 						}
 				}
 
@@ -125,14 +125,18 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 			.map { opprettEttersending(antallVedlegg, file) }
 	}
 
+	private fun logThrowableAsWarning(message: String): (Throwable) -> Unit {
+		return { t -> logger.warn("$message - ${t.message}", t) }
+	}
+
 	private suspend fun sendInnSoknad(innsendingsId: String) {
 		return withContext(Dispatchers.IO) {
-			retry(3) { innsendingApi.sendInn(innsendingsId) }
+			retry(3, logThrowable = logThrowableAsWarning("$innsendingsId: Feil ved innsending")) { innsendingApi.sendInn(innsendingsId) }
 		}
 	}
 
 	private fun sendInnSoknader(innsendingsIds: List<String>) = runBlocking {
-		innsendingsIds.map { async { sendInnSoknad(it) }}.awaitAll()
+		innsendingsIds.map { async { runCatching { sendInnSoknad(it) } }}.awaitAll()
 	}
 
 	@Suppress("FunctionName")
