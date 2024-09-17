@@ -46,13 +46,13 @@ class KjellmanLoadTests : SystemTestBase() {
 
 
 	@Test
-	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`() {
-		loadTests.`TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`()
+	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 38MB`() {
+		loadTests.`TC01 - Innsending av 10 soknader, hver med to vedlegg pa 38MB`()
 	}
 
 	@Test
-	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 1MB`() {
-		loadTests.`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 1MB`()
+	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`() {
+		loadTests.`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`()
 	}
 
 	@Test
