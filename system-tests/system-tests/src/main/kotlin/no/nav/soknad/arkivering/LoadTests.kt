@@ -27,8 +27,8 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	private val innsendingApi = InnsendingApi(config, useOAuth)
 
 	@Suppress("FunctionName")
-	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`() = runCatching {
-		val file = loadFile(fileOfSize2mb)
+	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 38MB`() = runCatching {
+		val file = loadFile(fileOfSize38mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(10, 2, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 10)
@@ -38,8 +38,8 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 	}
 
 	@Suppress("FunctionName")
-	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 1MB`() = runCatching {
-		val file = loadFile(fileOfSize1mb)
+	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`() = runCatching {
+		val file = loadFile(fileOfSize2mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(100, 3, file)
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = innsendingsIdListe, 15)
@@ -143,4 +143,3 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 private const val fileOfSize38mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534.png"
 private const val fileOfSize2mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.png"
 private const val fileOfSize1mb = "/Midvinterblot_(Carl_Larsson)_-_Nationalmuseum_-_32534_small.jpg"
-private const val fileOfSize1byte = "/1_byte_file"

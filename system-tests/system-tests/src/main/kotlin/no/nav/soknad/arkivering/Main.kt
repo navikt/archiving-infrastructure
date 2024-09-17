@@ -9,10 +9,9 @@ import kotlin.system.exitProcess
 private val logger = LoggerFactory.getLogger("no.nav.soknad.arkivering.Main")
 
 val testCases: Map<TestCase, KFunction1<LoadTests, Result<Unit>>> = mapOf(
-	TestCase.TC01 to LoadTests::`TC01 - Innsending av 10 soknader, hver med to vedlegg pa 2MB`,
-	TestCase.TC02 to LoadTests::`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 1MB`,
+	TestCase.TC01 to LoadTests::`TC01 - Innsending av 10 soknader, hver med to vedlegg pa 38MB`,
+	TestCase.TC02 to LoadTests::`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`,
 	TestCase.TC03 to LoadTests::`TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`,
-//	TestCase.TC04 to LoadTests::`TC04 - Innsending av 5 soknader, hver med fire vedlegg pa 38MB`,
 )
 
 fun main() {

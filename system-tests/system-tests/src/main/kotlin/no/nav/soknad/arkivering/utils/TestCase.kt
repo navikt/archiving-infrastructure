@@ -4,5 +4,4 @@ enum class TestCase() {
 	TC01,
 	TC02,
 	TC03,
-	TC04,
 }
