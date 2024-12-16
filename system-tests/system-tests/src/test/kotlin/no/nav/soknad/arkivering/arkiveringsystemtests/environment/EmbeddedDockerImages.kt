@@ -18,6 +18,7 @@ class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 
+	private lateinit var gotenbergContainer: KGenericContainer
 	private lateinit var postgresInnsendingContainer: KPostgreSQLContainer
 	private lateinit var kafkaContainer: KafkaContainer
 	private lateinit var schemaRegistryContainer: KGenericContainer
@@ -45,8 +46,13 @@ class EmbeddedDockerImages {
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
+		gotenbergContainer = KGenericContainer("gotenberg/gotenberg:8.0.0")
+			.withNetworkAliases("gotenberg")
+			.withExposedPorts(defaultPorts["gotenberg"])
+
 		postgresInnsendingContainer.start()
 		kafkaContainer.start()
+		gotenbergContainer.start()
 
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
@@ -130,9 +136,10 @@ class EmbeddedDockerImages {
 					"AZURE_APP_CLIENT_ID"			              to "aud-localhost",
 					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
+					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
 				)
 			)
-			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer)
+			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
 			.waitingFor(Wait.forHttp("/health/isAlive").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
 		innsendingApiContainer.start()
@@ -200,6 +207,7 @@ class EmbeddedDockerImages {
 
 		postgresInnsendingContainer.stop()
 		kafkaContainer.stop()
+		gotenbergContainer.stop()
 		schemaRegistryContainer.stop()
 	}
 
