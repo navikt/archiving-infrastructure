@@ -37,12 +37,13 @@ jobs:
     name: Deploy load-tests as a CronJob
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v3
       - name: Deploy cronjob
         uses: nais/deploy/actions/deploy@v1
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: system-tests/.nais/nais.yml
           VAR: image=${{needs.build-and-push.outputs.image}}
