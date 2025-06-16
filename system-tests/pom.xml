@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<kotlin.version>2.0.20</kotlin.version>
+		<kotlin.version>2.1.10</kotlin.version>
 		<maven.version>3.8.8</maven.version>
 		<maven-surefire-plugin.version>3.4.0</maven-surefire-plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,7 +25,7 @@
 		<springframework.version>6.1.12</springframework.version>
 		<!--Kotlin -->
 		<kotlin.compiler.jvmTarget>${java.version}</kotlin.compiler.jvmTarget>
-		<coroutines.version>1.8.1</coroutines.version>
+		<coroutines.version>1.10.2</coroutines.version>
 
 		<!-- Kafka -->
 		<kafka-streams-avro-serde.version>7.7.0</kafka-streams-avro-serde.version>

@@ -1,0 +1,49 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/system-tests"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      kotlin-dependencies:
+        patterns:
+          - "org.jetbrains.kotlin:*"
+        update-types:
+          - "major"
+      spring-boot-dependencies:
+        patterns:
+          - "org.springframework:*"
+        update-types:
+          - "major"
+      major-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      all-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      all-minor-patch:
+        update-types:
+          - "patch"
+          - "minor"
+      major-dependencies:
+        update-types:
+          - "major"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
