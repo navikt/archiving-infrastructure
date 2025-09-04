@@ -10,6 +10,11 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
+import java.io.IOException
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.Duration
 
 class EmbeddedDockerImages {
@@ -27,6 +32,8 @@ class EmbeddedDockerImages {
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
 
+	private lateinit var cloudStorageInnsendingContainer: KGenericContainer
+
 	private var soknadsarkivererLogs = ""
 
 
@@ -41,6 +48,21 @@ class EmbeddedDockerImages {
 			.withUsername(postgresUsername)
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
+/*
+
+		cloudStorageInnsendingContainer = KGenericContainer("fsouza/fake-gcs-server")
+			//.withNetworkAliases("cloudStorage")
+			.withNetwork(network)
+			.withCreateContainerCmdModifier {
+				it.withEntrypoint(
+					"/bin/fake-gcs-server",
+					"-scheme", "http",
+					//"-port", defaultPorts["cloudStorage"].toString(),
+					"-data", "/data"
+				)
+			}
+			.withExposedPorts(defaultPorts["cloudStorage"])
+*/
 
 		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.1"))
 			.withNetworkAliases("kafka-broker")
@@ -54,7 +76,13 @@ class EmbeddedDockerImages {
 		kafkaContainer.start()
 		gotenbergContainer.start()
 
+/*
+		cloudStorageInnsendingContainer.start()
+		updateExternalUrl(cloudStorageInnsendingContainer)
+*/
+
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
@@ -137,12 +165,20 @@ class EmbeddedDockerImages {
 					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
 					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
+					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-loadtests",
+					//"FILE_STORAGE_HOST"											to "http://${cloudStorageInnsendingContainer.networkAliases[0]}:${defaultPorts["cloudStorage"]}"
+					//"FILE_STORAGE_HOST"											to "http://localhost:${defaultPorts["cloudStorage"]}",
 				)
 			)
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
 			.waitingFor(Wait.forHttp("/health/isAlive").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
-		innsendingApiContainer.start()
+		try {
+			innsendingApiContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start innsending-api. Logs:\n${innsendingApiContainer.logs}")
+			throw e
+		}
 
 		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure-soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
@@ -209,6 +245,7 @@ class EmbeddedDockerImages {
 		kafkaContainer.stop()
 		gotenbergContainer.stop()
 		schemaRegistryContainer.stop()
+		//cloudStorageInnsendingContainer.stop()
 	}
 
 
@@ -228,6 +265,33 @@ class EmbeddedDockerImages {
 	fun getUrlForSoknadsmottaker()  = "http://localhost:" + soknadsmottakerContainer .firstMappedPort
 	fun getUrlForSchemaRegistry()   = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
 	fun getUrlForKafkaBroker()      = "localhost:"        + kafkaContainer           .firstMappedPort
+}
+
+
+private fun updateExternalUrl(cloudStorageInnsendingContainer: KGenericContainer) {
+	val url = "http://localhost:${cloudStorageInnsendingContainer.firstMappedPort}"
+	val modifyExternalUrlRequestUri = "$url/_internal/config"
+	val updateExternalUrlJson = """{"externalUrl": "$url"}"""
+
+	val req = HttpRequest.newBuilder()
+		.uri(URI.create(modifyExternalUrlRequestUri))
+		.header("Content-Type", "application/json")
+		.PUT(HttpRequest.BodyPublishers.ofString(updateExternalUrlJson))
+		.build()
+
+	val response = try {
+		HttpClient.newBuilder().build()
+			.send(req, HttpResponse.BodyHandlers.discarding())
+	} catch (e: IOException) {
+		throw RuntimeException("Failed to update fake-gcs-server external URL", e)
+	} catch (e: InterruptedException) {
+		Thread.currentThread().interrupt()
+		throw RuntimeException("Thread interrupted while updating fake-gcs-server external URL", e)
+	}
+
+	if (response.statusCode() != 200) {
+		throw RuntimeException("Error updating fake-gcs-server with external url, response status code ${response.statusCode()} != 200")
+	}
 }
 
 

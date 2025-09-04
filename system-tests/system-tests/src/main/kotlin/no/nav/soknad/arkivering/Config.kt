@@ -9,6 +9,7 @@ val defaultPorts = mapOf(
 	"schema-registry"  to 8081,
 	"database"         to 5432,
 	"gotenberg"        to 3000,
+	"cloudStorage"	   to 4443
 )
 
 val defaultProperties = mapOf(
@@ -23,6 +24,7 @@ val defaultProperties = mapOf(
 	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
+	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-loadtests",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
 	"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"  to "privat-soknadinnsending-arkiveringstilbakemeldinger-v1-dev",
@@ -87,6 +89,7 @@ data class Topics(
 	val brukernotifikasjonBeskjedTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"),
 	val brukernotifikasjonOppgaveTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"),
 	val brukernotifikasjonUtkastTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"),
+	val nologinSendInnTopic: String = getProperty("KAFKA_NOLOGIN_SUBMISSION_TOPIC"),
 )
 
 data class SchemaRegistry(
@@ -94,3 +97,4 @@ data class SchemaRegistry(
 	val username: String = getProperty("KAFKA_SCHEMA_REGISTRY_USER"),
 	val password: String = getProperty("KAFKA_SCHEMA_REGISTRY_PASSWORD"),
 )
+const val DEFAULT_LEVETID_OPPRETTET_SOKNAD = 28L // 4 uker inntil ikke innsendt søknad/ettersendingssøknad slettes
