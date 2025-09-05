@@ -27,6 +27,10 @@ runs:
   steps:
     - name: 'Checkout, compile and Docker Build'
       shell: bash
+      env:
+        GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
+
       run: |
         orig_path=$(pwd)
         if [ ! -d "${{ inputs.component_name }}" ]; then
@@ -41,7 +45,11 @@ runs:
           TEST_PARAM="-DskipTests"
         fi
 
-        mvn clean install $TEST_PARAM
+        if [ -z "${GITHUB_NAV_TOKEN}" ]; then
+          echo "ERROR: GITHUB_NAV_TOKEN is missing. Maven cannot authenticate." >&2
+        exit 1
+        fi     
+        mvn clean install --settings maven-settings.xml $TEST_PARAM
 
         if [[ ${{ inputs.run_docker_build }} = "true" ]]; then
           APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
