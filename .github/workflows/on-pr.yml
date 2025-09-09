@@ -38,7 +38,6 @@ jobs:
         with:
           component_name: innsending-api
           skip_tests: true
-          branch: feature/uinnlogget-send-inn
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
