@@ -59,7 +59,7 @@ class KjellmanLoadTests : SystemTestBase() {
 		loadTests.`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`()
 	}
 
-	@Disabled("Dropper denne testen for naa siden den ikke gir nok verdi")
+	@Disabled("Dropper denne testen da last testing blir gjort i test TC07")
 	@Test
 	fun `TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`() {
 		loadTests.`TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`()
@@ -78,6 +78,7 @@ class KjellmanLoadTests : SystemTestBase() {
 		loadTests.`TC05 - Opplasting av en fil deretter sletter den`()
 	}
 
+	@Disabled("Dropper denne testen da last testing blir gjort i test TC07")
 	@Test
 	fun `TC06 - Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB`() {
 		loadTests.`TC06 - Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB`()
