@@ -224,6 +224,10 @@
 
 	<repositories>
 		<repository>
+			<id>github</id>
+			<url>https://github-package-registry-mirror.gc.nav.no/cached/maven-release</url>
+		</repository>
+		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
