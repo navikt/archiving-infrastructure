@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
+import org.junit.jupiter.api.assertDoesNotThrow
+
 
 /**
  * Kjellman Load Tests
@@ -57,10 +59,33 @@ class KjellmanLoadTests : SystemTestBase() {
 		loadTests.`TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`()
 	}
 
-	@Disabled("Dropper denne testen for naa siden den ikke gir nok verdi")
+	@Disabled("Dropper denne testen da last testing blir gjort i test TC07")
 	@Test
 	fun `TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`() {
 		loadTests.`TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`()
 	}
 
+	@Test
+	fun `TC04 - Innsending av 10 soknader fra ikke innlogget bruker, hver med ett vedlegg pa 1MB`() {
+		assertDoesNotThrow {
+			loadTests.`TC04 - Innsending av 10 soknader fra ikke innlogget bruker, hver med ett vedlegg pa 1MB`()
+		}
+	}
+
+	@Disabled("Dropper denne testen da det ikke er en ende-til-ende test")
+	@Test
+	fun `TC05 - Opplasting av en fil deretter sletter den`() {
+		loadTests.`TC05 - Opplasting av en fil deretter sletter den`()
+	}
+
+	@Disabled("Dropper denne testen da last testing blir gjort i test TC07")
+	@Test
+	fun `TC06 - Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB`() {
+		loadTests.`TC06 - Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB`()
+	}
+
+	@Test
+	fun `TC07 - Innsending av 1000 soknader fra innlogget og ikke innlogget bruker`() {
+		loadTests.`TC07 - Innsending av 1000 soknader fra innlogget og ikke innlogget bruker`()
+	}
 }

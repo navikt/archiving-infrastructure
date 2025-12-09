@@ -10,6 +10,11 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
+import java.io.IOException
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.Duration
 
 class EmbeddedDockerImages {
@@ -26,6 +31,8 @@ class EmbeddedDockerImages {
 	private lateinit var innsendingApiContainer: KGenericContainer
 	private lateinit var soknadsmottakerContainer: KGenericContainer
 	private lateinit var soknadsarkivererContainer: KGenericContainer
+
+	private lateinit var cloudStorageInnsendingContainer: KGenericContainer
 
 	private var soknadsarkivererLogs = ""
 
@@ -55,6 +62,7 @@ class EmbeddedDockerImages {
 		gotenbergContainer.start()
 
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
@@ -137,12 +145,18 @@ class EmbeddedDockerImages {
 					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
 					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
+					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-loadtests",
 				)
 			)
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
 			.waitingFor(Wait.forHttp("/health/isAlive").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
-		innsendingApiContainer.start()
+		try {
+			innsendingApiContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start innsending-api. Logs:\n${innsendingApiContainer.logs}")
+			throw e
+		}
 
 		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure-soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")

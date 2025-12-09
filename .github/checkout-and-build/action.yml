@@ -27,6 +27,7 @@ runs:
   steps:
     - name: 'Checkout, compile and Docker Build'
       shell: bash
+
       run: |
         orig_path=$(pwd)
         if [ ! -d "${{ inputs.component_name }}" ]; then

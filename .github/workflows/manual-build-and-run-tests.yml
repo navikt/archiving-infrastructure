@@ -50,6 +50,7 @@ jobs:
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
+
       - name: 'Build and run the end-to-end-tests'
         run: mvn install --file system-tests/pom.xml
 

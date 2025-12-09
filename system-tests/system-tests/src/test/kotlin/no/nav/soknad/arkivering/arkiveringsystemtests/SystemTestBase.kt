@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
 abstract class SystemTestBase {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	val attemptsThanSoknadsarkivererWillPerform = 6
+	val attemptsThanSoknadsarkivererWillPerform = 7
 
 	val targetEnvironment: String? = System.getProperty("targetEnvironment")
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false

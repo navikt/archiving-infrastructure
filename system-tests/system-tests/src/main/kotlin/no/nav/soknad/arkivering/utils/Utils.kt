@@ -1,13 +1,16 @@
 package no.nav.soknad.arkivering.utils
 
+import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.avroschemas.Soknadstyper
 import no.nav.soknad.arkivering.dto.FileResponses
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
+import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.createTempFile
 
 fun loopAndVerify(
 	expectedCount: Int,
@@ -122,3 +125,15 @@ fun createVarianter(fileId: String) = Varianter(
 	"innsending.pdf",
 	"PDFA"
 )
+
+
+fun loadFile(fileName: String): File {
+	val resource = LoadTests::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
+	val file = createTempFile().toFile()
+	resource.use { input ->
+		file.outputStream().use { output ->
+			input.copyTo(output)
+		}
+	}
+	return file
+}
