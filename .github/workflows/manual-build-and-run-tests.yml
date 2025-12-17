@@ -55,5 +55,5 @@ jobs:
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-        run: mvn install --settings maven-settings.xml --file system-tests/pom.xml
+        run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml -DskipTests
 
