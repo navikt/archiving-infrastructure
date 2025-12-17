@@ -17,7 +17,7 @@ class DefaultOAuth2HttpClient(private val client: OkHttpClient) : OAuth2HttpClie
 		oAuth2HttpRequest.formParameters.forEach { (k, v) -> bodyBuilder.add(k, v) }
 
 		val requestBuilder = Request.Builder().url(oAuth2HttpRequest.tokenEndpointUrl.toURL())
-		oAuth2HttpRequest.oAuth2HttpHeaders.headers()
+		oAuth2HttpRequest.oAuth2HttpHeaders.headers
 			.forEach { (k, v) -> requestBuilder.header(k, v.joinToString(separator = ",")) }
 
 		val request = requestBuilder.post(bodyBuilder.build()).build()

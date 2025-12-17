@@ -290,7 +290,11 @@ class EndToEndTests : SystemTestBase() {
 
 		val nologinSoknad = prepareNoLoginSoknad(mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb))))
 
-		val soknadTestResponse = innsendingApi.lagreOgSendInnNoLoginSoknad(nologinSoknad)
+		val soknadTestResponse = try {
+			innsendingApi.lagreOgSendInnNoLoginSoknad(nologinSoknad)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertTrue(soknadTestResponse.isSuccess)
 

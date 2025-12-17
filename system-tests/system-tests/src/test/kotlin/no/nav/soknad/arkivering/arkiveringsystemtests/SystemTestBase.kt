@@ -6,6 +6,7 @@ import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.KafkaConfig
 import no.nav.soknad.arkivering.SchemaRegistry
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
+import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
