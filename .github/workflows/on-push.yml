@@ -19,7 +19,10 @@ jobs:
           cache: 'maven'
 
       - name: Build with maven
-        run: mvn install --file system-tests/pom.xml -DskipTests
+        env:
+          GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
+        run: mvn install --settings maven-settings.xml --file system-tests/pom.xml -DskipTests
   
       - name: Build and push Docker image
         uses: nais/docker-build-push@v0
