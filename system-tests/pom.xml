@@ -36,7 +36,9 @@
 		<logstash.version>7.4</logstash.version>
 
 		<!-- Test -->
-		<testcontainers.version>2.0.2</testcontainers.version>
+		<testcontainers.version>2.0.3</testcontainers.version>
+		<testcontainers-postgresql.version>1.21.4</testcontainers-postgresql.version>
+		<testcontainers-kafka.version>1.21.4</testcontainers-kafka.version>
 		<mockk.version>1.14.5</mockk.version>
 		<springmockk.version>4.0.2</springmockk.version>
 		<wiremock.version>3.0.1</wiremock.version>

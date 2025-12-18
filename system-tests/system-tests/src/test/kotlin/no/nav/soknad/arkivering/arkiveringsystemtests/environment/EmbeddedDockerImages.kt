@@ -6,7 +6,7 @@ import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.kafka.ConfluentKafkaContainer
-import org.testcontainers.postgresql.PostgreSQLContainer
+import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
@@ -19,7 +19,7 @@ class EmbeddedDockerImages {
 	private val databaseName = "postgres"
 
 	private lateinit var gotenbergContainer: GenericContainer<*>
-	private lateinit var postgresInnsendingContainer: PostgreSQLContainer
+	private lateinit var postgresInnsendingContainer: PostgreSQLContainer<*>
 	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
 	private lateinit var schemaRegistryContainer: GenericContainer<*>
 	private lateinit var arkivMockContainer: GenericContainer<*>
