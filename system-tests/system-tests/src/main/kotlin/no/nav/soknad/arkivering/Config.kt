@@ -5,7 +5,7 @@ val defaultPorts = mapOf(
 	"soknadsmottaker"  to 8090,
 	"soknadsarkiverer" to 8091,
 	"arkiv-mock"       to 8092,
-	"kafka-broker"     to 9092,
+	"kafka-broker"     to 9093,
 	"schema-registry"  to 8081,
 	"database"         to 5432,
 	"gotenberg"        to 3000,

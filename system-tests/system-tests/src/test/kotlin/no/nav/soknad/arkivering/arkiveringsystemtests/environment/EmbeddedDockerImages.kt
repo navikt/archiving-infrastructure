@@ -5,16 +5,11 @@ import no.nav.soknad.arkivering.defaultProperties
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.KafkaContainer
-import org.testcontainers.containers.Network
+import org.testcontainers.kafka.ConfluentKafkaContainer
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
-import java.io.IOException
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.time.Duration
 
 class EmbeddedDockerImages {
@@ -23,43 +18,39 @@ class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 
-	private lateinit var gotenbergContainer: KGenericContainer
-	private lateinit var postgresInnsendingContainer: KPostgreSQLContainer
-	private lateinit var kafkaContainer: KafkaContainer
-	private lateinit var schemaRegistryContainer: KGenericContainer
-	private lateinit var arkivMockContainer: KGenericContainer
-	private lateinit var innsendingApiContainer: KGenericContainer
-	private lateinit var soknadsmottakerContainer: KGenericContainer
-	private lateinit var soknadsarkivererContainer: KGenericContainer
-
-	private lateinit var cloudStorageInnsendingContainer: KGenericContainer
-
-	private var soknadsarkivererLogs = ""
-
+	private lateinit var gotenbergContainer: GenericContainer<*>
+	private lateinit var postgresInnsendingContainer: PostgreSQLContainer<*>
+	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
+	private lateinit var schemaRegistryContainer: GenericContainer<*>
+	private lateinit var arkivMockContainer: GenericContainer<*>
+	private lateinit var innsendingApiContainer: GenericContainer<*>
+	private lateinit var soknadsmottakerContainer: GenericContainer<*>
+	private lateinit var soknadsarkivererContainer: GenericContainer<*>
 
 	@Suppress("HttpUrlsUsage")
 	fun startContainers() {
 		val network = Network.newNetwork()
 
-		postgresInnsendingContainer = KPostgreSQLContainer()
+		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.6"))
 			.withNetworkAliases("postgres-innsending")
-			.withExposedPorts(defaultPorts["database"])
+			.withExposedPorts(defaultPorts["database"]!!)
 			.withNetwork(network)
 			.withUsername(postgresUsername)
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
+		postgresInnsendingContainer.start()
 
-		kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.1"))
+		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
+			.withNetworkAliases("gotenberg")
+			.withExposedPorts(defaultPorts["gotenberg"]!!)
+			.withNetwork(network)
+		gotenbergContainer.start()
+
+		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
-		gotenbergContainer = KGenericContainer("gotenberg/gotenberg:8.0.0")
-			.withNetworkAliases("gotenberg")
-			.withExposedPorts(defaultPorts["gotenberg"])
-
-		postgresInnsendingContainer.start()
 		kafkaContainer.start()
-		gotenbergContainer.start()
 
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
@@ -72,8 +63,7 @@ class EmbeddedDockerImages {
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
 
-
-		schemaRegistryContainer = KGenericContainer("confluentinc/cp-schema-registry")
+		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:latest")
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])
 			.withNetwork(network)
@@ -89,7 +79,7 @@ class EmbeddedDockerImages {
 
 		schemaRegistryContainer.start()
 
-		arkivMockContainer = KGenericContainer("archiving-infrastructure-arkiv-mock")
+		arkivMockContainer = GenericContainer("archiving-infrastructure-arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
 			.withExposedPorts(defaultPorts["arkiv-mock"])
 			.withNetwork(network)
@@ -105,7 +95,7 @@ class EmbeddedDockerImages {
 
 		arkivMockContainer.start()
 
-		soknadsmottakerContainer = KGenericContainer("archiving-infrastructure-soknadsmottaker")
+		soknadsmottakerContainer = GenericContainer("archiving-infrastructure-soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
 			.withExposedPorts(defaultPorts["soknadsmottaker"])
 			.withNetwork(network)
@@ -123,7 +113,7 @@ class EmbeddedDockerImages {
 
 		soknadsmottakerContainer.start()
 
-		innsendingApiContainer = KGenericContainer("archiving-infrastructure-innsending-api")
+		innsendingApiContainer = GenericContainer("archiving-infrastructure-innsending-api")
 			.withNetworkAliases("innsending-api")
 			.withExposedPorts(defaultPorts["innsending-api"])
 			.withNetwork(network)
@@ -158,7 +148,7 @@ class EmbeddedDockerImages {
 			throw e
 		}
 
-		soknadsarkivererContainer = KGenericContainer("archiving-infrastructure-soknadsarkiverer")
+		soknadsarkivererContainer = GenericContainer("archiving-infrastructure-soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
 			.withExposedPorts(defaultPorts["soknadsarkiverer"])
 			.withNetwork(network)
@@ -185,6 +175,8 @@ class EmbeddedDockerImages {
 
 		soknadsarkivererContainer.start()
 
+		logger.info("Containers started")
+
 	}
 
 	private fun createTopic(topic: String) {
@@ -204,37 +196,22 @@ class EmbeddedDockerImages {
 		}
 	}
 
+
 	fun stopContainers() {
-		fun createHeader(name: String): String {
-			val box = "=".repeat(9 + name.length)
-			return "\n\n$box\n= Logs $name =\n$box\n"
-		}
-		logger.info(createHeader("soknadsmottaker") + soknadsmottakerContainer.logs)
-		logger.info(createHeader("soknadsarkiverer") + soknadsarkivererContainer.logs)
-		logger.info(createHeader("arkiv-mock") + arkivMockContainer.logs)
-		logger.info(createHeader("innsending-api") + innsendingApiContainer.logs)
-
-		innsendingApiContainer.stop()
-		soknadsmottakerContainer.stop()
-		soknadsarkivererContainer.stop()
-		arkivMockContainer.stop()
-
-		postgresInnsendingContainer.stop()
-		kafkaContainer.stop()
-		gotenbergContainer.stop()
-		schemaRegistryContainer.stop()
+		// collect logs for debugging
+		try { logger.info("soknadsmottaker logs:\n${soknadsmottakerContainer.logs}") } catch (_: Exception) {}
+		try { logger.info("soknadsarkiverer logs:\n${soknadsarkivererContainer.logs}") } catch (_: Exception) {}
+		try { logger.info("arkiv-mock logs:\n${arkivMockContainer.logs}") } catch (_: Exception) {}
+		try { logger.info("innsending-api logs:\n${innsendingApiContainer.logs}") } catch (_: Exception) {}
+		try { innsendingApiContainer.stop() } catch (_: Exception) {}
+		try { soknadsmottakerContainer.stop() } catch (_: Exception) {}
+		try { soknadsarkivererContainer.stop() } catch (_: Exception) {}
+		try { arkivMockContainer.stop() } catch (_: Exception) {}
+		try { kafkaContainer.stop() } catch (_: Exception) {}
+		try { schemaRegistryContainer.stop() } catch (_: Exception) {}
+		try { gotenbergContainer.stop() } catch (_: Exception) {}
+		try { postgresInnsendingContainer.stop() } catch (_: Exception) {}
 	}
-
-
-	fun shutDownSoknadsarkiverer() {
-		soknadsarkivererLogs += soknadsarkivererContainer.logs + "\n"
-		soknadsarkivererContainer.stop()
-	}
-
-	fun startUpSoknadsarkiverer() {
-		soknadsarkivererContainer.start()
-	}
-
 
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
 	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
@@ -245,6 +222,3 @@ class EmbeddedDockerImages {
 }
 
 
-class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
-
-class KPostgreSQLContainer : PostgreSQLContainer<KPostgreSQLContainer>(DockerImageName.parse("postgres"))
