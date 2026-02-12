@@ -109,7 +109,7 @@ class EmbeddedDockerImages {
 				)
 			)
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
-			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
+			.waitingFor(Wait.forHttp("/health/status").forStatusCode(200))
 
 		soknadsmottakerContainer.start()
 
@@ -139,7 +139,7 @@ class EmbeddedDockerImages {
 				)
 			)
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
-			.waitingFor(Wait.forHttp("/health/isAlive").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
+			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
 		try {
 			innsendingApiContainer.start()
