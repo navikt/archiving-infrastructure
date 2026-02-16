@@ -53,6 +53,14 @@ class EndToEndTests : SystemTestBase() {
 			embeddedDockerImages.stopContainers()
 		}
 	}
+	@Test
+	fun `jackson test`() {
+		val jsonResponse = "{\"status\":\"UP\", \"ping\":{\"status\":\"UP\"}, \"ssl\":{\"status\":\"UP\",\"details\":{\"validChains\":[]}}}"
+
+		val health = objectMapper.readValue(jsonResponse, Health::class.java)
+		assertTrue(health.status == "UP")
+
+	}
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {

@@ -8,6 +8,7 @@ private val defaultProperties = mapOf(
 	"arkiv-mock.url"           to "http://localhost:${defaultPorts["arkiv-mock"]}",
 	"schema-registry.url"      to "http://localhost:${defaultPorts["schema-registry"]}",
 	"kafka-broker.url"         to "localhost:${defaultPorts["kafka-broker"]}",
+	"innsendingapi.url"		     to "http://localhost:${defaultPorts["innsending-api"]}",
 )
 
 enum class Profile {

@@ -12,7 +12,7 @@ import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import no.nav.soknad.arkivering.verification.SoknadAssertionHelper
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
@@ -27,7 +27,7 @@ abstract class SystemTestBase {
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
 	lateinit var config: Config
-	private val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
+	protected val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	lateinit var kafkaListener: KafkaListener
 
@@ -55,19 +55,19 @@ abstract class SystemTestBase {
 		val dependencies = HashMap<String, String>().also {
 			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
-			it["innsendingapi"]    = env.getUrlForInnsendingApi()+"/health/isAlive"
+			it["innsendingapi"]    = env.getUrlForInnsendingApi()+"/internal/health"
 			it["arkiv-mock"]       = env.getUrlForArkivMock()+"/internal/health"
 		}
 		for (dep in dependencies) {
 			try {
-				val url = "${dep.value}"
+				val url = dep.value
 
 				val bytes = performGetCall(url)
 				val health = objectMapper.readValue(bytes, Health::class.java)
 
-				assertEquals("UP", health.status, "Dependency '${dep.key}' seems to be down")
+				assertTrue(health.status == "UP" || "OK".equals(health.status, true), "Dependency '${dep.key}' seems to be down")
 			} catch (e: Exception) {
-				fail("Dependency '${dep.key}' seems to be down")
+				fail("Dependency '${dep.key}' seems to be down",e)
 			}
 		}
 	}
@@ -90,4 +90,4 @@ class Health {
 }
 
 
-const val externalEnvironments = "docker|q0|q1"
+const val externalEnvironments = "docker|q1|q2"

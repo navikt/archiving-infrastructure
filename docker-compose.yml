@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 services:
 
   kafka-broker:
@@ -35,13 +35,13 @@ services:
       - kafka-broker
 
   postgres-innsending:
-    image: postgres
+    image: postgres:15
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     ports:
-      - "5433:5432"
+      - "5432:5432"
 
   soknadsmottaker:
     build: ../soknadsmottaker
@@ -78,7 +78,7 @@ services:
       - soknadsmottaker
     environment:
       - SPRING_PROFILES_ACTIVE=endtoend
-      - DATABASE_PORT=5433
+      - DATABASE_PORT=5432
       - DATABASE_HOST=postgres-innsending
       - DATABASE_DATABASE=postgres
       - DATABASE_USERNAME=postgres
@@ -92,6 +92,7 @@ services:
       - AZURE_APP_CLIENT_ID=testclient
       - AZURE_APP_CLIENT_SECRET=testsecret
       - AZURE_OPENID_CONFIG_TOKEN_ENDPOINT=http://localhost:8181/oauth2/v2.0/token
+      - KONVERTERING_TIL_PDF_URL=http://upload-convert-to-pdf.fyllut-sendinn
 
   soknadsarkiverer:
     build: ../soknadsarkiverer
