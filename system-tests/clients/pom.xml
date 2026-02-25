@@ -31,6 +31,14 @@
 		</dependency>
 
 		<dependency>
+			<groupId>no.nav.soknad.innsending</groupId>
+			<artifactId>innsending-api</artifactId>
+			<version>c21da5c-prod</version>
+			<classifier>openapi-spec</classifier>
+			<type>zip</type>
+		</dependency>
+
+		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
 			<version>${okhttp3.version}</version>
@@ -47,6 +55,28 @@
 		<finalName>${project.artifactId}</finalName>
 		<sourceDirectory>target/generated-sources/openapi</sourceDirectory>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>unpack-openapi-spec</id>
+						<phase>generate-sources</phase>
+						<goals><goal>unpack</goal></goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>no.nav.soknad.innsending</groupId>
+									<artifactId>innsending-api</artifactId>
+									<classifier>openapi-spec</classifier>
+									<type>zip</type>
+									<outputDirectory>${project.build.directory}/innsending-api-spec</outputDirectory>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 
 			<plugin>
 				<groupId>org.openapitools</groupId>
@@ -80,7 +110,7 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<inputSpec>${project.basedir}/src/main/resources/innsending-api/innsending-api.yml</inputSpec>
+							<inputSpec>${project.build.directory}/innsending-api-spec/innsending-api.yml</inputSpec>
 							<output>target/generated-sources/openapi</output>
 							<generatorName>kotlin</generatorName>
 							<apiPackage>no.nav.soknad.arkivering.innsending.api</apiPackage>
