@@ -24,6 +24,7 @@ val defaultProperties = mapOf(
 	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
+	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-loadtests",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-loadtests",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
@@ -89,6 +90,7 @@ data class Topics(
 	val brukernotifikasjonBeskjedTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"),
 	val brukernotifikasjonOppgaveTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"),
 	val brukernotifikasjonUtkastTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"),
+	val loggedinSendInnTopic: String = getProperty("KAFKA_LOGGEDIN_SUBMISSION_TOPIC"),
 	val nologinSendInnTopic: String = getProperty("KAFKA_NOLOGIN_SUBMISSION_TOPIC"),
 )
 
