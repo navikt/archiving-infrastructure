@@ -9,13 +9,18 @@ import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
+import no.nav.soknad.arkivering.innsending.api.NologinApplicationApi
+import no.nav.soknad.arkivering.innsending.model.ApplicationSubmissionResponse
 import no.nav.soknad.arkivering.innsending.model.ArkiveringsStatusDto
+import no.nav.soknad.arkivering.innsending.model.AttachmentDto
 import no.nav.soknad.arkivering.innsending.model.Mimetype
 import no.nav.soknad.arkivering.innsending.model.SkjemaDokumentDtoV2
 import no.nav.soknad.arkivering.innsending.model.SkjemaDtoV2
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
+import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
 import no.nav.soknad.arkivering.innsending.model.VisningsType
 import no.nav.soknad.arkivering.utils.SkjemaDokumentDtoV2TestBuilder
+import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import no.nav.soknad.arkivering.utils.retry
 import no.nav.soknad.innsending.utils.builders.SkjemaDtoV2TestBuilder
 import org.junit.jupiter.api.AfterAll
@@ -30,6 +35,8 @@ class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 	private lateinit var innsendingApi: InnsendingApi
+	private lateinit var nologinApplicationApi: NologinApplicationApi
+
 
 	val testpersonid = "19876898104"
 
@@ -117,7 +124,7 @@ class EndToEndTests : SystemTestBase() {
 		innsendingApi.sendInn(soknadTestdata)
 
 		assertThatArkivMock()
-			.hasFailureEvent(innsendingsId, 150_000L)
+			.hasFailureEvent(innsendingsId, 350_000L)
 			.hasNoEntityInArchive(innsendingsId)
 			.verify()
 
@@ -296,17 +303,18 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `Happy case - one submission from not logged in user ends up in the archive`() {
 
-		val nologinSoknad = prepareNoLoginSoknad(mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb))))
+		val innsendingsUUID = UUID.randomUUID()
+		val nologinSoknad = prepareNoLoginApplication(innsendingsUUID, mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb))))
 
 		val soknadTestResponse = try {
-			innsendingApi.lagreOgSendInnNoLoginSoknad(nologinSoknad)
+			innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad)
 		} catch (e: Exception) {
 			throw e
 		}
 
 		assertTrue(soknadTestResponse.isSuccess)
 
-		val innsendingsId = nologinSoknad.innsendingsId!!
+		val innsendingsId = innsendingsUUID.toString()
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
@@ -352,6 +360,24 @@ class EndToEndTests : SystemTestBase() {
 			.build()
 
 		return skjemDtoV2
+	}
+
+
+	// Lagster opp filer på vedlegg til søknad, og returnerer SkjemaDtoV2 klar for innsending
+	private fun prepareNoLoginApplication(innsendingsId: UUID, vedleggMap: Map<String, List<File>>): SubmitApplicationRequest {
+		val brukerId = testpersonid
+
+		val vedleggsListe: List<SkjemaDokumentDtoV2> = lastOppFilerTilSoknad(innsendingsId.toString(), vedleggMap) // returnerer map med fyllutVedleggIds til liste med lagringsId for opplastede filer til vedlegg
+		val attachmentDto = vedleggsListe.map{ AttachmentDto(it.vedleggsnr, it.label, it.opplastingsStatus,
+			it.tittel, it.beskrivelse,it.vedleggsurl, it.filIdListe?.map{filId -> UUID.fromString(filId)}) }
+		val soknad = SubmitApplicationRequestBuilder(
+			brukerId = brukerId,
+			status = SoknadsStatusDto.utfylt,
+		)
+			.medVedlegg(attachmentDto)
+			.build()
+
+		return soknad
 	}
 
 

@@ -32,6 +32,7 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 
 	private val nologinFillager = if (authClient != null) NologinApi(config.innsendingApiUrl, authClient) else NologinApi(config.innsendingApiUrl)
 	private val nologinSoknad = if (authClient != null) NologinSoknadApi(config.innsendingApiUrl, authClient) else NologinSoknadApi(config.innsendingApiUrl)
+	private val nologinApplicationApi = if (authClient != null) NologinApplicationApi(config.innsendingApiUrl, authClient) else NologinApplicationApi(config.innsendingApiUrl)
 
 
 	init {
@@ -80,6 +81,12 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		logger.info("Lagrer og sender inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
 		nologinSoknad.opprettNologinSoknad(nologinSoknadDto)
 		logger.info("Lagret og sendt inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
+	}
+
+	fun sendInNoLoginApplication(innsendingsID: UUID, submitApplicationRequest: SubmitApplicationRequest) = runCatching {
+		logger.info("Submits not logged in Application ${innsendingsID}")
+		nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
+		logger.info("Submitted and sent in not logged in Application ${innsendingsID}")
 	}
 
 	fun lastOppNoLoginFil(innsendingId: String, vedleggsId: String, fil: File) = runCatching {
