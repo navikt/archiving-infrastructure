@@ -44,12 +44,12 @@ jobs:
           cache: 'maven'
 
       - name: 'Build the code for soknadsmottaker'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ soknadsmottaker-branch }}
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.soknadsmottaker-branch }}
         with:
           component_name: soknadsmottaker
 
       - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ soknadsarkiverer-branch }}
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.soknadsarkiverer-branch }}
         with:
           component_name: soknadsarkiverer
 
@@ -59,7 +59,7 @@ jobs:
           component_name: arkiv-mock
 
       - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ innsending-api-branch }}
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.innsending-api-branch }}
         with:
           component_name: innsending-api
         env:
