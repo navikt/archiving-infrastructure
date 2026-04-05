@@ -11,6 +11,21 @@ on:
         options:
           - none
           - preprod
+      innsending-api-branch:
+        description: 'Innsending-api branch'
+        required: true
+        default: 'main'
+        type: string
+      soknadsmottaker-branch:
+        description: 'Soknadsmottaker branch'
+        required: true
+        default: 'main'
+        type: string
+      soknadsarkiverer-branch:
+        description: 'Soknadsarkiverer branch'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
   build-and-push:
@@ -29,12 +44,12 @@ jobs:
           cache: 'maven'
 
       - name: 'Build the code for soknadsmottaker'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ soknadsmottaker-branch }}
         with:
           component_name: soknadsmottaker
 
       - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ soknadsarkiverer-branch }}
         with:
           component_name: soknadsarkiverer
 
@@ -44,7 +59,7 @@ jobs:
           component_name: arkiv-mock
 
       - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ innsending-api-branch }}
         with:
           component_name: innsending-api
         env:
