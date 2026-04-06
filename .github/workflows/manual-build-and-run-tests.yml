@@ -76,6 +76,15 @@ jobs:
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
+      - name: Upload build metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.component }}-build
+          path: |
+            **/target/*.jar
+          if-no-files-found: ignore
+
   e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
@@ -96,6 +105,12 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
 
       - name: Run end-to-end tests
         env:
