@@ -1,5 +1,6 @@
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,19 +9,20 @@ on:
         required: true
         default: 'preprod'
         type: choice
-        options:
-          - none
-          - preprod
+        options: [none, preprod]
+
       innsending:
         description: 'Innsending-api branch'
         required: true
         default: 'main'
         type: string
+
       soknadsmottaker:
         description: 'Soknadsmottaker branch'
         required: true
         default: 'main'
         type: string
+
       soknadsarkiverer:
         description: 'Soknadsarkiverer branch'
         required: true
@@ -28,47 +30,78 @@ on:
         type: string
 
 jobs:
-  build-and-push:
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-      packages: 'read'
+
+  build-components:
+    name: Build ${{ matrix.component }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - component: soknadsmottaker
+            ref: ${{ inputs.soknadsmottaker }}
+
+          - component: soknadsarkiverer
+            ref: ${{ inputs.soknadsarkiverer }}
+
+          - component: innsending-api
+            ref: ${{ inputs.innsending }}
+
+          - component: arkiv-mock
+            ref: main
+
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+
     steps:
-      - uses: actions/checkout@v5
-      - name: Set up JDK
+      - name: Checkout this repo
+        uses: actions/checkout@v5
+
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '21'
-          cache: 'maven'
+          cache: maven
 
-      - name: 'Build the code for soknadsmottaker'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.soknadsmottaker }}
-        with:
-          component_name: soknadsmottaker
-
-      - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.soknadsarkiverer }}
-        with:
-          component_name: soknadsarkiverer
-
-      - name: 'Build the code for arkiv-mock'
+      - name: Build component
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
-          component_name: arkiv-mock
+          component_name: ${{ matrix.component }}
+          ref: ${{ matrix.ref }}
+        env:
+          GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
-      - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@${{ inputs.innsending }}
+  e2e-tests:
+    name: Run E2E tests
+    runs-on: ubuntu-latest
+    needs: build-components
+
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
-          component_name: innsending-api
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run end-to-end tests
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-
-
-      - name: 'Build and run the end-to-end-tests'
-        env:
-          GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-        run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mvn install \
+            --settings system-tests/maven-settings.xml \
+            --file system-tests/pom.xml
