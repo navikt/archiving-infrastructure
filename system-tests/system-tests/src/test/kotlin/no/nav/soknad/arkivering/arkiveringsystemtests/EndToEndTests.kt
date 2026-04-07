@@ -35,8 +35,6 @@ class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 	private lateinit var innsendingApi: InnsendingApi
-	private lateinit var nologinApplicationApi: NologinApplicationApi
-
 
 	val testpersonid = "19876898104"
 
