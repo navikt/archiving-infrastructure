@@ -56,7 +56,7 @@ jobs:
             ref: ${{ inputs.innsending }}
 
           - component: arkiv-mock
-            ref: ${{ inputs.innsending }}
+            ref: ${{ inputs.arkivmock }}
 
     permissions:
       contents: read
