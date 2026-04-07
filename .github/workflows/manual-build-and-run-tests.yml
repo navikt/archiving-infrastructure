@@ -29,6 +29,12 @@ on:
         default: 'main'
         type: string
 
+      arkivmock:
+        description: 'Arkivmock branch'
+        required: true
+        default: 'main'
+        type: string
+
 jobs:
 
   build-components:
@@ -50,7 +56,7 @@ jobs:
             ref: ${{ inputs.innsending }}
 
           - component: arkiv-mock
-            ref: main
+            ref: ${{ inputs.innsending }}
 
     permissions:
       contents: read
@@ -72,18 +78,9 @@ jobs:
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: ${{ matrix.component }}
-          ref: ${{ matrix.ref }}
+          branch: ${{ matrix.ref }}
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-
-      - name: Upload build metadata
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.component }}-build
-          path: |
-            **/target/*.jar
-          if-no-files-found: ignore
 
   e2e-tests:
     name: Run E2E tests
