@@ -1,16 +1,24 @@
 package no.nav.soknad.arkivering
 
+val kafkaBrokerPort: Int = System.getenv("KAFKA_BROKER_PORT")?.toInt()
+	?: run {
+		val targetEnv = System.getProperty("targetEnvironment") ?: System.getenv("TARGET_ENVIRONMENT") ?: ""
+		if (targetEnv == "docker") 9092 else 9093
+	}
+
 val defaultPorts = mapOf(
 	"innsending-api"   to 9064,
 	"soknadsmottaker"  to 8090,
 	"soknadsarkiverer" to 8091,
 	"arkiv-mock"       to 8092,
-	"kafka-broker"     to 9093,
+	"kafka-broker"     to kafkaBrokerPort,
 	"schema-registry"  to 8081,
 	"database"         to 5432,
 	"gotenberg"        to 3000,
 	"cloudStorage"	   to 4443
 )
+
+val testContainerBrokerPort = kafkaBrokerPort
 
 val defaultProperties = mapOf(
 	"KAFKA_STREAMS_APPLICATION_ID"   to "innsending-system-tests",
@@ -54,7 +62,7 @@ data class Config(
 
 data class KafkaConfig(
 	val applicationId: String = getProperty("KAFKA_STREAMS_APPLICATION_ID"),
-	val brokers: String = getProperty("KAFKA_BROKERS"),
+	val brokers: String = getProperty("KAFKA_BROKERS", "localhost:9092"),
 	val security: SecurityConfig = SecurityConfig(),
 	val topics: Topics = Topics(),
 	val schemaRegistry: SchemaRegistry = SchemaRegistry(),
