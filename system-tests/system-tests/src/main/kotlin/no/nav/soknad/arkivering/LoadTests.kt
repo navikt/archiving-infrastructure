@@ -86,7 +86,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		}
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = soknadListe.map{it.innsendingsId!!}, 30)
 
-		sendInnSoknader_NoLogin(soknadListe)
+		sendinnsoknaderNologin(soknadListe)
 
 		verifier.verify()
 	}
@@ -118,7 +118,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 		val verifier = setupVerificationThatFinishedEventsAreCreated(expectedKeys = soknadListe.map{it.innsendingsId!!}, 30)
 
-		sendInnSoknader_NoLogin(soknadListe)
+		sendinnsoknaderNologin(soknadListe)
 
 		verifier.verify()
 	}
@@ -143,7 +143,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 		var index = 0
 		repeat(antallSoknader) {
 			sendInnSoknader(listOf(innsendingsIdListe.get(index)))
-			sendInnSoknader_NoLogin(listOf(soknadListe.get(index)))
+			sendinnsoknaderNologin(listOf(soknadListe.get(index)))
 			index++
 		}
 
@@ -237,10 +237,12 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 			.onFailure { throw it }
 
 	private fun sendInnSoknader(innsendingsIds: List<String>) = runBlocking {
+		logger.info("Load test: Sender inn innsendingsIds=${innsendingsIds.joinToString { it }}")
 		innsendingsIds.map { async { runCatching { sendInnSoknad(it) } }}.awaitAll()
 	}
 
-	private fun sendInnSoknader_NoLogin(nologinSoknader: List<SkjemaDtoV2>) = runBlocking {
+	private fun sendinnsoknaderNologin(nologinSoknader: List<SkjemaDtoV2>) = runBlocking {
+		logger.info("Load test: Sender inn innsendingsIds=${nologinSoknader.filter {it.innsendingsId != null}.map{it.innsendingsId}.toList().joinToString { it ?: "" }}")
 		nologinSoknader.map{ async { runCatching { sendInnSoknad(it) } }}.awaitAll()
 	}
 

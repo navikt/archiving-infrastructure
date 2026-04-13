@@ -3,7 +3,7 @@ package no.nav.soknad.arkivering
 val kafkaBrokerPort: Int = System.getenv("KAFKA_BROKER_PORT")?.toInt()
 	?: run {
 		val targetEnv = System.getProperty("targetEnvironment") ?: System.getenv("TARGET_ENVIRONMENT") ?: ""
-		if (targetEnv == "docker") 9092 else 9093
+		if (targetEnv == "embedded") 9093 else 9092
 	}
 
 val defaultPorts = mapOf(
@@ -17,8 +17,6 @@ val defaultPorts = mapOf(
 	"gotenberg"        to 3000,
 	"cloudStorage"	   to 4443
 )
-
-val testContainerBrokerPort = kafkaBrokerPort
 
 val defaultProperties = mapOf(
 	"KAFKA_STREAMS_APPLICATION_ID"   to "innsending-system-tests",

@@ -10,6 +10,7 @@ import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.testContainerBrokerPort
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import no.nav.soknad.arkivering.verification.SoknadAssertionHelper
 import org.junit.jupiter.api.Assertions.assertTrue

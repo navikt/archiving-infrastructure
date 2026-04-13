@@ -27,7 +27,7 @@ class SoknadAssertionHelper(
 		} while (attemptsLeft > 0)
 
 		if (currentStatus != expectedStatus) {
-			throw Exception("Forventet at søknad skulle få status '$expectedStatus' i databasen hos innsending-api, men status er '$currentStatus'")
+			throw Exception("$innsendingsId: Forventet at søknad skulle få status '$expectedStatus' i databasen hos innsending-api, men status er '$currentStatus'")
 		}
 		return this
 	}

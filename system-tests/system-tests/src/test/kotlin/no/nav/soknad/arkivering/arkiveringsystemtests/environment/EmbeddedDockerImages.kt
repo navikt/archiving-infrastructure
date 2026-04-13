@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
+import no.nav.soknad.arkivering.testContainerBrokerPort
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
