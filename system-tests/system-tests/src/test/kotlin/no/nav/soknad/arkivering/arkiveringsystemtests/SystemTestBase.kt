@@ -52,6 +52,7 @@ abstract class SystemTestBase {
 	}
 
 	private fun checkThatDependenciesAreUp() {
+		logger.info("Checking that dependencies are up, soknadsmottakerHost=${env.getUrlForSoknadsmottaker()}")
 		val dependencies = HashMap<String, String>().also {
 			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
