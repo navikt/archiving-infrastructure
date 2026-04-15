@@ -30,6 +30,16 @@
 			<version>${xml-apis.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-dom</artifactId>
+			<version>${batik-dom.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-svg-dom</artifactId>
+			<version>${batik-svg-dom.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-core</artifactId>
 			<version>${token-support.version}</version>

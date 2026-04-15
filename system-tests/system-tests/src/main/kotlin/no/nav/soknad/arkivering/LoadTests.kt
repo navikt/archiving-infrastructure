@@ -38,6 +38,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC01 - Innsending av 10 soknader, hver med to vedlegg pa 38MB`() = runCatching {
+		logger.info("Load test: Innsending av 10 soknader, hver med to vedlegg pa 38MB")
 		val file = loadFile(fileOfSize38mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(10, 2, file)
 
@@ -49,6 +50,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC02 - Innsending av 100 soknader, hver med tre vedlegg pa 2MB`() = runCatching {
+		logger.info("Load test: Innsending av 100 soknader, hver med tre vedlegg pa 2MB")
 		val file = loadFile(fileOfSize2mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(100, 3, file)
 
@@ -60,6 +62,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC03 - Innsending av 1000 soknader, hver med to vedlegg pa 1MB`() = runCatching {
+		logger.info("Load test: Innsending av 1000 soknader, hver med to vedlegg pa 1MB")
 		val file = loadFile(fileOfSize1mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(1000, 2, file)
 
@@ -72,7 +75,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC04 - Innsending av 10 soknader fra ikke innlogget bruker, hver med ett vedlegg pa 1MB`() = runCatching {
-
+		logger.info("Load test: Innsending av 10 soknader fra ikke innlogget bruker, hver med ett vedlegg pa 1MB")
 		val soknadListe = mutableListOf<SkjemaDtoV2>()
 		try {
 			repeat(10) {
@@ -94,7 +97,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC05 - Opplasting av en fil deretter sletter den`() = runCatching {
-
+		logger.info("Load test: Opplasting av en fil deretter sletter den")
 		val innsendingsId = UUID.randomUUID().toString()
 		val vedleggsRef = UUID.randomUUID().toString()
 
@@ -108,7 +111,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC06 - Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB`() = runCatching {
-
+		logger.info("Load test: Innsending av 1000 soknader fra ikke innlogget bruker, hver med 2 vedlegg pa 1MB")
 		val soknadListe = mutableListOf<SkjemaDtoV2>()
 		repeat(1000) {
 			soknadListe.add(prepareNoLoginSoknad(
@@ -126,7 +129,7 @@ class LoadTests(config: Config, private val kafkaListener: KafkaListener, val us
 
 	@Suppress("FunctionName")
 	fun `TC07 - Innsending av 1000 soknader fra innlogget og ikke innlogget bruker`() = runCatching {
-
+		logger.info("Load test: Innsending av 1000 soknader fra innlogget og ikke innlogget bruker")
 		val antallSoknader = 500
 		val file = loadFile(fileOfSize1mb)
 		val innsendingsIdListe: List<String> = opprettSoknaderAsync(antallSoknader, 2, file)

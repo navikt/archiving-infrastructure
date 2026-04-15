@@ -53,6 +53,8 @@
 		<jackson.version>2.19.0</jackson.version>
 		<junit-jupiter.version>5.11.0</junit-jupiter.version>
 		<xml-apis.version>1.4.01</xml-apis.version>
+		<batik-dom.version>1.19</batik-dom.version>
+		<batik-svg-dom.version>1.19</batik-svg-dom.version>
 
 
 		<!-- Plugins -->
