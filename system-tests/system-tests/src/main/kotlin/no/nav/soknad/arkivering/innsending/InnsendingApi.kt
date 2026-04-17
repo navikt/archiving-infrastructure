@@ -65,12 +65,24 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 
 	fun sendInn(soknad: SoknadTestdata) = runCatching {
 		logger.info("Sender inn søknad: ${soknad.innsendingsId}")
-		sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
+		try {
+			sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
+			logger.info("Sendt inn søknad: ${soknad.innsendingsId}")
+		} catch (e: Exception) {
+			logger.error("Feil ved innsending av søknad: ${soknad.innsendingsId}", e)
+			throw e
+		}
 	}
 
-	fun sendInn(innsendingsId: String) {
+	fun sendInn(innsendingsId: String) = runCatching {
 		logger.info("Sender inn søknad: ${innsendingsId}")
-		sendInnSoknad.sendInnSoknad(innsendingsId)
+		try {
+			sendInnSoknad.sendInnSoknad(innsendingsId)
+			logger.info("Sendt inn søknad: ${innsendingsId}")
+		} catch (e: Exception) {
+			logger.error("Feil ved innsending av søknad: ${innsendingsId}", e)
+			throw e
+		}
 	}
 
 	fun getArkiveringsstatus(innsendingsId: String): ArkiveringsStatusDto {

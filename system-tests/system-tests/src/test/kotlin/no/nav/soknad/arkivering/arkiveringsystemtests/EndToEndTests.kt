@@ -76,7 +76,11 @@ class EndToEndTests : SystemTestBase() {
 			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
@@ -97,7 +101,11 @@ class EndToEndTests : SystemTestBase() {
 			.verifyHasSize(1)
 			.lastOppFil(0, "Thirty_MB.pdf")
 
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
@@ -119,7 +127,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 500, attemptsThanSoknadsarkivererWillPerform + 1)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasFailureEvent(innsendingsId, 350_000L)
@@ -148,7 +160,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, -1)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
@@ -179,7 +195,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.OK.name, -1)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
@@ -208,7 +228,11 @@ class EndToEndTests : SystemTestBase() {
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.NOT_FOUND.name, 1)
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 408, 1)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
@@ -232,7 +256,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 		assertThatArkivMock()
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
@@ -258,7 +286,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 404, erroneousAttempts)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasEntityInArchive(innsendingsId)
@@ -285,7 +317,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithErroneousBodyForXAttempts(innsendingsId, erroneousAttempts)
-		innsendingApi.sendInn(soknadTestdata)
+		try {
+			innsendingApi.sendInn(soknadTestdata)
+		} catch (e: Exception) {
+			throw e
+		}
 
 		assertThatArkivMock()
 			.hasEntityInArchive(innsendingsId)
@@ -324,6 +360,12 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@Test
+	fun `Happy case - ten submission from not logged in user ends up in the archive`() {
+		repeat(10) {
+			`Happy case - one submission from not logged in user ends up in the archive`()
+		}
+	}
 
 	@Test
 	fun `Happy case - upload one file and then deletes it`() {
