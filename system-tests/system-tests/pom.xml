@@ -121,8 +121,8 @@
 			<version>${kafka-streams-avro-serde.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.github.navikt</groupId>
-			<artifactId>soknadarkiv-schema</artifactId>
+			<groupId>no.nav.soknad.arkivering</groupId>
+			<artifactId>avro-schemas</artifactId>
 			<version>${arkivering-schemas.version}</version>
 		</dependency>
 		<dependency>
