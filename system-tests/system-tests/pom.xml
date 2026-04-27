@@ -257,10 +257,6 @@
 			<url>https://github-package-registry-mirror.gc.nav.no/cached/maven-release</url>
 		</repository>
 		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		<repository>
 			<id>confluent</id>
 			<url>https://packages.confluent.io/maven</url>
 		</repository>
