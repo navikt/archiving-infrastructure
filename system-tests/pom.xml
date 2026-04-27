@@ -62,7 +62,6 @@
 
 		<!-- Plugins -->
 		<openapi-generator-maven-plugin.version>7.0.0</openapi-generator-maven-plugin.version>
-		<remote-comparer-maven-plugin.version>1.0.5</remote-comparer-maven-plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 

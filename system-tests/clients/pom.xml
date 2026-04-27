@@ -99,26 +99,6 @@
 
 
 			<plugin>
-				<groupId>com.github.sjoblomj</groupId>
-				<artifactId>remote-comparer-maven-plugin</artifactId>
-				<version>${remote-comparer-maven-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>compare Soknadsmottaker OpenAPI spec</id>
-						<goals>
-							<goal>remote-compare</goal>
-						</goals>
-						<configuration>
-							<localFilePath>src/main/resources/soknadsmottaker-api.yml</localFilePath>
-							<remoteFileUri>https://raw.githubusercontent.com/navikt/soknadsmottaker/main/api/src/main/resources/soknadsmottaker-api.yml</remoteFileUri>
-							<timeoutMs>20000</timeoutMs>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-
-			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<version>${kotlin.version}</version>
