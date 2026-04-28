@@ -1,5 +1,6 @@
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,9 +9,31 @@ on:
         required: true
         default: 'preprod'
         type: choice
-        options:
-          - none
-          - preprod
+        options: [none, preprod]
+
+      innsending:
+        description: 'Innsending-api branch'
+        required: true
+        default: 'main'
+        type: string
+
+      soknadsmottaker:
+        description: 'Soknadsmottaker branch'
+        required: true
+        default: 'main'
+        type: string
+
+      soknadsarkiverer:
+        description: 'Soknadsarkiverer branch'
+        required: true
+        default: 'main'
+        type: string
+
+      arkivmock:
+        description: 'Arkivmock branch'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
   build-and-push:
@@ -32,16 +55,19 @@ jobs:
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsmottaker
+          branch: ${{ inputs.soknadsmottaker }}
 
       - name: 'Build the code for soknadsarkiverer'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsarkiverer
+          branch: ${{ inputs.soknadsarkiverer }}
 
       - name: 'Build the code for arkiv-mock'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: arkiv-mock
+          branch: ${{ inputs.arkivmock }}
 
       - name: 'Build the code for innsending-api'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
@@ -49,11 +75,10 @@ jobs:
           component_name: innsending-api
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-
+          branch: ${{ inputs.innsending }}
 
       - name: 'Build and run the end-to-end-tests'
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
         run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
-

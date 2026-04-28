@@ -26,18 +26,6 @@ class KafkaPublisher(private val kafkaConfig: KafkaConfig) {
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 	})
 
-	fun putDataOnTopic(key: String, value: Soknadarkivschema, headers: Headers = RecordHeaders()) {
-		val topic = kafkaConfig.topics.mainTopic
-		val kafkaProducer = kafkaMainProducer
-		putDataOnTopic(key, value, headers, topic, kafkaProducer)
-	}
-
-	fun putDataOnTopic(key: String, value: ProcessingEvent, headers: Headers = RecordHeaders()) {
-		val topic = kafkaConfig.topics.processingTopic
-		val kafkaProducer = kafkaProcessingEventProducer
-		putDataOnTopic(key, value, headers, topic, kafkaProducer)
-	}
-
 	fun putDataOnTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
 		val topic = kafkaConfig.topics.mainTopic
 		val kafkaProducer = kafkaStringProducer

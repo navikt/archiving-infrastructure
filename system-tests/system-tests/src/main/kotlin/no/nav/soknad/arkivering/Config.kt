@@ -1,11 +1,17 @@
 package no.nav.soknad.arkivering
 
+val kafkaBrokerPort: Int = System.getenv("KAFKA_BROKER_PORT")?.toInt()
+	?: run {
+		val targetEnv = System.getProperty("targetEnvironment") ?: System.getenv("TARGET_ENVIRONMENT") ?: ""
+		if (targetEnv == "embedded") 9093 else 9092
+	}
+
 val defaultPorts = mapOf(
 	"innsending-api"   to 9064,
 	"soknadsmottaker"  to 8090,
 	"soknadsarkiverer" to 8091,
 	"arkiv-mock"       to 8092,
-	"kafka-broker"     to 9093,
+	"kafka-broker"     to kafkaBrokerPort,
 	"schema-registry"  to 8081,
 	"database"         to 5432,
 	"gotenberg"        to 3000,
@@ -24,6 +30,7 @@ val defaultProperties = mapOf(
 	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
 	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
+	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-loadtests",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-loadtests",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
@@ -53,7 +60,7 @@ data class Config(
 
 data class KafkaConfig(
 	val applicationId: String = getProperty("KAFKA_STREAMS_APPLICATION_ID"),
-	val brokers: String = getProperty("KAFKA_BROKERS"),
+	val brokers: String = getProperty("KAFKA_BROKERS", "localhost:9092"),
 	val security: SecurityConfig = SecurityConfig(),
 	val topics: Topics = Topics(),
 	val schemaRegistry: SchemaRegistry = SchemaRegistry(),
@@ -89,6 +96,7 @@ data class Topics(
 	val brukernotifikasjonBeskjedTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_BESKJED_TOPIC"),
 	val brukernotifikasjonOppgaveTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"),
 	val brukernotifikasjonUtkastTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"),
+	val loggedinSendInnTopic: String = getProperty("KAFKA_LOGGEDIN_SUBMISSION_TOPIC"),
 	val nologinSendInnTopic: String = getProperty("KAFKA_NOLOGIN_SUBMISSION_TOPIC"),
 )
 

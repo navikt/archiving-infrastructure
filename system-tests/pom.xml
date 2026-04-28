@@ -30,7 +30,7 @@
 		<!-- Kafka -->
 		<kafka-streams-avro-serde.version>7.9.5</kafka-streams-avro-serde.version>
 		<kafka.version>3.9.1</kafka.version>
-		<arkivering-schemas.version>f52ace8dcc</arkivering-schemas.version>
+		<arkivering-schemas.version>1.4.4-bf301c4492e2</arkivering-schemas.version>
 
 		<!-- Logging -->
 		<logstash.version>7.4</logstash.version>
@@ -52,11 +52,16 @@
 		<postgresql.version>42.7.8</postgresql.version>
 		<jackson.version>2.19.0</jackson.version>
 		<junit-jupiter.version>5.11.0</junit-jupiter.version>
+		<xml-apis.version>1.4.01</xml-apis.version>
+<!--
+		<xml-apis-ext.version>1.3.04</xml-apis-ext.version>
+-->
+		<batik-dom.version>1.17</batik-dom.version>
+		<batik-svg-dom.version>1.19</batik-svg-dom.version>
 
 
 		<!-- Plugins -->
 		<openapi-generator-maven-plugin.version>7.0.0</openapi-generator-maven-plugin.version>
-		<remote-comparer-maven-plugin.version>1.0.5</remote-comparer-maven-plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 

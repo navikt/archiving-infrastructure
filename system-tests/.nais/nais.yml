@@ -30,6 +30,8 @@ spec:
       value: "TRUE"
     - name: KAFKA_MAIN_TOPIC
       value: team-soknad.privat-soknadinnsending-v1-loadtests
+    - name: KAFKA_LOGGEDIN_SUBMISSION_TOPIC
+      value: team-soknad.privat-loggedinsubmission-v1-loadtests
     - name: KAFKA_NOLOGIN_SUBMISSION_TOPIC
       value: team-soknad.privat-nologinsubmission-v1-loadtests
     - name: KAFKA_PROCESSING_TOPIC

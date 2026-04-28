@@ -53,6 +53,7 @@ class EmbeddedDockerImages {
 		kafkaContainer.start()
 
 		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)

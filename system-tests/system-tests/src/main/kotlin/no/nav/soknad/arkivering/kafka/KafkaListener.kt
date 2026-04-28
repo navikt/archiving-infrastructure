@@ -45,6 +45,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	}
 
 	init {
+		logger.info("***Starting KafkaListener: kafkaBrokers=${kafkaConfig.brokers}***")
 		val streamsBuilder = StreamsBuilder()
 		kafkaStreams(streamsBuilder)
 		val topology = streamsBuilder.build()
