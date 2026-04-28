@@ -27,7 +27,7 @@ class KafkaPublisher(private val kafkaConfig: KafkaConfig) {
 	})
 
 	fun putDataOnTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
-		val topic = kafkaConfig.topics.mainTopic
+		val topic = kafkaConfig.topics.loggedinSendInnTopic
 		val kafkaProducer = kafkaStringProducer
 		putDataOnTopic(key, value, headers, topic, kafkaProducer)
 	}
