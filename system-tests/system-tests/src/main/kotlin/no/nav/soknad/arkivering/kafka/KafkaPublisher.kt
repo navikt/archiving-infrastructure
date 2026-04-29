@@ -5,7 +5,6 @@ import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer
 import no.nav.soknad.arkivering.KafkaConfig
 import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
-import no.nav.soknad.arkivering.avroschemas.Soknadarkivschema
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -20,19 +19,18 @@ import java.util.concurrent.TimeUnit
 
 class KafkaPublisher(private val kafkaConfig: KafkaConfig) {
 
-	private val kafkaMainProducer = KafkaProducer<String, Soknadarkivschema>(kafkaConfigMap())
 	private val kafkaProcessingEventProducer = KafkaProducer<String, ProcessingEvent>(kafkaConfigMap())
 	private val kafkaStringProducer = KafkaProducer<String, String>(kafkaConfigMap().also {
 		it[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
 	})
 
-	fun putDataOnTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
+	fun putDataOnLoggedInTopic(key: String, value: String, headers: Headers = RecordHeaders()) {
 		val topic = kafkaConfig.topics.loggedinSendInnTopic
 		val kafkaProducer = kafkaStringProducer
-		putDataOnTopic(key, value, headers, topic, kafkaProducer)
+		putDataOnLoggedInTopic(key, value, headers, topic, kafkaProducer)
 	}
 
-	private fun <T> putDataOnTopic(
+	private fun <T> putDataOnLoggedInTopic(
 		key: String?, value: T, headers: Headers, topic: String,
 		kafkaProducer: KafkaProducer<String, T>
 	): RecordMetadata {
