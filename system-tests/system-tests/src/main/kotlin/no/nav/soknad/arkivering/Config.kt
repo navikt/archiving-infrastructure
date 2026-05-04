@@ -29,7 +29,6 @@ val defaultProperties = mapOf(
 	"KAFKA_SCHEMA_REGISTRY_USER"     to "",
 	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
-	"KAFKA_MAIN_TOPIC"                       to "privat-soknadinnsending-v1-dev",
 	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-loadtests",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-loadtests",
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
@@ -85,7 +84,6 @@ data class OAuth2Config(
 )
 
 data class Topics(
-	val mainTopic: String = getProperty("KAFKA_MAIN_TOPIC"),
 	val processingTopic: String = getProperty("KAFKA_PROCESSING_TOPIC"),
 	val messageTopic: String = getProperty("KAFKA_MESSAGE_TOPIC"),
 	val arkiveringstilbakemeldingerTopic: String = getProperty("KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"),

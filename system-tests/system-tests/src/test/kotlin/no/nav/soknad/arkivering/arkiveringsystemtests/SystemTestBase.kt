@@ -77,7 +77,7 @@ abstract class SystemTestBase {
 
 	fun putPoisonPillOnKafkaTopic(key: String) {
 		logger.debug("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		kafkaPublisher.putDataOnTopic(key, "unserializableString")
+		kafkaPublisher.putDataOnLoggedInTopic(key, "unserializableString")
 	}
 
 	fun assertThatArkivMock() = AssertionHelper(kafkaListener)

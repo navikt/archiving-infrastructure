@@ -9,8 +9,6 @@ import no.nav.soknad.arkivering.LoadTests
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
-import no.nav.soknad.arkivering.innsending.api.NologinApplicationApi
-import no.nav.soknad.arkivering.innsending.model.ApplicationSubmissionResponse
 import no.nav.soknad.arkivering.innsending.model.ArkiveringsStatusDto
 import no.nav.soknad.arkivering.innsending.model.AttachmentDto
 import no.nav.soknad.arkivering.innsending.model.Mimetype
