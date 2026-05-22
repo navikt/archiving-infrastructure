@@ -204,7 +204,7 @@ class EndToEndTests : SystemTestBase() {
 			.verify()
 
 		assertThatSoknad(innsendingsId)
-			.hasStatus(ArkiveringsStatusDto.ikkeSatt)
+			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
 	@Test
@@ -237,7 +237,7 @@ class EndToEndTests : SystemTestBase() {
 			.verify()
 
 		assertThatSoknad(innsendingsId)
-			.hasStatus(ArkiveringsStatusDto.ikkeSatt)
+			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
 	@Test
