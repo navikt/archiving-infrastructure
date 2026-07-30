@@ -5,7 +5,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import no.nav.soknad.arkivering.LoadTests
+import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
@@ -471,7 +471,7 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 	private fun loadFile(fileName: String): File {
-		val resource = LoadTests::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
+		val resource = Config::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
 		val file = createTempFile().toFile()
 		resource.use { input ->
 			file.outputStream().use { output ->

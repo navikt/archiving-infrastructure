@@ -135,7 +135,7 @@ class EmbeddedDockerImages {
 					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
 					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
-					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-loadtests",
+					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-systemtests",
 				)
 			)
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
@@ -220,5 +220,4 @@ class EmbeddedDockerImages {
 	fun getUrlForSchemaRegistry()   = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
 	fun getUrlForKafkaBroker()      = "localhost:"        + kafkaContainer           .firstMappedPort
 }
-
 
