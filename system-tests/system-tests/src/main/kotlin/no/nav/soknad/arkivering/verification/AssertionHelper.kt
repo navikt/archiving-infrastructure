@@ -1,9 +1,9 @@
 package no.nav.soknad.arkivering.verification
 
-import no.nav.soknad.arkivering.avroschemas.EventTypes
-import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.dto.ArchiveEntity
 import no.nav.soknad.arkivering.kafka.KafkaListener
+import no.nav.soknad.arkivering.kafka.ProcessingEventJson
+import no.nav.soknad.arkivering.kafka.ProcessingEventType
 
 /**
  * This is a helper class for setting up asynchronous assertions of Kafka messages that will appear at some
@@ -26,18 +26,18 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	}
 
 	fun hasFinishedEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper =
-		processingEventIsPresent(timeoutInMs, key, EventTypes.FINISHED)
+		processingEventIsPresent(timeoutInMs, key, ProcessingEventType.FINISHED)
 
 	fun hasFailureEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper =
-		processingEventIsPresent(timeoutInMs, key, EventTypes.FAILURE)
+		processingEventIsPresent(timeoutInMs, key, ProcessingEventType.FAILURE)
 
 	private fun processingEventIsPresent(
 		timeoutInMs: Long,
 		key: String,
-		eventType: EventTypes
+		eventType: ProcessingEventType
 	): AssertionHelper {
-		val eventIsPresent: (ProcessingEvent) -> Boolean = { it.type == eventType }
-		val verificationTask = VerificationTask.Builder<ProcessingEvent>()
+		val eventIsPresent: (ProcessingEventJson) -> Boolean = { it.type == eventType }
+		val verificationTask = VerificationTask.Builder<ProcessingEventJson>()
 			.withManager(verificationTaskManager)
 			.withTimeout(timeoutInMs)
 			.forKey(key)

@@ -69,15 +69,23 @@ class EmbeddedDockerImages {
 
 		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
+		// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
+		// replay keeps working while it exists (issue #78).
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
+		// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
+		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!)
+		createTopic(defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!)
 		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
 
+		// Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay
+		// and production during the JSON v3 transition (issue #78). The system-test suite's own
+		// Kafka listener/publisher reads/writes plain JSON on the v3 topics without Schema Registry.
 		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:latest")
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])

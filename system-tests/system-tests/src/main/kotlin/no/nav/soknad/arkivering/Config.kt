@@ -25,16 +25,20 @@ val defaultProperties = mapOf(
 	"KAFKA_KEYSTORE_PATH"            to "",
 	"KAFKA_TRUSTSTORE_PATH"          to "",
 	"KAFKA_CREDSTORE_PASSWORD"       to "",
-	"KAFKA_SCHEMA_REGISTRY"          to "http://localhost:${defaultPorts["schema-registry"]}",
-	"KAFKA_SCHEMA_REGISTRY_USER"     to "",
-	"KAFKA_SCHEMA_REGISTRY_PASSWORD" to "",
 
 	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-systemtests",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-systemtests",
+	// Legacy Avro processing-event/metrics topics (referred to as "v2" in the JSON v3 design spec,
+	// see navikt/soknadsarkiverer#260). Retained for legacy replay; the default system-test path
+	// reads/writes the JSON v3 topics below instead (issue #78).
 	"KAFKA_PROCESSING_TOPIC"                 to "privat-soknadinnsending-processingeventlog-v1-dev",
 	"KAFKA_MESSAGE_TOPIC"                    to "privat-soknadinnsending-messages-v1-dev",
 	"KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"  to "privat-soknadinnsending-arkiveringstilbakemeldinger-v1-dev",
 	"KAFKA_METRICS_TOPIC"                    to "privat-soknadinnsending-metrics-v1-dev",
+	// JSON v3 processing-event/metrics topics (default system-test path, no Schema Registry).
+	// Topic names must match the defaults used by soknadsarkiverer/soknadsmottaker.
+	"KAFKA_PROCESSING_TOPIC_V3"              to "privat-soknadinnsending-processingeventlog-v3-dev",
+	"KAFKA_METRICS_TOPIC_V3"                 to "privat-soknadinnsending-metrics-v3-dev",
 	"KAFKA_ENTITIES_TOPIC"                   to "team-soknad.privat-soknadinnsending-systemtests-entities",
 	"KAFKA_NUMBER_OF_CALLS_TOPIC"            to "team-soknad.privat-soknadinnsending-systemtests-numberofcalls",
 	"KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"    to "min-side.aapen-brukervarsel-v1",
@@ -62,7 +66,6 @@ data class KafkaConfig(
 	val brokers: String = getProperty("KAFKA_BROKERS", "localhost:9092"),
 	val security: SecurityConfig = SecurityConfig(),
 	val topics: Topics = Topics(),
-	val schemaRegistry: SchemaRegistry = SchemaRegistry(),
 )
 
 data class SecurityConfig(
@@ -84,10 +87,15 @@ data class OAuth2Config(
 )
 
 data class Topics(
+	// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained for legacy
+	// replay only; not read/written by the default system-test path (issue #78).
 	val processingTopic: String = getProperty("KAFKA_PROCESSING_TOPIC"),
 	val messageTopic: String = getProperty("KAFKA_MESSAGE_TOPIC"),
 	val arkiveringstilbakemeldingerTopic: String = getProperty("KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"),
 	val metricsTopic: String = getProperty("KAFKA_METRICS_TOPIC"),
+	// JSON v3 processing-event/metrics topics: the default system-test path, no Schema Registry.
+	val processingTopicV3: String = getProperty("KAFKA_PROCESSING_TOPIC_V3"),
+	val metricsTopicV3: String = getProperty("KAFKA_METRICS_TOPIC_V3"),
 	val entitiesTopic: String = getProperty("KAFKA_ENTITIES_TOPIC"),
 	val numberOfCallsTopic: String = getProperty("KAFKA_NUMBER_OF_CALLS_TOPIC"),
 	val brukernotifikasjonDoneTopic: String = getProperty("KAFKA_BRUKERNOTIFIKASJON_DONE_TOPIC"),
@@ -98,9 +106,4 @@ data class Topics(
 	val nologinSendInnTopic: String = getProperty("KAFKA_NOLOGIN_SUBMISSION_TOPIC"),
 )
 
-data class SchemaRegistry(
-	val url: String = getProperty("KAFKA_SCHEMA_REGISTRY"),
-	val username: String = getProperty("KAFKA_SCHEMA_REGISTRY_USER"),
-	val password: String = getProperty("KAFKA_SCHEMA_REGISTRY_PASSWORD"),
-)
 const val DEFAULT_LEVETID_OPPRETTET_SOKNAD = 28L // 4 uker inntil ikke innsendt søknad/ettersendingssøknad slettes

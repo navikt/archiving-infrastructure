@@ -21,6 +21,9 @@ services:
     ports:
       - "2181:2181"
 
+  # Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay and
+  # production during the JSON v3 transition (navikt/soknadsarkiverer#260, issue #78). The default
+  # system-test path itself reads/writes plain JSON on the v3 topics without Schema Registry.
   kafka-schema-registry:
     image: confluentinc/cp-schema-registry
     hostname: kafka-schema-registry
