@@ -1,17 +1,17 @@
 # archiving-infrastructure
-This repository contains scripts to run the entire archiving system locally. It also contains end-to-end tests and load tests. For a description of the whole archiving system, see [the documentation](https://github.com/navikt/archiving-infrastructure/wiki).
+This repository contains scripts to run the entire archiving system locally. It also contains end-to-end tests. For a description of the whole archiving system, see [the documentation](https://github.com/navikt/archiving-infrastructure/wiki).
 
-As is evident by their names, the end-to-end tests will perform various tests on the system as a whole from the outside and test various behaviours of the system. The load tests will make many simultaneous requests to the system and make sure that the components can handle the load without breaking.
+The end-to-end tests perform various tests on the system as a whole from the outside and verify different behaviours across the archiving flow.
 Note that in order to simulate the external interfaces, JOARK and SAF, to the archiving system uses an application, [arkiv-mock](https://github.com/navikt/arkiv-mock), is used.
 
 ### Repository overview
 * **docs**: Documentation resources.
-* **system-tests**: Contains the end-to-end tests and load tests.
+* **system-tests**: Contains the end-to-end tests.
 * **docker-compose.yml**: File with definitions on how to build Docker images locally.
 * ***.sh**: Various scripts to automate running the end-to-end tests, building components etc. See [the Scripts section](#Scripts) for more details
 
 ## Environments
-The end-to-end and load tests can run in various different environments:
+The end-to-end tests can run in various different environments:
 
 ### testcontainers (default)
 The easiest way to run the end-to-end tests locally is with `./run-end-to-end-tests.sh`, which will build innsending-api, soknadsmottaker and soknadsarkiverer, create Docker images of them and pull external ones, and then execute the end-to-end tests. Once the Docker images are present on a machine, the end-to-end tests can instead be run with `mvn clean install` in the system-tests directory. This saves time compared to running the `./end-to-end-tests.sh` script. The downside of using Maven, however, is that the user manually needs to update the Docker images if local changes are made to the code bases of the applications. Therefore, it is easier to simply use the script directly.
@@ -25,12 +25,6 @@ This mode is especially useful for debugging. The downsides are that the user ne
 
 ### GitHub Actions
 Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for innsending-api, soknadsmottaker, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
-
-### cronjob
-The load tests are run by a cronjob on scheduled times. They will test the upper limits of concurrent load, both with having many simultaneous requests, as well as fewer but heavier. The load tests take almost 1.5 hours to complete, and therefore they are not part of the normal build-chain. Instead, they are run on scheduled times to verify that the system performance has not degraded.
-
-The load tests can be started ad-hoc at any time by running the following command:
-`kubectl create job --namespace=team-soknad --from=cronjobs/innsending-system-tests innsending-load-tests`
 
 ## Scripts
 * Run `./run-end-to-end-tests.sh` to build all applications and run the end-to-end tests. This will use testcontainers to start the applications and their dependencies, as described above. By running `./run-end-to-end-tests.sh no-testcontainers`, the applications will start up in "external" Docker containers, and the tests will run against the containers. Running this script is all it takes to run the end-to-end tests; the other scripts will be called by this script.
