@@ -4,6 +4,8 @@
 # archiving-infrastructure branch while the JSON v3 processing-event/metrics migration is in flight.
 # Revert every `@feature/json-v3-processing-events` ref and the `soknadsarkiverer` default back to
 # `@main`/`'main'` before merging to main.
+# TEMPORARY (issue #84): the checkout-and-build ref is pinned to @feature/faster-e2e-builds so this
+# PR exercises the new version of the action. Revert to @feature/json-v3-processing-events before merge.
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
 
@@ -55,33 +57,26 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
 
-      - name: 'Build the code for soknadsmottaker'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+      # See the comment in on-pr.yml for why setup-java's own Maven cache is not used
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
         with:
-          component_name: soknadsmottaker
-          branch: ${{ inputs.soknadsmottaker }}
+          path: ~/.m2/repository
+          key: e2e-m2-${{ runner.os }}-${{ hashFiles('system-tests/**/pom.xml') }}
+          restore-keys: |
+            e2e-m2-${{ runner.os }}-
 
-      - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+      - name: 'Build the code for the components'
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
         with:
-          component_name: soknadsarkiverer
-          branch: ${{ inputs.soknadsarkiverer }}
-
-      - name: 'Build the code for arkiv-mock'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
-        with:
-          component_name: arkiv-mock
-          branch: ${{ inputs.arkivmock }}
-
-      - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
-        with:
-          component_name: innsending-api
+          component_names: |
+            soknadsmottaker@${{ inputs.soknadsmottaker }}
+            soknadsarkiverer@${{ inputs.soknadsarkiverer }}
+            arkiv-mock@${{ inputs.arkivmock }}
+            innsending-api@${{ inputs.innsending }}
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-          branch: ${{ inputs.innsending }}
 
       - name: 'Build and run the end-to-end-tests'
         env:

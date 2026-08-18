@@ -21,40 +21,38 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
 
-      - name: 'Build the code for soknadsmottaker'
-        # TEMPORARY (issue #78): pinned to feature/json-v3-processing-events so CI tests the paired
-        # soknadsarkiverer/soknadsmottaker branches together. Revert this ref to @main before merge.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+      # Not using the Maven cache built into setup-java: it derives the cache key from **/pom.xml,
+      # and the sibling repositories are cloned into the workspace between restore and save, so the
+      # cache ends up saved under a key that can never be restored ("maven cache is not found").
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
         with:
-          component_name: soknadsmottaker
+          path: ~/.m2/repository
+          key: e2e-m2-${{ runner.os }}-${{ hashFiles('system-tests/**/pom.xml') }}
+          restore-keys: |
+            e2e-m2-${{ runner.os }}-
 
-      - name: 'Build the code for soknadsarkiverer'
-        # TEMPORARY (issue #78): pinned to feature/json-v3-processing-events, and explicitly builds
-        # the paired soknadsarkiverer branch of the same name. Revert both to main before merge.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+      - name: 'Build the code for the components'
+        # TEMPORARY (issue #84): pinned to feature/faster-e2e-builds so that this PR exercises the
+        # new version of the action. Revert to @feature/json-v3-processing-events before merge
+        # (and to @main together with the rest of issue #78).
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
         with:
-          component_name: soknadsarkiverer
-          branch: feature/json-v3-processing-events
-
-      - name: 'Build the code for arkiv-mock'
-        # TEMPORARY (issue #78): pinned to feature/json-v3-processing-events. Revert to @main before merge.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
-        with:
-          component_name: arkiv-mock
-
-      - name: 'Build the code for innsending-api'
-        # TEMPORARY (issue #78): pinned to feature/json-v3-processing-events. Revert to @main before merge.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
-        with:
-          component_name: innsending-api
+          # TEMPORARY (issue #78): soknadsarkiverer is built from the paired feature branch.
+          # Drop the "@feature/json-v3-processing-events" suffix before merging to main.
+          component_names: |
+            soknadsmottaker
+            soknadsarkiverer@feature/json-v3-processing-events
+            arkiv-mock
+            innsending-api
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 'Run the end-to-end-tests (this PR)'
-        # TEMPORARY (issue #78): pinned to feature/json-v3-processing-events. Revert to @main before merge.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+        # TEMPORARY (issue #84): see the comment above. Revert to @feature/json-v3-processing-events
+        # before merge, and to @main together with the rest of issue #78.
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
         with:
           component_name: archiving-infrastructure
           branch: ${GITHUB_HEAD_REF} # Branch of current PR

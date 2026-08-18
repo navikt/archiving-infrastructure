@@ -1,9 +1,14 @@
 name: 'Checkout and build'
-description: 'Checkout, compile and docker build component'
+description: 'Checkout, compile and docker build one or more components, in parallel'
 inputs:
   component_name:
-    description: 'Name of component'
-    required: true
+    description: 'Name of component. Use component_names to build several components in parallel.'
+    required: false
+    default: ""
+  component_names:
+    description: 'Whitespace/newline separated list of components to check out and build in parallel. Each entry may override the branch with "component@branch".'
+    required: false
+    default: ""
   branch:
     description: 'Branch to check out'
     required: false
@@ -29,26 +34,96 @@ runs:
       shell: bash
 
       run: |
+        set -uo pipefail
+
         orig_path=$(pwd)
-        if [ ! -d "${{ inputs.component_name }}" ]; then
-          git clone https://github.com/navikt/${{ inputs.component_name }}.git
-        fi
-        cd ${{ inputs.component_name }}
-        git checkout ${{ inputs.branch }}
-        cd ${{ inputs.sub_directory }}
+        branch="${{ inputs.branch }}"
+        sub_directory="${{ inputs.sub_directory }}"
+        skip_tests="${{ inputs.skip_tests }}"
+        run_docker_build="${{ inputs.run_docker_build }}"
 
-        TEST_PARAM=""
-        if [[ ${{ inputs.skip_tests }} = "true" ]]; then
-          TEST_PARAM="-DskipTests"
+        components="${{ inputs.component_names }} ${{ inputs.component_name }}"
+        if [[ -z "$(echo $components)" ]]; then
+          echo "Neither component_name nor component_names was given"
+          exit 1
         fi
 
-        mvn clean install --settings maven-settings.xml $TEST_PARAM
-
-        if [[ ${{ inputs.run_docker_build }} = "true" ]]; then
-          APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
-          TAG="archiving-infrastructure-${APP_NAME}:latest"
-          docker build --tag $TAG .
-          docker images
-          docker context ls
+        # The SBOM (cyclonedx) is only needed by the deploy pipelines, and takes several minutes
+        # per component because it resolves the entire dependency tree. The same goes for the enforcer.
+        # file-lock lets the parallel Maven processes safely share ~/.m2/repository.
+        MVN_FLAGS="-B -ntp -Dcyclonedx.skip=true -DskipBomPlugin=true -Denforcer.skip=true"
+        MVN_FLAGS="$MVN_FLAGS -Daether.syncContext.named.factory=file-lock -Daether.syncContext.named.nameMapper=file-gav"
+        if [[ "$skip_tests" == "true" ]]; then
+          # Skips compilation of the tests as well, not just the execution of them
+          MVN_FLAGS="$MVN_FLAGS -Dmaven.test.skip=true"
         fi
+
+        build_component() {
+          # Accepts "component" or "component@branch"
+          local component="${1%%@*}"
+          local component_branch="$branch"
+          if [[ "$1" == *"@"* ]]; then
+            component_branch="${1#*@}"
+          fi
+
+          if [ ! -d "$component" ]; then
+            git clone --depth 1 --branch "$component_branch" https://github.com/navikt/$component.git || return 1
+          else
+            git -C "$component" fetch --depth 1 origin "$component_branch" || return 1
+            git -C "$component" checkout FETCH_HEAD || return 1
+          fi
+
+          cd "$component/$sub_directory" || return 1
+
+          # No need to clean - the components are freshly cloned onto an ephemeral runner
+          mvn install --settings maven-settings.xml $MVN_FLAGS || return 1
+
+          if [[ "$run_docker_build" == "true" ]]; then
+            APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
+            TAG="archiving-infrastructure-${APP_NAME}:latest"
+            docker build --tag $TAG . || return 1
+          fi
+        }
+
+        pids=()
+        names=()
+        for component in $components; do
+          names+=("$component")
+        done
+
+        if [[ ${#names[@]} -eq 1 ]]; then
+          # A single component - build it in the foreground so that the output is streamed live
+          build_component "${names[0]}"
+          status=$?
+          echo "Building ${names[0]} ... [$([[ $status -eq 0 ]] && echo OK || echo FAILED)]"
+        else
+          for component in "${names[@]}"; do
+            # Each component builds in its own subshell, with its own log file so that the
+            # output of the parallel builds does not interleave
+            ( build_component "$component" ) > "$orig_path/build-${component%%@*}.log" 2>&1 &
+            pids+=("$!")
+          done
+
+          status=0
+          for i in "${!pids[@]}"; do
+            component="${names[$i]}"
+            if wait "${pids[$i]}"; then
+              result="OK"
+            else
+              result="FAILED"
+              status=1
+            fi
+
+            echo "::group::Build of $component ... [$result]"
+            cat "$orig_path/build-${component%%@*}.log"
+            echo "::endgroup::"
+            rm -f "$orig_path/build-${component%%@*}.log"
+            echo "Building $component ... [$result]"
+          done
+        fi
+
         cd "$orig_path"
+        if [[ "$run_docker_build" == "true" ]]; then
+          docker images
+        fi
+        exit $status
