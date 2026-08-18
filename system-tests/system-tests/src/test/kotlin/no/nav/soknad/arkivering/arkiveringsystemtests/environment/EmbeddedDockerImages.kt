@@ -18,6 +18,7 @@ class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 
+	private lateinit var authServerContainer: GenericContainer<*>
 	private lateinit var gotenbergContainer: GenericContainer<*>
 	private lateinit var postgresInnsendingContainer: PostgreSQLContainer<*>
 	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
@@ -45,6 +46,20 @@ class EmbeddedDockerImages {
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
 		gotenbergContainer.start()
+
+		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
+			.withNetworkAliases("authserver")
+			.withExposedPorts(6969)
+			.withNetwork(network)
+			.withEnv(
+				hashMapOf(
+					"SERVER_PORT" to "6969",
+					"JSON_CONFIG" to """{"interactiveLogin":true,"httpServer":"NettyWrapper"}"""
+				)
+			)
+			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
+
+		authServerContainer.start()
 
 		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
 			.withNetworkAliases("kafka-broker")
@@ -165,15 +180,25 @@ class EmbeddedDockerImages {
 					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"AZURE_APP_WELL_KNOWN_URL" to "http://metadata",
 					"AZURE_APP_CLIENT_ID"			to "aud-localhost",
-					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://metadata",
+					"AZURE_OPENID_CONFIG_ISSUER" to "http://authserver:6969/azuread",
+					"AZURE_OPENID_CONFIG_JWKS_URI" to "http://authserver:6969/azuread/jwks",
+					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://authserver:6969/azuread/token",
 					"AZURE_APP_CLIENT_SECRET" to "secret",
+					"DOKARKIV_SCOPE"					to "scope",
+					"SAF_SCOPE"								to "scope",
+					"INNSENDING_API_SCOPE"			to "scope",
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
-			.dependsOn(kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
+			.dependsOn(authServerContainer, kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
-		soknadsarkivererContainer.start()
+		try {
+			soknadsarkivererContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start soknadsarkiverer. Logs:\n${soknadsarkivererContainer.logs}")
+			throw e
+		}
 
 		logger.info("Containers started")
 
@@ -209,6 +234,7 @@ class EmbeddedDockerImages {
 		try { arkivMockContainer.stop() } catch (_: Exception) {}
 		try { kafkaContainer.stop() } catch (_: Exception) {}
 		try { schemaRegistryContainer.stop() } catch (_: Exception) {}
+		try { authServerContainer.stop() } catch (_: Exception) {}
 		try { gotenbergContainer.stop() } catch (_: Exception) {}
 		try { postgresInnsendingContainer.stop() } catch (_: Exception) {}
 	}
@@ -220,4 +246,3 @@ class EmbeddedDockerImages {
 	fun getUrlForSchemaRegistry()   = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
 	fun getUrlForKafkaBroker()      = "localhost:"        + kafkaContainer           .firstMappedPort
 }
-
