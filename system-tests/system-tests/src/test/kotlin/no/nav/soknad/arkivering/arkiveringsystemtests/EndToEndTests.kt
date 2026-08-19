@@ -25,10 +25,15 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
+import org.junit.jupiter.api.parallel.ResourceAccessMode
+import org.junit.jupiter.api.parallel.ResourceLock
 import java.io.File
 import java.util.*
 import kotlin.io.path.createTempFile
 
+@Execution(ExecutionMode.CONCURRENT)
 class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
@@ -240,6 +245,9 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	// The poison pill tests global deserialization robustness and is not tied to a single innsendingsId,
+	// so it is kept apart from the other resource heavy tests.
+	@ResourceLock(value = heavyTestsResource, mode = ResourceAccessMode.READ_WRITE)
 	@Test
 	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -358,6 +366,9 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	// Ten submissions in a loop put a lot of load on the shared containers, so this test is kept apart
+	// from the other resource heavy tests.
+	@ResourceLock(value = heavyTestsResource, mode = ResourceAccessMode.READ_WRITE)
 	@Test
 	fun `Happy case - ten submission from not logged in user ends up in the archive`() {
 		repeat(10) {
@@ -498,3 +509,10 @@ class EndToEndTests : SystemTestBase() {
 		performPutCall(url)
 	}
 }
+
+/**
+ * Resource lock shared by the tests that should not run at the same time as each other. Note that
+ * [org.junit.jupiter.api.parallel.Resources.GLOBAL] (and thereby `@Isolated`) must not be used on a test method here:
+ * a method level global lock makes JUnit run the whole test run in a single thread.
+ */
+private const val heavyTestsResource = "end-to-end-heavy-tests"
