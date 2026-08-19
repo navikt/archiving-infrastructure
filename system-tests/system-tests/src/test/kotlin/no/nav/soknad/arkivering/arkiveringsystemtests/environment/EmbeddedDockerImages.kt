@@ -1,5 +1,10 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
 import org.junit.jupiter.api.fail
@@ -11,6 +16,11 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
+
+// Pinned for reproducibility and to avoid unnecessary pulls (issue #85). These matched `latest`
+// when pinned. Keep in sync with the pre-pulled images in the GitHub workflows.
+private const val KAFKA_IMAGE = "confluentinc/cp-kafka:8.3.1"
+private const val SCHEMA_REGISTRY_IMAGE = "confluentinc/cp-schema-registry:8.3.1"
 
 class EmbeddedDockerImages {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -28,26 +38,76 @@ class EmbeddedDockerImages {
 	private lateinit var soknadsmottakerContainer: GenericContainer<*>
 	private lateinit var soknadsarkivererContainer: GenericContainer<*>
 
-	@Suppress("HttpUrlsUsage")
-	fun startContainers() {
+	// Starts the containers in dependency-ordered phases, starting the mutually independent
+	// containers of each phase in parallel (issue #85):
+	// 1. postgres-innsending, gotenberg, authserver and kafka (no dependencies on each other)
+	// 2. Kafka topics, then schema-registry and arkiv-mock (depend only on kafka)
+	// 3. soknadsmottaker (depends on kafka and schema-registry)
+	// 4. innsending-api (depends on postgres, kafka, soknadsmottaker, arkiv-mock and gotenberg)
+	// 5. soknadsarkiverer (depends on authserver, kafka, schema-registry, arkiv-mock, innsending-api)
+	fun startContainers() = runBlocking {
 		val network = Network.newNetwork()
 
-		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.6"))
+		coroutineScope {
+			val postgres = async(Dispatchers.IO) { createPostgresContainer(network).also { it.start() } }
+			val gotenberg = async(Dispatchers.IO) { createGotenbergContainer(network).also { it.start() } }
+			val authServer = async(Dispatchers.IO) { createAuthServerContainer(network).also { it.start() } }
+			val kafka = async(Dispatchers.IO) { createKafkaContainer(network).also { it.start() } }
+			postgresInnsendingContainer = postgres.await()
+			gotenbergContainer = gotenberg.await()
+			authServerContainer = authServer.await()
+			kafkaContainer = kafka.await()
+		}
+
+		createTopics()
+
+		coroutineScope {
+			val schemaRegistry = async(Dispatchers.IO) { createSchemaRegistryContainer(network).also { it.start() } }
+			val arkivMock = async(Dispatchers.IO) { createArkivMockContainer(network).also { it.start() } }
+			schemaRegistryContainer = schemaRegistry.await()
+			arkivMockContainer = arkivMock.await()
+		}
+
+		soknadsmottakerContainer = createSoknadsmottakerContainer(network)
+		soknadsmottakerContainer.start()
+
+		innsendingApiContainer = createInnsendingApiContainer(network)
+		try {
+			innsendingApiContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start innsending-api. Logs:\n${innsendingApiContainer.logs}")
+			throw e
+		}
+
+		soknadsarkivererContainer = createSoknadsarkivererContainer(network)
+		try {
+			soknadsarkivererContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start soknadsarkiverer. Logs:\n${soknadsarkivererContainer.logs}")
+			throw e
+		}
+
+		logger.info("Containers started")
+	}
+
+	private fun createPostgresContainer(network: Network) =
+		PostgreSQLContainer(DockerImageName.parse("postgres:15.6"))
 			.withNetworkAliases("postgres-innsending")
 			.withExposedPorts(defaultPorts["database"]!!)
 			.withNetwork(network)
 			.withUsername(postgresUsername)
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
-		postgresInnsendingContainer.start()
 
-		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
+	private fun createGotenbergContainer(network: Network) =
+		GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
 			.withNetworkAliases("gotenberg")
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
-		gotenbergContainer.start()
 
-		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
+	@Suppress("HttpUrlsUsage")
+	private fun createAuthServerContainer(network: Network) =
+		GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
 			.withNetworkAliases("authserver")
 			.withExposedPorts(6969)
 			.withNetwork(network)
@@ -59,34 +119,17 @@ class EmbeddedDockerImages {
 			)
 			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
 
-		authServerContainer.start()
-
-		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+	private fun createKafkaContainer(network: Network) =
+		ConfluentKafkaContainer(DockerImageName.parse(KAFKA_IMAGE))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
-		kafkaContainer.start()
-
-		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
-		// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
-		// replay keeps working while it exists (issue #78).
-		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
-		// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
-		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!)
-		createTopic(defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!)
-		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
-
+	@Suppress("HttpUrlsUsage")
+	private fun createSchemaRegistryContainer(network: Network) =
 		// Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay
 		// and production during the JSON v3 transition (issue #78). The system-test suite's own
 		// Kafka listener/publisher reads/writes plain JSON on the v3 topics without Schema Registry.
-		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:latest")
+		GenericContainer(SCHEMA_REGISTRY_IMAGE)
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])
 			.withNetwork(network)
@@ -100,9 +143,8 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
 
-		schemaRegistryContainer.start()
-
-		arkivMockContainer = GenericContainer("archiving-infrastructure-arkiv-mock")
+	private fun createArkivMockContainer(network: Network) =
+		GenericContainer("archiving-infrastructure-arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
 			.withExposedPorts(defaultPorts["arkiv-mock"])
 			.withNetwork(network)
@@ -116,9 +158,9 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		arkivMockContainer.start()
-
-		soknadsmottakerContainer = GenericContainer("archiving-infrastructure-soknadsmottaker")
+	@Suppress("HttpUrlsUsage")
+	private fun createSoknadsmottakerContainer(network: Network) =
+		GenericContainer("archiving-infrastructure-soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
 			.withExposedPorts(defaultPorts["soknadsmottaker"])
 			.withNetwork(network)
@@ -134,9 +176,9 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
 			.waitingFor(Wait.forHttp("/health/status").forStatusCode(200))
 
-		soknadsmottakerContainer.start()
-
-		innsendingApiContainer = GenericContainer("archiving-infrastructure-innsending-api")
+	@Suppress("HttpUrlsUsage")
+	private fun createInnsendingApiContainer(network: Network) =
+		GenericContainer("archiving-infrastructure-innsending-api")
 			.withNetworkAliases("innsending-api")
 			.withExposedPorts(defaultPorts["innsending-api"])
 			.withNetwork(network)
@@ -164,14 +206,9 @@ class EmbeddedDockerImages {
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
-		try {
-			innsendingApiContainer.start()
-		} catch (e: Exception) {
-			logger.error("Failed to start innsending-api. Logs:\n${innsendingApiContainer.logs}")
-			throw e
-		}
-
-		soknadsarkivererContainer = GenericContainer("archiving-infrastructure-soknadsarkiverer")
+	@Suppress("HttpUrlsUsage")
+	private fun createSoknadsarkivererContainer(network: Network) =
+		GenericContainer("archiving-infrastructure-soknadsarkiverer")
 			.withNetworkAliases("soknadsarkiverer")
 			.withExposedPorts(defaultPorts["soknadsarkiverer"])
 			.withNetwork(network)
@@ -201,15 +238,24 @@ class EmbeddedDockerImages {
 			.dependsOn(authServerContainer, kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
-		try {
-			soknadsarkivererContainer.start()
-		} catch (e: Exception) {
-			logger.error("Failed to start soknadsarkiverer. Logs:\n${soknadsarkivererContainer.logs}")
-			throw e
-		}
-
-		logger.info("Containers started")
-
+	private suspend fun createTopics() = coroutineScope {
+		listOf(
+			defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!,
+			defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!,
+			// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
+			// replay keeps working while it exists (issue #78).
+			defaultProperties["KAFKA_PROCESSING_TOPIC"]!!,
+			defaultProperties["KAFKA_MESSAGE_TOPIC"]!!,
+			defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!,
+			defaultProperties["KAFKA_METRICS_TOPIC"]!!,
+			// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
+			defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!,
+			defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!,
+			defaultProperties["KAFKA_ENTITIES_TOPIC"]!!,
+			defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!,
+			defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!,
+			defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!,
+		).map { topic -> async(Dispatchers.IO) { createTopic(topic) } }.awaitAll()
 	}
 
 	private fun createTopic(topic: String) {

@@ -67,6 +67,21 @@ jobs:
           restore-keys: |
             e2e-m2-${{ runner.os }}-
 
+      # Pre-pull the external images used by the testcontainers setup in the background, so that
+      # the pull time overlaps with the build phase instead of landing in the test phase
+      # (issue #85). Keep in sync with the image versions in EmbeddedDockerImages.kt.
+      - name: 'Pre-pull external Docker images in the background'
+        run: |
+          (
+            docker pull confluentinc/cp-kafka:8.3.1 &
+            docker pull confluentinc/cp-schema-registry:8.3.1 &
+            docker pull postgres:15.6 &
+            docker pull gotenberg/gotenberg:8.25.1 &
+            docker pull ghcr.io/navikt/mock-oauth2-server:0.5.5 &
+            wait
+          ) > pre-pull.log 2>&1 &
+          echo "Pre-pull of external Docker images started in the background"
+
       - name: 'Build the code for the components'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
         with:
@@ -77,6 +92,14 @@ jobs:
             innsending-api@${{ inputs.innsending }}
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
+
+      # Ensure the background pre-pull has finished before the tests start, so the pull time does
+      # not land in the test phase (issue #85). If a pull failed, testcontainers will pull the
+      # image itself, so this only waits - it does not fail the build.
+      - name: 'Wait for pre-pulled Docker images'
+        run: |
+          while pgrep -f "docker pull (confluentinc|postgres:|gotenberg|mock-oauth2)" > /dev/null; do sleep 5; done
+          cat pre-pull.log
 
       - name: 'Build and run the end-to-end-tests'
         env:
