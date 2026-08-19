@@ -25,10 +25,10 @@ inputs:
     description: 'Whether docker build should be run'
     required: false
     default: "true"
-  prepull_images:
-    description: 'Whitespace/newline separated list of external Docker images to pull in the background while the components are built. Pull failures are only warnings - the test run will pull the image on demand.'
+  prepull_test_images:
+    description: 'Whether external images used by the system tests should be pulled in the background while the components are built. Pull failures are only warnings - the test run will pull the image on demand.'
     required: false
-    default: ""
+    default: "false"
 
 
 runs:
@@ -45,13 +45,32 @@ runs:
         sub_directory="${{ inputs.sub_directory }}"
         skip_tests="${{ inputs.skip_tests }}"
         run_docker_build="${{ inputs.run_docker_build }}"
-        prepull_images="${{ inputs.prepull_images }}"
+        prepull_test_images="${{ inputs.prepull_test_images }}"
 
         components="${{ inputs.component_names }} ${{ inputs.component_name }}"
         if [[ -z "$(echo $components)" ]]; then
           echo "Neither component_name nor component_names was given"
           exit 1
         fi
+
+        prepull_images=()
+        case "$prepull_test_images" in
+          true)
+            prepull_images=(
+              "postgres:15.6"
+              "gotenberg/gotenberg:8.25.1"
+              "ghcr.io/navikt/mock-oauth2-server:0.5.5"
+              "confluentinc/cp-kafka:7.9.1"
+              "confluentinc/cp-schema-registry:7.9.1"
+            )
+            ;;
+          false)
+            ;;
+          *)
+            echo "prepull_test_images must be either true or false"
+            exit 1
+            ;;
+        esac
 
         # The SBOM (cyclonedx) is only needed by the deploy pipelines, and takes several minutes
         # per component because it resolves the entire dependency tree. The same goes for the enforcer.
@@ -100,7 +119,7 @@ runs:
         # pull time overlaps with the component builds instead of landing in the test phase
         pull_pids=()
         pull_names=()
-        for image in $prepull_images; do
+        for image in "${prepull_images[@]}"; do
           log_file="$orig_path/pull-${image//[^a-zA-Z0-9._-]/_}.log"
           ( docker pull --quiet "$image" ) > "$log_file" 2>&1 &
           pull_pids+=("$!")
