@@ -25,10 +25,23 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
+import org.junit.jupiter.api.parallel.ResourceAccessMode
+import org.junit.jupiter.api.parallel.ResourceLock
 import java.io.File
 import java.util.*
 import kotlin.io.path.createTempFile
 
+// Tests in this class run concurrently against the single shared set of containers started
+// in @BeforeAll. @Execution(CONCURRENT) is required explicitly because JUnit runs methods of
+// @TestInstance(PER_CLASS) classes sequentially otherwise.
+// Tests that must run alone (poison pill, the 10x no-login loop) take the shared
+// "end-to-end" resource lock in READ_WRITE mode; every other test holds it in READ mode,
+// so they run concurrently with each other but never with an exclusive test.
+// (A class-level READ lock serializes all methods with JUnit 5.11; method-level
+// @Isolated does not exist in JUnit 5. See issue #86.)
+@Execution(ExecutionMode.CONCURRENT)
 class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
@@ -56,6 +69,7 @@ class EndToEndTests : SystemTestBase() {
 			embeddedDockerImages.stopContainers()
 		}
 	}
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `jackson test`() {
 		val jsonResponse = "{\"status\":\"UP\", \"ping\":{\"status\":\"UP\"}, \"ssl\":{\"status\":\"UP\",\"details\":{\"validChains\":[]}}}"
@@ -65,6 +79,7 @@ class EndToEndTests : SystemTestBase() {
 
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Happy case - one file ends up in the archive`() {
 		val soknadTestdata = innsendingApi.opprettEttersending()
@@ -90,6 +105,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Happy case - large attachment ends up in the archive`() {
 		val soknadTestdata = innsendingApi.opprettEttersending()
@@ -115,6 +131,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Arkivering av ettersending feiler mot arkivet`() {
 		val soknadTestdata = innsendingApi.opprettEttersending()
@@ -140,6 +157,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkiveringFeilet)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Archive responds 409 - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -175,6 +193,7 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `SAF respond with journalpost - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -207,6 +226,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Request responds with 408 - second attempt already archived from SAF`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -240,6 +260,8 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	// Serialized because it tests global deserialization robustness (issue #86)
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ_WRITE)
 	@Test
 	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -268,6 +290,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Archive responds 404 on first two attempts - Works on third attempt`() {
 		val erroneousAttempts = 2
@@ -299,6 +322,7 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Archive responds 200 but has wrong response body - Will retry`() {
 		val erroneousAttempts = 3
@@ -332,6 +356,7 @@ class EndToEndTests : SystemTestBase() {
 
 	private val fileOfSize1mb = "/One_MB.pdf"
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Happy case - one submission from not logged in user ends up in the archive`() {
 
@@ -358,6 +383,8 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	// Serialized because the 10x loop consumes a lot of resources (issue #86)
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ_WRITE)
 	@Test
 	fun `Happy case - ten submission from not logged in user ends up in the archive`() {
 		repeat(10) {
@@ -365,6 +392,7 @@ class EndToEndTests : SystemTestBase() {
 		}
 	}
 
+	@ResourceLock(value = "end-to-end", mode = ResourceAccessMode.READ)
 	@Test
 	fun `Happy case - upload one file and then deletes it`() {
 
