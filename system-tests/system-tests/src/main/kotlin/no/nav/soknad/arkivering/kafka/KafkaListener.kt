@@ -139,18 +139,34 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	}
 
 
-	fun clearConsumers() {
-		entityConsumers.clear()
-		metricsConsumers.clear()
-		numberOfCallsConsumers.clear()
-		processingEventConsumers.clear()
-		arkiveringstilbakemeldingerConsumers.clear()
+	/**
+	 * A handle for a consumer registered on this [KafkaListener]. Call [deregister] to remove
+	 * exactly that consumer again, without affecting consumers registered by others. This makes
+	 * it safe for several tests running in parallel to share one [KafkaListener] instance.
+	 */
+	fun interface ConsumerRegistration {
+		fun deregister()
 	}
 
 	@Suppress("unused")
-	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetricsJson>) = metricsConsumers        .add(consumer)
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)     = entityConsumers         .add(consumer)
-	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
-	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEventJson>)   = processingEventConsumers.add(consumer)
-	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>)   = arkiveringstilbakemeldingerConsumers.add(consumer)
+	fun addConsumerForMetrics(consumer: KafkaEntityConsumer<InnsendingMetricsJson>): ConsumerRegistration {
+		metricsConsumers.add(consumer)
+		return ConsumerRegistration { metricsConsumers.remove(consumer) }
+	}
+	fun addConsumerForEntities(consumer: KafkaEntityConsumer<ArchiveEntity>): ConsumerRegistration {
+		entityConsumers.add(consumer)
+		return ConsumerRegistration { entityConsumers.remove(consumer) }
+	}
+	fun addConsumerForNumberOfCalls(consumer: KafkaEntityConsumer<Int>): ConsumerRegistration {
+		numberOfCallsConsumers.add(consumer)
+		return ConsumerRegistration { numberOfCallsConsumers.remove(consumer) }
+	}
+	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEventJson>): ConsumerRegistration {
+		processingEventConsumers.add(consumer)
+		return ConsumerRegistration { processingEventConsumers.remove(consumer) }
+	}
+	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>): ConsumerRegistration {
+		arkiveringstilbakemeldingerConsumers.add(consumer)
+		return ConsumerRegistration { arkiveringstilbakemeldingerConsumers.remove(consumer) }
+	}
 }

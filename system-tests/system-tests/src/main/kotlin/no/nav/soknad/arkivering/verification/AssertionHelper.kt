@@ -11,8 +11,9 @@ import no.nav.soknad.arkivering.kafka.ProcessingEventType
  * However, it will only perform the checks when the [verify] function (which is a blocking function) is called.
  *
  * Note that most if not all functions of the [AssertionHelper] have a side effect: the given [kafkaListener] will have
- * its consumers modified. Also, by creating an [AssertionHelper], the consumers of the provided [kafkaListener] will
- * be cleared.
+ * its consumers modified. Each [AssertionHelper] registers its own consumers on the (potentially shared)
+ * [kafkaListener], and [verify] deregisters exactly those consumers again when it is done. This makes it safe
+ * for tests running in parallel to each use their own [AssertionHelper] on the same [KafkaListener].
  */
 class AssertionHelper(private val kafkaListener: KafkaListener) {
 
@@ -21,9 +22,11 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	 */
 	private val verificationTaskManager = VerificationTaskManager()
 
-	init {
-		kafkaListener.clearConsumers()
-	}
+	/**
+	 * Registrations of all consumers this helper has added to the [kafkaListener]. They are
+	 * deregistered when [verify] finishes so that no stale consumers linger on the shared listener.
+	 */
+	private val registrations = mutableListOf<KafkaListener.ConsumerRegistration>()
 
 	fun hasFinishedEvent(key: String, timeoutInMs: Long = verificationDefaultPresenceTimeout): AssertionHelper =
 		processingEventIsPresent(timeoutInMs, key, ProcessingEventType.FINISHED)
@@ -46,7 +49,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.build()
 
 		verificationTaskManager.registerTask(verificationTask)
-		kafkaListener.addConsumerForProcessingEvents(verificationTask)
+		registrations.add(kafkaListener.addConsumerForProcessingEvents(verificationTask))
 
 		return this
 	}
@@ -64,7 +67,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.build()
 
 		verificationTaskManager.registerTask(verificationTask)
-		kafkaListener.addConsumerForNumberOfCalls(verificationTask)
+		registrations.add(kafkaListener.addConsumerForNumberOfCalls(verificationTask))
 
 		return this
 	}
@@ -77,7 +80,7 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.build()
 
 		verificationTaskManager.registerTask(verificationTask)
-		kafkaListener.addConsumerForEntities(verificationTask)
+		registrations.add(kafkaListener.addConsumerForEntities(verificationTask))
 
 		return this
 	}
@@ -90,13 +93,17 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.build()
 
 		verificationTaskManager.registerTask(verificationTask)
-		kafkaListener.addConsumerForEntities(verificationTask)
+		registrations.add(kafkaListener.addConsumerForEntities(verificationTask))
 
 		return this
 	}
 
 
 	fun verify() {
-		verificationTaskManager.assertAllTasksSucceeds()
+		try {
+			verificationTaskManager.assertAllTasksSucceeds()
+		} finally {
+			registrations.forEach { it.deregister() }
+		}
 	}
 }
