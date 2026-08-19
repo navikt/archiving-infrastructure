@@ -34,10 +34,10 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        # TEMPORARY (issue #84): pinned to feature/faster-e2e-builds so that this PR exercises the
-        # new version of the action. Revert to @feature/json-v3-processing-events before merge
-        # (and to @main together with the rest of issue #78).
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
+        # TEMPORARY (issues #84/#85): pinned to feature/parallel-testcontainers so that this PR
+        # exercises the new version of the action. Revert to @feature/json-v3-processing-events
+        # before merge (and to @main together with the rest of issue #78).
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/parallel-testcontainers
         with:
           # TEMPORARY (issue #78): soknadsarkiverer is built from the paired feature branch.
           # Drop the "@feature/json-v3-processing-events" suffix before merging to main.
@@ -46,13 +46,21 @@ jobs:
             soknadsarkiverer@feature/json-v3-processing-events
             arkiv-mock
             innsending-api
+          # The external images started by EmbeddedDockerImages.kt - keep the two lists in sync
+          prepull_images: |
+            postgres:15.6
+            gotenberg/gotenberg:8.25.1
+            ghcr.io/navikt/mock-oauth2-server:0.5.5
+            confluentinc/cp-kafka:7.9.1
+            confluentinc/cp-schema-registry:7.9.1
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
       - name: 'Run the end-to-end-tests (this PR)'
-        # TEMPORARY (issue #84): see the comment above. Revert to @feature/json-v3-processing-events
-        # before merge, and to @main together with the rest of issue #78.
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
+        # TEMPORARY (issues #84/#85): see the comment above. Revert to
+        # @feature/json-v3-processing-events before merge, and to @main together with the rest of
+        # issue #78.
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/parallel-testcontainers
         with:
           component_name: archiving-infrastructure
           branch: ${GITHUB_HEAD_REF} # Branch of current PR

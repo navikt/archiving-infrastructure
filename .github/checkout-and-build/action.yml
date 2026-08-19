@@ -25,6 +25,10 @@ inputs:
     description: 'Whether docker build should be run'
     required: false
     default: "true"
+  prepull_images:
+    description: 'Whitespace/newline separated list of external Docker images to pull in the background while the components are built. Pull failures are only warnings - the test run will pull the image on demand.'
+    required: false
+    default: ""
 
 
 runs:
@@ -41,6 +45,7 @@ runs:
         sub_directory="${{ inputs.sub_directory }}"
         skip_tests="${{ inputs.skip_tests }}"
         run_docker_build="${{ inputs.run_docker_build }}"
+        prepull_images="${{ inputs.prepull_images }}"
 
         components="${{ inputs.component_names }} ${{ inputs.component_name }}"
         if [[ -z "$(echo $components)" ]]; then
@@ -91,6 +96,17 @@ runs:
           names+=("$component")
         done
 
+        # The external images used by the system tests are pulled in the background, so that the
+        # pull time overlaps with the component builds instead of landing in the test phase
+        pull_pids=()
+        pull_names=()
+        for image in $prepull_images; do
+          log_file="$orig_path/pull-${image//[^a-zA-Z0-9._-]/_}.log"
+          ( docker pull --quiet "$image" ) > "$log_file" 2>&1 &
+          pull_pids+=("$!")
+          pull_names+=("$image")
+        done
+
         if [[ ${#names[@]} -eq 1 ]]; then
           # A single component - build it in the foreground so that the output is streamed live
           build_component "${names[0]}"
@@ -123,6 +139,19 @@ runs:
         fi
 
         cd "$orig_path"
+
+        for i in "${!pull_pids[@]}"; do
+          image="${pull_names[$i]}"
+          log_file="$orig_path/pull-${image//[^a-zA-Z0-9._-]/_}.log"
+          if wait "${pull_pids[$i]}"; then
+            echo "Pulling $image ... [OK]"
+          else
+            # Not fatal: Testcontainers pulls the image itself if it is missing
+            echo "::warning::Pre-pull of $image failed: $(cat "$log_file")"
+          fi
+          rm -f "$log_file"
+        done
+
         if [[ "$run_docker_build" == "true" ]]; then
           docker images
         fi

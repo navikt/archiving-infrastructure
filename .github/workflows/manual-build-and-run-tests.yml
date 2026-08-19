@@ -4,8 +4,8 @@
 # archiving-infrastructure branch while the JSON v3 processing-event/metrics migration is in flight.
 # Revert every `@feature/json-v3-processing-events` ref and the `soknadsarkiverer` default back to
 # `@main`/`'main'` before merging to main.
-# TEMPORARY (issue #84): the checkout-and-build ref is pinned to @feature/faster-e2e-builds so this
-# PR exercises the new version of the action. Revert to @feature/json-v3-processing-events before merge.
+# TEMPORARY (issues #84/#85): the checkout-and-build ref is pinned to @feature/parallel-testcontainers
+# so this PR exercises the new version of the action. Revert to @feature/json-v3-processing-events before merge.
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
 
@@ -68,13 +68,20 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/faster-e2e-builds
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/parallel-testcontainers
         with:
           component_names: |
             soknadsmottaker@${{ inputs.soknadsmottaker }}
             soknadsarkiverer@${{ inputs.soknadsarkiverer }}
             arkiv-mock@${{ inputs.arkivmock }}
             innsending-api@${{ inputs.innsending }}
+          # The external images started by EmbeddedDockerImages.kt - keep the two lists in sync
+          prepull_images: |
+            postgres:15.6
+            gotenberg/gotenberg:8.25.1
+            ghcr.io/navikt/mock-oauth2-server:0.5.5
+            confluentinc/cp-kafka:7.9.1
+            confluentinc/cp-schema-registry:7.9.1
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
