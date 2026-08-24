@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.KafkaConfig
-import no.nav.soknad.arkivering.SchemaRegistry
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
@@ -43,7 +42,7 @@ abstract class SystemTestBase {
 			Config()
 		}
 		val kafkaConfig = if (dockerImages != null) {
-			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker(), schemaRegistry = SchemaRegistry(url = dockerImages.getUrlForSchemaRegistry()))
+			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker())
 		} else {
 			KafkaConfig()
 		}

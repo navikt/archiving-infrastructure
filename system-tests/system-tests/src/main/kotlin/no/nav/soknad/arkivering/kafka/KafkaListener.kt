@@ -3,14 +3,8 @@ package no.nav.soknad.arkivering.kafka
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import no.nav.soknad.arkivering.KafkaConfig
-import no.nav.soknad.arkivering.avroschemas.InnsendingMetrics
-import no.nav.soknad.arkivering.avroschemas.ProcessingEvent
 import no.nav.soknad.arkivering.dto.ArchiveEntity
-import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.Serdes
@@ -30,9 +24,9 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	private val verbose = true
 
 	private val entityConsumers          = CopyOnWriteArrayList<KafkaEntityConsumer<ArchiveEntity>>()
-	private val metricsConsumers         = CopyOnWriteArrayList<KafkaEntityConsumer<InnsendingMetrics>>()
+	private val metricsConsumers         = CopyOnWriteArrayList<KafkaEntityConsumer<InnsendingMetricsJson>>()
 	private val numberOfCallsConsumers   = CopyOnWriteArrayList<KafkaEntityConsumer<Int>>()
-	private val processingEventConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<ProcessingEvent>>()
+	private val processingEventConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<ProcessingEventJson>>()
 	private val arkiveringstilbakemeldingerConsumers = CopyOnWriteArrayList<KafkaEntityConsumer<String>>()
 
 	private val kafkaStreams: KafkaStreams
@@ -58,8 +52,12 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 
 	private fun kafkaStreams(streamsBuilder: StreamsBuilder) {
-		val metricsStream              = streamsBuilder.stream(kafkaConfig.topics.metricsTopic,       Consumed.with(stringSerde, createInnsendingMetricsSerde()))
-		val processingEventTopicStream = streamsBuilder.stream(kafkaConfig.topics.processingTopic,    Consumed.with(stringSerde, createProcessingEventSerde()))
+		// Default system-test path reads the JSON v3 processing-event/metrics topics (issue #78):
+		// plain JSON via Jackson, no Schema Registry. The legacy Avro v1/"v2" topics
+		// (kafkaConfig.topics.processingTopic / metricsTopic) are retained for legacy replay but are
+		// not consumed here.
+		val metricsStream              = streamsBuilder.stream(kafkaConfig.topics.metricsTopicV3,    Consumed.with(stringSerde, stringSerde))
+		val processingEventTopicStream = streamsBuilder.stream(kafkaConfig.topics.processingTopicV3,  Consumed.with(stringSerde, stringSerde))
 		val arkiveringstilbakemeldingerStream = streamsBuilder.stream(kafkaConfig.topics.arkiveringstilbakemeldingerTopic,Consumed.with(stringSerde, stringSerde))
 		val entitiesStream             = streamsBuilder.stream(kafkaConfig.topics.entitiesTopic,      Consumed.with(stringSerde, stringSerde))
 		val numberOfCallsStream        = streamsBuilder.stream(kafkaConfig.topics.numberOfCallsTopic, Consumed.with(stringSerde, intSerde))
@@ -71,6 +69,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
 		metricsStream
+			.mapValues { json -> mapper.readValue<InnsendingMetricsJson>(json) }
 			.peek { key, entity -> log("$key: Metrics received   - $entity") }
 			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> metricsConsumers.forEach { it.consume(key, entity) } }
@@ -81,6 +80,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 			.foreach { key, numberOfCalls -> numberOfCallsConsumers.forEach { it.consume(key, numberOfCalls) } }
 
 		processingEventTopicStream
+			.mapValues { json -> mapper.readValue<ProcessingEventJson>(json) }
 			.peek { key, entity -> log("$key: Processing Events  - $entity") }
 			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> processingEventConsumers.forEach { it.consume(key, entity) } }
@@ -97,17 +97,14 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	}
 
 	private fun kafkaConfig() = Properties().also {
-		it[AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG] = kafkaConfig.schemaRegistry.url
 		it[StreamsConfig.APPLICATION_ID_CONFIG] = kafkaConfig.applicationId
 		it[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.brokers
 		it[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
-		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = SpecificAvroSerde::class.java
+		it[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
 		it[StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG] = LogAndContinueExceptionHandler::class.java
 		it[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 1000
 
 		if (kafkaConfig.security.enabled) {
-			it[SchemaRegistryClientConfig.USER_INFO_CONFIG] = "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
-			it[SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE] = "USER_INFO"
 			it[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "SSL"
 			it[SslConfigs.SSL_KEYSTORE_TYPE_CONFIG] = "PKCS12"
 			it[SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG] = kafkaConfig.security.trustStorePath
@@ -116,18 +113,6 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 			it[SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG] = kafkaConfig.security.keyStorePassword
 			it[SslConfigs.SSL_KEY_PASSWORD_CONFIG] = kafkaConfig.security.keyStorePassword
 		}
-	}
-
-	private fun createProcessingEventSerde(): SpecificAvroSerde<ProcessingEvent> = createAvroSerde()
-	private fun createInnsendingMetricsSerde(): SpecificAvroSerde<InnsendingMetrics> = createAvroSerde()
-
-	private fun <T : SpecificRecord> createAvroSerde(): SpecificAvroSerde<T> {
-		val serdeConfig = hashMapOf(
-			AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG to kafkaConfig.schemaRegistry.url,
-			SchemaRegistryClientConfig.BASIC_AUTH_CREDENTIALS_SOURCE to "USER_INFO",
-			SchemaRegistryClientConfig.USER_INFO_CONFIG to "${kafkaConfig.schemaRegistry.username}:${kafkaConfig.schemaRegistry.password}"
-		)
-		return SpecificAvroSerde<T>().also { it.configure(serdeConfig, false) }
 	}
 
 	/**
@@ -163,9 +148,9 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	}
 
 	@Suppress("unused")
-	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetrics>) = metricsConsumers        .add(consumer)
+	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetricsJson>) = metricsConsumers        .add(consumer)
 	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)     = entityConsumers         .add(consumer)
 	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
-	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEvent>)   = processingEventConsumers.add(consumer)
+	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEventJson>)   = processingEventConsumers.add(consumer)
 	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>)   = arkiveringstilbakemeldingerConsumers.add(consumer)
 }

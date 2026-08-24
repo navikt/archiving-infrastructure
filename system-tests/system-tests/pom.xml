@@ -110,11 +110,6 @@
 			<version>${kafka.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>io.confluent</groupId>
-			<artifactId>kafka-streams-avro-serde</artifactId>
-			<version>${kafka-streams-avro-serde.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>no.nav.soknad.arkivering</groupId>
 			<artifactId>avro-schemas</artifactId>
 			<version>${arkivering-schemas.version}</version>
@@ -215,10 +210,6 @@
 			<id>github</id>
 			<name>GitHub felles Maven Packagesfor Navikt</name>
 			<url>https://github-package-registry-mirror.gc.nav.no/cached/maven-release</url>
-		</repository>
-		<repository>
-			<id>confluent</id>
-			<url>https://packages.confluent.io/maven</url>
 		</repository>
 		<repository>
 			<id>central</id>
