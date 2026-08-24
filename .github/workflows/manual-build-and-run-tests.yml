@@ -1,9 +1,3 @@
-# TEMPORARY (issue #78): the checkout-and-build action refs below are pinned to
-# @feature/json-v3-processing-events, and the `soknadsarkiverer` input default targets that branch,
-# so a manual run tests this repo's paired branch in navikt/soknadsarkiverer together with the
-# archiving-infrastructure branch while the JSON v3 processing-event/metrics migration is in flight.
-# Revert every `@feature/json-v3-processing-events` ref and the `soknadsarkiverer` default back to
-# `@main`/`'main'` before merging to main.
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
 
@@ -32,7 +26,7 @@ on:
       soknadsarkiverer:
         description: 'Soknadsarkiverer branch'
         required: true
-        default: 'feature/json-v3-processing-events' # TEMPORARY (issue #78): revert to 'main' before merge
+        default: 'main'
         type: string
 
       arkivmock:
@@ -58,25 +52,25 @@ jobs:
           cache: 'maven'
 
       - name: 'Build the code for soknadsmottaker'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsmottaker
           branch: ${{ inputs.soknadsmottaker }}
 
       - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: soknadsarkiverer
           branch: ${{ inputs.soknadsarkiverer }}
 
       - name: 'Build the code for arkiv-mock'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: arkiv-mock
           branch: ${{ inputs.arkivmock }}
 
       - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/json-v3-processing-events
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_name: innsending-api
         env:
