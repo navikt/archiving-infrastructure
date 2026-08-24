@@ -1,9 +1,3 @@
-# TEMPORARY (issue #78): the checkout-and-build action refs below are pinned to
-# @feature/json-v3-processing-events, and the `soknadsarkiverer` input default targets that branch,
-# so a manual run tests this repo's paired branch in navikt/soknadsarkiverer together with the
-# archiving-infrastructure branch while the JSON v3 processing-event/metrics migration is in flight.
-# Revert every `@feature/json-v3-processing-events` ref and the `soknadsarkiverer` default back to
-# `@main`/`'main'` before merging to main.
 # TEMPORARY (issue #84): the checkout-and-build ref is pinned to @feature/faster-e2e-builds so this
 # PR exercises the new version of the action. Revert to @feature/json-v3-processing-events before merge.
 name: Manually triggered build and run tests
@@ -34,7 +28,7 @@ on:
       soknadsarkiverer:
         description: 'Soknadsarkiverer branch'
         required: true
-        default: 'feature/json-v3-processing-events' # TEMPORARY (issue #78): revert to 'main' before merge
+        default: 'main'
         type: string
 
       arkivmock:
