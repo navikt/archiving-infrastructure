@@ -1,5 +1,3 @@
-# TEMPORARY (issues #84/#85): the checkout-and-build ref is pinned to @feature/parallel-testcontainers
-# so this PR exercises the new version of the action. Revert to @feature/json-v3-processing-events before merge.
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
 
@@ -62,7 +60,7 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@feature/parallel-testcontainers
+        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
           component_names: |
             soknadsmottaker@${{ inputs.soknadsmottaker }}
