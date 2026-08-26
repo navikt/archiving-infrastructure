@@ -11,12 +11,18 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 class EmbeddedDockerImages {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
+
+	// Pinned rather than "latest" for reproducible test runs and to avoid pulling a new image
+	// whenever Confluent publishes one. Keep in sync with the pre-pull list in the workflows.
+	private val confluentVersion = "7.9.1"
 
 	private lateinit var authServerContainer: GenericContainer<*>
 	private lateinit var gotenbergContainer: GenericContainer<*>
@@ -39,13 +45,11 @@ class EmbeddedDockerImages {
 			.withUsername(postgresUsername)
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
-		postgresInnsendingContainer.start()
 
 		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
 			.withNetworkAliases("gotenberg")
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
-		gotenbergContainer.start()
 
 		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
 			.withNetworkAliases("authserver")
@@ -59,13 +63,17 @@ class EmbeddedDockerImages {
 			)
 			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
 
-		authServerContainer.start()
-
-		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:$confluentVersion"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
-		kafkaContainer.start()
+		// These four have no dependencies on each other, so they can start at the same time
+		startInParallel(
+			"postgres-innsending" to postgresInnsendingContainer,
+			"gotenberg" to gotenbergContainer,
+			"authserver" to authServerContainer,
+			"kafka-broker" to kafkaContainer,
+		)
 
 		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
@@ -86,7 +94,7 @@ class EmbeddedDockerImages {
 		// Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay
 		// and production during the JSON v3 transition (issue #78). The system-test suite's own
 		// Kafka listener/publisher reads/writes plain JSON on the v3 topics without Schema Registry.
-		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:latest")
+		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:$confluentVersion")
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])
 			.withNetwork(network)
@@ -99,8 +107,6 @@ class EmbeddedDockerImages {
 			)
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
-
-		schemaRegistryContainer.start()
 
 		arkivMockContainer = GenericContainer("archiving-infrastructure-arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
@@ -116,7 +122,11 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		arkivMockContainer.start()
+		// Both only depend on Kafka, which is already running
+		startInParallel(
+			"schema-registry" to schemaRegistryContainer,
+			"arkiv-mock" to arkivMockContainer,
+		)
 
 		soknadsmottakerContainer = GenericContainer("archiving-infrastructure-soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
@@ -134,7 +144,7 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
 			.waitingFor(Wait.forHttp("/health/status").forStatusCode(200))
 
-		soknadsmottakerContainer.start()
+		startInParallel("soknadsmottaker" to soknadsmottakerContainer)
 
 		innsendingApiContainer = GenericContainer("archiving-infrastructure-innsending-api")
 			.withNetworkAliases("innsending-api")
@@ -210,6 +220,38 @@ class EmbeddedDockerImages {
 
 		logger.info("Containers started")
 
+	}
+
+	/**
+	 * Starts the given containers concurrently and waits until all of them are ready. Uses a
+	 * dedicated thread pool rather than the ForkJoinPool common pool, whose parallelism can be 1
+	 * on small CI runners.
+	 */
+	private fun startInParallel(vararg containers: Pair<String, GenericContainer<*>>) {
+		val executor = Executors.newFixedThreadPool(containers.size)
+		try {
+			val futures = containers.map { (name, container) ->
+				name to CompletableFuture.runAsync({
+					logger.info("Starting $name")
+					container.start()
+				}, executor)
+			}
+
+			var failure: Throwable? = null
+			futures.forEachIndexed { index, (name, future) ->
+				try {
+					future.join()
+				} catch (e: Exception) {
+					val container = containers[index].second
+					val logs = try { container.logs } catch (_: Exception) { "<no logs available>" }
+					logger.error("Failed to start $name. Logs:\n$logs")
+					failure = failure ?: e.cause ?: e
+				}
+			}
+			failure?.let { throw it }
+		} finally {
+			executor.shutdown()
+		}
 	}
 
 	private fun createTopic(topic: String) {
