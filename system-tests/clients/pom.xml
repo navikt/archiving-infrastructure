@@ -129,26 +129,6 @@
 
 
 			<plugin>
-				<groupId>com.github.sjoblomj</groupId>
-				<artifactId>remote-comparer-maven-plugin</artifactId>
-				<version>${remote-comparer-maven-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>compare Soknadsmottaker OpenAPI spec</id>
-						<goals>
-							<goal>remote-compare</goal>
-						</goals>
-						<configuration>
-							<localFilePath>src/main/resources/soknadsmottaker-api.yml</localFilePath>
-							<remoteFileUri>https://raw.githubusercontent.com/navikt/soknadsmottaker/main/api/src/main/resources/soknadsmottaker-api.yml</remoteFileUri>
-							<timeoutMs>20000</timeoutMs>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-
-			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<version>${kotlin.version}</version>
@@ -173,11 +153,14 @@
 			<id>central</id>
 			<url>https://repo1.maven.org/maven2</url>
 		</repository>
+		<repository>
+			<id>openhtmltopdf</id>
+			<url>https://github.com/openhtmltopdf/openhtmltopdf</url>
+		</repository>
+		<repository>
+			<id>github</id>
+			<name>GitHub felles Maven Packagesfor Navikt</name>
+			<url>https://github-package-registry-mirror.gc.nav.no/cached/maven-release</url>
+		</repository>
 	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</pluginRepository>
-	</pluginRepositories>
 </project>

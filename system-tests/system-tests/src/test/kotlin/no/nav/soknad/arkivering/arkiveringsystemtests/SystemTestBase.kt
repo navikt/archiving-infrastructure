@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.KafkaConfig
-import no.nav.soknad.arkivering.SchemaRegistry
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EnvironmentConfig
 import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
@@ -43,7 +42,7 @@ abstract class SystemTestBase {
 			Config()
 		}
 		val kafkaConfig = if (dockerImages != null) {
-			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker(), schemaRegistry = SchemaRegistry(url = dockerImages.getUrlForSchemaRegistry()))
+			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker())
 		} else {
 			KafkaConfig()
 		}
@@ -52,6 +51,7 @@ abstract class SystemTestBase {
 	}
 
 	private fun checkThatDependenciesAreUp() {
+		logger.info("Checking that dependencies are up, soknadsmottakerHost=${env.getUrlForSoknadsmottaker()}")
 		val dependencies = HashMap<String, String>().also {
 			it["soknadsmottaker"]  = env.getUrlForSoknadsmottaker()+"/internal/health"
 			it["soknadsarkiverer"] = env.getUrlForSoknadsarkiverer()+"/internal/health"
@@ -76,7 +76,7 @@ abstract class SystemTestBase {
 
 	fun putPoisonPillOnKafkaTopic(key: String) {
 		logger.debug("Poison pill key is $key for test '${Thread.currentThread().stackTrace[2].methodName}'")
-		kafkaPublisher.putDataOnTopic(key, "unserializableString")
+		kafkaPublisher.putDataOnLoggedInTopic(key, "unserializableString")
 	}
 
 	fun assertThatArkivMock() = AssertionHelper(kafkaListener)

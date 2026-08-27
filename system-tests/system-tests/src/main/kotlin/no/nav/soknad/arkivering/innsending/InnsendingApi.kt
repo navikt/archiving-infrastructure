@@ -32,6 +32,7 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 
 	private val nologinFillager = if (authClient != null) NologinApi(config.innsendingApiUrl, authClient) else NologinApi(config.innsendingApiUrl)
 	private val nologinSoknad = if (authClient != null) NologinSoknadApi(config.innsendingApiUrl, authClient) else NologinSoknadApi(config.innsendingApiUrl)
+	private val nologinApplicationApi = if (authClient != null) NologinApplicationApi(config.innsendingApiUrl, authClient) else NologinApplicationApi(config.innsendingApiUrl)
 
 
 	init {
@@ -64,12 +65,24 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 
 	fun sendInn(soknad: SoknadTestdata) = runCatching {
 		logger.info("Sender inn søknad: ${soknad.innsendingsId}")
-		sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
+		try {
+			sendInnSoknad.sendInnSoknad(soknad.innsendingsId)
+			logger.info("Sendt inn søknad: ${soknad.innsendingsId}")
+		} catch (e: Exception) {
+			logger.error("Feil ved innsending av søknad: ${soknad.innsendingsId}", e)
+			throw e
+		}
 	}
 
-	fun sendInn(innsendingsId: String) {
+	fun sendInn(innsendingsId: String) = runCatching {
 		logger.info("Sender inn søknad: ${innsendingsId}")
-		sendInnSoknad.sendInnSoknad(innsendingsId)
+		try {
+			sendInnSoknad.sendInnSoknad(innsendingsId)
+			logger.info("Sendt inn søknad: ${innsendingsId}")
+		} catch (e: Exception) {
+			logger.error("Feil ved innsending av søknad: ${innsendingsId}", e)
+			throw e
+		}
 	}
 
 	fun getArkiveringsstatus(innsendingsId: String): ArkiveringsStatusDto {
@@ -80,6 +93,12 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		logger.info("Lagrer og sender inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
 		nologinSoknad.opprettNologinSoknad(nologinSoknadDto)
 		logger.info("Lagret og sendt inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
+	}
+
+	fun sendInNoLoginApplication(innsendingsID: UUID, submitApplicationRequest: SubmitApplicationRequest) = runCatching {
+		logger.info("Submits not logged in Application ${innsendingsID}")
+		nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
+		logger.info("Submitted and sent in not logged in Application ${innsendingsID}")
 	}
 
 	fun lastOppNoLoginFil(innsendingId: String, vedleggsId: String, fil: File) = runCatching {

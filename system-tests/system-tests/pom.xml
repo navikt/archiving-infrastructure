@@ -9,8 +9,8 @@
 	</parent>
 
 	<artifactId>system-tests</artifactId>
-	<name>End-to-end-tests and Load-tests</name>
-	<description>End-to-end-tests and Load-tests</description>
+	<name>End-to-end-tests</name>
+	<description>End-to-end-tests</description>
 
 	<dependencies>
 		<dependency>
@@ -23,6 +23,29 @@
 			<artifactId>token-client-core</artifactId>
 			<version>${token-support.version}</version>
 		</dependency>
+		<!-- Required for openhtmltopdf SVG support -->
+		<dependency>
+			<groupId>xml-apis</groupId>
+			<artifactId>xml-apis</artifactId>
+			<version>${xml-apis.version}</version>
+		</dependency>
+<!--
+		<dependency>
+			<groupId>xml-apis</groupId>
+			<artifactId>xml-apis-ext</artifactId>
+			<version>${xml-apis-ext.version}</version>
+		</dependency>
+-->
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-dom</artifactId>
+			<version>${batik-dom.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-svg-dom</artifactId>
+			<version>${batik-svg-dom.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>no.nav.security</groupId>
 			<artifactId>token-validation-core</artifactId>
@@ -33,12 +56,6 @@
 			<artifactId>kotlin-stdlib</artifactId>
 			<version>${kotlin.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jetbrains.kotlin</groupId>
-			<artifactId>kotlin-reflect</artifactId>
-			<version>${kotlin.version}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-core</artifactId>
@@ -93,24 +110,9 @@
 			<version>${kafka.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>io.confluent</groupId>
-			<artifactId>kafka-streams-avro-serde</artifactId>
-			<version>${kafka-streams-avro-serde.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.navikt</groupId>
-			<artifactId>soknadarkiv-schema</artifactId>
+			<groupId>no.nav.soknad.arkivering</groupId>
+			<artifactId>avro-schemas</artifactId>
 			<version>${arkivering-schemas.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.prometheus</groupId>
-			<artifactId>simpleclient</artifactId>
-			<version>${prometheus.simpleclient.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.prometheus</groupId>
-			<artifactId>simpleclient_pushgateway</artifactId>
-			<version>${prometheus.simpleclient.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.tomakehurst</groupId>
@@ -200,30 +202,6 @@
 				</dependencies>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.6.0</version>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<archive>
-								<manifest>
-									<mainClass>no.nav.soknad.arkivering.MainKt</mainClass>
-								</manifest>
-							</archive>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 
@@ -231,15 +209,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub felles Maven Packagesfor Navikt</name>
-			<url>https://maven.pkg.github.com/navikt/maven-release</url>
-		</repository>
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		<repository>
-			<id>confluent</id>
-			<url>https://packages.confluent.io/maven</url>
+			<url>https://github-package-registry-mirror.gc.nav.no/cached/maven-release</url>
 		</repository>
 		<repository>
 			<id>central</id>

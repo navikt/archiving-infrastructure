@@ -11,6 +11,8 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 class EmbeddedDockerImages {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -18,6 +20,11 @@ class EmbeddedDockerImages {
 	private val postgresUsername = "postgres"
 	private val databaseName = "postgres"
 
+	// Pinned rather than "latest" for reproducible test runs and to avoid pulling a new image
+	// whenever Confluent publishes one. Keep in sync with the pre-pull list in the workflows.
+	private val confluentVersion = "7.9.1"
+
+	private lateinit var authServerContainer: GenericContainer<*>
 	private lateinit var gotenbergContainer: GenericContainer<*>
 	private lateinit var postgresInnsendingContainer: PostgreSQLContainer<*>
 	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
@@ -38,32 +45,56 @@ class EmbeddedDockerImages {
 			.withUsername(postgresUsername)
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
-		postgresInnsendingContainer.start()
 
 		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
 			.withNetworkAliases("gotenberg")
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
-		gotenbergContainer.start()
 
-		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"))
+		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
+			.withNetworkAliases("authserver")
+			.withExposedPorts(6969)
+			.withNetwork(network)
+			.withEnv(
+				hashMapOf(
+					"SERVER_PORT" to "6969",
+					"JSON_CONFIG" to """{"interactiveLogin":true,"httpServer":"NettyWrapper"}"""
+				)
+			)
+			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
+
+		kafkaContainer = ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:$confluentVersion"))
 			.withNetworkAliases("kafka-broker")
 			.withNetwork(network)
 
-		kafkaContainer.start()
+		// These four have no dependencies on each other, so they can start at the same time
+		startInParallel(
+			"postgres-innsending" to postgresInnsendingContainer,
+			"gotenberg" to gotenbergContainer,
+			"authserver" to authServerContainer,
+			"kafka-broker" to kafkaContainer,
+		)
 
-		createTopic(defaultProperties["KAFKA_MAIN_TOPIC"]!!)
+		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
+		// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
+		// replay keeps working while it exists (issue #78).
 		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
+		// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
+		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!)
+		createTopic(defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!)
 		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
 		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
 
-		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:latest")
+		// Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay
+		// and production during the JSON v3 transition (issue #78). The system-test suite's own
+		// Kafka listener/publisher reads/writes plain JSON on the v3 topics without Schema Registry.
+		schemaRegistryContainer = GenericContainer("confluentinc/cp-schema-registry:$confluentVersion")
 			.withNetworkAliases("kafka-schema-registry")
 			.withExposedPorts(defaultPorts["schema-registry"])
 			.withNetwork(network)
@@ -76,8 +107,6 @@ class EmbeddedDockerImages {
 			)
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
-
-		schemaRegistryContainer.start()
 
 		arkivMockContainer = GenericContainer("archiving-infrastructure-arkiv-mock")
 			.withNetworkAliases("arkiv-mock")
@@ -93,7 +122,11 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		arkivMockContainer.start()
+		// Both only depend on Kafka, which is already running
+		startInParallel(
+			"schema-registry" to schemaRegistryContainer,
+			"arkiv-mock" to arkivMockContainer,
+		)
 
 		soknadsmottakerContainer = GenericContainer("archiving-infrastructure-soknadsmottaker")
 			.withNetworkAliases("soknadsmottaker")
@@ -111,7 +144,7 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer, schemaRegistryContainer)
 			.waitingFor(Wait.forHttp("/health/status").forStatusCode(200))
 
-		soknadsmottakerContainer.start()
+		startInParallel("soknadsmottaker" to soknadsmottakerContainer)
 
 		innsendingApiContainer = GenericContainer("archiving-infrastructure-innsending-api")
 			.withNetworkAliases("innsending-api")
@@ -135,7 +168,7 @@ class EmbeddedDockerImages {
 					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"    to "http://metadata",
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
 					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
-					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-loadtests",
+					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-systemtests",
 				)
 			)
 			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
@@ -165,18 +198,60 @@ class EmbeddedDockerImages {
 					"SAF_URL"									to "http://${arkivMockContainer.networkAliases[0]}:${defaultPorts["arkiv-mock"]}",
 					"AZURE_APP_WELL_KNOWN_URL" to "http://metadata",
 					"AZURE_APP_CLIENT_ID"			to "aud-localhost",
-					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://metadata",
+					"AZURE_OPENID_CONFIG_ISSUER" to "http://authserver:6969/azuread",
+					"AZURE_OPENID_CONFIG_JWKS_URI" to "http://authserver:6969/azuread/jwks",
+					"AZURE_OPENID_CONFIG_TOKEN_ENDPOINT" to "http://authserver:6969/azuread/token",
 					"AZURE_APP_CLIENT_SECRET" to "secret",
+					"DOKARKIV_SCOPE"					to "scope",
+					"SAF_SCOPE"								to "scope",
+					"INNSENDING_API_SCOPE"			to "scope",
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
-			.dependsOn(kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
+			.dependsOn(authServerContainer, kafkaContainer, schemaRegistryContainer, arkivMockContainer, innsendingApiContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
-		soknadsarkivererContainer.start()
+		try {
+			soknadsarkivererContainer.start()
+		} catch (e: Exception) {
+			logger.error("Failed to start soknadsarkiverer. Logs:\n${soknadsarkivererContainer.logs}")
+			throw e
+		}
 
 		logger.info("Containers started")
 
+	}
+
+	/**
+	 * Starts the given containers concurrently and waits until all of them are ready. Uses a
+	 * dedicated thread pool rather than the ForkJoinPool common pool, whose parallelism can be 1
+	 * on small CI runners.
+	 */
+	private fun startInParallel(vararg containers: Pair<String, GenericContainer<*>>) {
+		val executor = Executors.newFixedThreadPool(containers.size)
+		try {
+			val futures = containers.map { (name, container) ->
+				name to CompletableFuture.runAsync({
+					logger.info("Starting $name")
+					container.start()
+				}, executor)
+			}
+
+			var failure: Throwable? = null
+			futures.forEachIndexed { index, (name, future) ->
+				try {
+					future.join()
+				} catch (e: Exception) {
+					val container = containers[index].second
+					val logs = try { container.logs } catch (_: Exception) { "<no logs available>" }
+					logger.error("Failed to start $name. Logs:\n$logs")
+					failure = failure ?: e.cause ?: e
+				}
+			}
+			failure?.let { throw it }
+		} finally {
+			executor.shutdown()
+		}
 	}
 
 	private fun createTopic(topic: String) {
@@ -209,6 +284,7 @@ class EmbeddedDockerImages {
 		try { arkivMockContainer.stop() } catch (_: Exception) {}
 		try { kafkaContainer.stop() } catch (_: Exception) {}
 		try { schemaRegistryContainer.stop() } catch (_: Exception) {}
+		try { authServerContainer.stop() } catch (_: Exception) {}
 		try { gotenbergContainer.stop() } catch (_: Exception) {}
 		try { postgresInnsendingContainer.stop() } catch (_: Exception) {}
 	}
@@ -220,5 +296,3 @@ class EmbeddedDockerImages {
 	fun getUrlForSchemaRegistry()   = "http://localhost:" + schemaRegistryContainer  .firstMappedPort
 	fun getUrlForKafkaBroker()      = "localhost:"        + kafkaContainer           .firstMappedPort
 }
-
-

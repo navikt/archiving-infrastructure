@@ -1,5 +1,6 @@
 name: Manually triggered build and run tests
 run-name: Manual deploy to ${{ inputs.environment }} [${{ github.ref_name }}]
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,9 +9,31 @@ on:
         required: true
         default: 'preprod'
         type: choice
-        options:
-          - none
-          - preprod
+        options: [none, preprod]
+
+      innsending:
+        description: 'Innsending-api branch'
+        required: true
+        default: 'main'
+        type: string
+
+      soknadsmottaker:
+        description: 'Soknadsmottaker branch'
+        required: true
+        default: 'main'
+        type: string
+
+      soknadsarkiverer:
+        description: 'Soknadsarkiverer branch'
+        required: true
+        default: 'main'
+        type: string
+
+      arkivmock:
+        description: 'Arkivmock branch'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
   build-and-push:
@@ -26,34 +49,30 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
 
-      - name: 'Build the code for soknadsmottaker'
+      # See the comment in on-pr.yml for why setup-java's own Maven cache is not used
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: e2e-m2-${{ runner.os }}-${{ hashFiles('system-tests/**/pom.xml') }}
+          restore-keys: |
+            e2e-m2-${{ runner.os }}-
+
+      - name: 'Build the code for the components'
         uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
         with:
-          component_name: soknadsmottaker
-
-      - name: 'Build the code for soknadsarkiverer'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
-        with:
-          component_name: soknadsarkiverer
-
-      - name: 'Build the code for arkiv-mock'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
-        with:
-          component_name: arkiv-mock
-
-      - name: 'Build the code for innsending-api'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
-        with:
-          component_name: innsending-api
+          component_names: |
+            soknadsmottaker@${{ inputs.soknadsmottaker }}
+            soknadsarkiverer@${{ inputs.soknadsarkiverer }}
+            arkiv-mock@${{ inputs.arkivmock }}
+            innsending-api@${{ inputs.innsending }}
+          prepull_test_images: true
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-
 
       - name: 'Build and run the end-to-end-tests'
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
         run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
-
