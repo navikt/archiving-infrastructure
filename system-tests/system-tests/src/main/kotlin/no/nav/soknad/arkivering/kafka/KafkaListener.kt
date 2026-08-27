@@ -139,18 +139,28 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 	}
 
 
-	fun clearConsumers() {
-		entityConsumers.clear()
-		metricsConsumers.clear()
-		numberOfCallsConsumers.clear()
-		processingEventConsumers.clear()
-		arkiveringstilbakemeldingerConsumers.clear()
+	/**
+	 * A handle for a registered consumer, which allows the caller to remove that particular consumer -
+	 * and only that consumer - once it is no longer needed. This keeps tests that run in parallel from
+	 * removing each other's consumers.
+	 */
+	fun interface ConsumerRegistration {
+		fun deregister()
+	}
+
+	private fun <T> register(
+		consumers: MutableList<KafkaEntityConsumer<T>>,
+		consumer: KafkaEntityConsumer<T>
+	): ConsumerRegistration {
+		consumers.add(consumer)
+		return ConsumerRegistration { consumers.remove(consumer) }
 	}
 
 	@Suppress("unused")
-	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetricsJson>) = metricsConsumers        .add(consumer)
-	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)     = entityConsumers         .add(consumer)
-	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)               = numberOfCallsConsumers  .add(consumer)
-	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEventJson>)   = processingEventConsumers.add(consumer)
-	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>)   = arkiveringstilbakemeldingerConsumers.add(consumer)
+	fun addConsumerForMetrics         (consumer: KafkaEntityConsumer<InnsendingMetricsJson>) = register(metricsConsumers, consumer)
+	fun addConsumerForEntities        (consumer: KafkaEntityConsumer<ArchiveEntity>)         = register(entityConsumers, consumer)
+	fun addConsumerForNumberOfCalls   (consumer: KafkaEntityConsumer<Int>)                   = register(numberOfCallsConsumers, consumer)
+	fun addConsumerForProcessingEvents(consumer: KafkaEntityConsumer<ProcessingEventJson>)   = register(processingEventConsumers, consumer)
+	@Suppress("unused")
+	fun addConsumerForArkiveringstilbakemeldinger(consumer: KafkaEntityConsumer<String>)     = register(arkiveringstilbakemeldingerConsumers, consumer)
 }
