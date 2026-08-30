@@ -41,11 +41,11 @@
         <div class="system-map" aria-label="Simplified system map">
           <div class="map-row">
             <div class="map-node"><strong>Bygger</strong><span>Build and publish forms</span></div>
-            <div class="map-node"><strong>FyllUt</strong><span>Fill in a form</span></div>
+            <div class="map-node"><strong>FyllUt</strong><span>Fill, attach, and submit</span></div>
           </div>
           <div class="map-arrow">form definition and user journey</div>
           <div class="map-row">
-            <div class="map-node"><strong>SendInn</strong><span>Upload and submit</span></div>
+            <div class="map-node"><strong>SendInn</strong><span>Additional documents and legacy drafts</span></div>
             <div class="map-node"><strong>Ettersending</strong><span>Add documentation later</span></div>
           </div>
           <div class="map-arrow">application, metadata, and files</div>
@@ -76,7 +76,7 @@
           </article>
           <article class="card">
             <h3>Guide users through submission</h3>
-            <p>FyllUt renders forms. SendInn handles document uploads and final submission. Ettersending starts a new document delivery for an existing case.</p>
+            <p>FyllUt renders new forms and handles their attachments through innsending-api. SendInn handles additional documentation and the remaining legacy drafts from the old handoff.</p>
             <a href="flow.html#user-paths">Compare user paths</a>
           </article>
           <article class="card">
@@ -95,7 +95,7 @@
           <p>The form definition takes a separate publishing path. Once a user starts filling it in, the live submission path looks like this.</p>
         </div>
         <div class="journey-grid">
-          <article class="journey-step"><h3>Fill in</h3><p>FyllUt renders a published form. The user may continue to SendInn when the submission needs attachments.</p></article>
+          <article class="journey-step"><h3>Fill in and attach</h3><p>FyllUt renders a published form and uploads attachments for the new application directly through innsending-api.</p></article>
           <article class="journey-step"><h3>Store and submit</h3><p>innsending-api holds application metadata and files while the user works, then sends metadata to soknadsmottaker.</p></article>
           <article class="journey-step"><h3>Queue and enrich</h3><p>soknadsmottaker publishes JSON to Kafka. soknadsarkiverer consumes it and fetches the file bytes from innsending-api.</p></article>
           <article class="journey-step"><h3>Archive and report</h3><p>soknadsarkiverer checks SAF for duplicates, creates the journal post in Joark, and reports the outcome back through Kafka.</p></article>

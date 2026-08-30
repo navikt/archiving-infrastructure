@@ -43,9 +43,9 @@
         <h2>Flow 2: choose a user path</h2>
         <p class="lede">The route depends on what the user needs to send. All digital routes converge on innsending-api.</p>
         <div class="branch-grid">
-          <article class="branch"><h3>New form</h3><p>FyllUt renders the form and asks innsending-api to store the application and produce its PDF. When attachments are needed, the user continues in SendInn to upload and submit them.</p></article>
+          <article class="branch"><h3>New form</h3><p>FyllUt renders the form, uploads its attachments through innsending-api, and submits the completed application. The user stays in FyllUt throughout the current flow.</p></article>
           <article class="branch"><h3>Additional documentation</h3><p>fyllut-ettersending helps the user identify the existing form or case and choose paper or digital delivery. The digital route creates an ettersending in innsending-api and redirects to SendInn for file upload and submission.</p></article>
-          <article class="branch"><h3>Logged-in document submission</h3><p>SendInn lets an ID-porten user resume an application, upload documents, and submit. Its server proxies calls to innsending-api with a TokenX token.</p></article>
+          <article class="branch"><h3>SendInn document submission</h3><p>SendInn handles digital ettersending and document-only submission. It also lets a user finish an old FyllUt draft when attachments were previously uploaded in SendInn. Its server proxies calls to innsending-api with a TokenX token.</p></article>
           <article class="branch"><h3>Paper route</h3><p>FyllUt and fyllut-ettersending can direct users to a paper process. That branch does not use the full digital upload and Kafka path described below.</p></article>
         </div>
       </section>
