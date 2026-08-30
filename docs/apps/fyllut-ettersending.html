@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="fyllut-ettersending application profile."><title>fyllut-ettersending | FyllUt and SendInn</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/site.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button><nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="../index.html">Overview</a><a href="../flow.html">System flow</a><a href="../applications.html" aria-current="page">Applications</a><a href="../technology.html">Technology</a></nav></div></header>
+<main id="main"><section class="page-hero"><div class="page-hero-inner"><div class="breadcrumbs"><a href="../applications.html">Applications</a> / fyllut-ettersending</div><p class="eyebrow">Citizen journey</p><h1>fyllut-ettersending</h1><p>Helps a citizen send additional documentation after the original application, using either a paper route or a digital handoff to SendInn.</p></div></section>
+<div class="content"><dl class="facts-grid"><div class="fact-card"><dt>Type</dt><dd>Citizen frontend</dd></div><div class="fact-card"><dt>Users</dt><dd>Applicants with an existing case</dd></div><div class="fact-card"><dt>Runtime</dt><dd>Next.js and React</dd></div><div class="fact-card"><dt>Login</dt><dd>ID-porten</dd></div></dl>
+<p class="lede">Ettersending starts a new delivery of documents. It identifies what the documents belong to and creates the route, but SendInn handles the file upload and final digital submission.</p>
+<div class="detail-grid"><div>
+  <section class="detail-panel"><h2>What it does</h2><ul><li>Lets a user find and select the relevant form or case.</li><li>Collects subject and attachment descriptions needed to route additional documents.</li><li>Offers paper and digital delivery paths.</li><li>Creates an ettersending or loose-post record through innsending-api and redirects digital users to SendInn.</li></ul></section>
+  <section class="detail-panel"><h2>Role in the flow</h2><p>It reads form metadata from FyllUt, then calls innsending-api with a TokenX token. For digital delivery, the returned submission ID becomes the SendInn route where the citizen uploads files and completes submission.</p></section>
+  <section class="detail-panel"><h2>What it does not do</h2><p>It does not render the original form, keep uploaded file bytes, or perform final submission and archiving.</p></section>
+</div><aside>
+  <section class="detail-panel"><h2>Technical details</h2><ul><li>Next.js 16 and React 19</li><li>Standalone Node server</li><li>NAIS on GCP</li><li>ID-porten level 4</li><li>TokenX for innsending-api calls</li><li>Runs under /fyllut-ettersending</li></ul></section>
+  <section class="detail-panel"><h2>Connections</h2><ul class="connection-list"><li><strong><a href="skjemabygging-formio.html">FyllUt</a></strong>Form list and metadata</li><li><strong><a href="innsending-api.html">innsending-api</a></strong>Creates the delivery record</li><li><strong><a href="send-inn-frontend.html">SendInn</a></strong>Uploads and submits files</li></ul></section>
+  <section class="detail-panel"><h2>Source</h2><a class="repo-link" href="https://github.com/navikt/fyllut-ettersending">github.com/navikt/fyllut-ettersending</a></section>
+</aside></div>
+<div class="next-links"><a class="next-link" href="send-inn-frontend.html"><small>Digital handoff</small><strong>SendInn</strong></a><a class="next-link" href="../flow.html#user-paths"><small>Flow</small><strong>Compare user paths</strong></a></div>
+</div></main><footer class="site-footer"><div class="footer-inner"><p>Part of the <a href="../index.html">FyllUt and SendInn system guide</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body></html>

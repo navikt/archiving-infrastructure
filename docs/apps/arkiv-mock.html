@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="arkiv-mock application profile."><title>arkiv-mock | FyllUt and SendInn</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/site.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button><nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="../index.html">Overview</a><a href="../flow.html">System flow</a><a href="../applications.html" aria-current="page">Applications</a><a href="../technology.html">Technology</a></nav></div></header>
+<main id="main"><section class="page-hero"><div class="page-hero-inner"><div class="breadcrumbs"><a href="../applications.html">Applications</a> / arkiv-mock</div><p class="eyebrow">Test support</p><h1>arkiv-mock</h1><p>A configurable stand-in for Joark, SAF, and innsending-api file retrieval in end-to-end and load tests.</p></div></section>
+<div class="content"><dl class="facts-grid"><div class="fact-card"><dt>Type</dt><dd>Test double</dd></div><div class="fact-card"><dt>Environments</dt><dd>Local, CI, and load tests</dd></div><div class="fact-card"><dt>Runtime</dt><dd>Kotlin and Spring Boot</dd></div><div class="fact-card"><dt>Production</dt><dd>Never used</dd></div></dl>
+<p class="lede">The mock makes archive behavior controllable. Tests can make one submission succeed, fail with a chosen response, return malformed data, or pause long enough to exercise timeouts and retries.</p>
+<div class="detail-grid"><div>
+  <section class="detail-panel"><h2>What it simulates</h2><ul><li>Joark's create-journal-post REST endpoint.</li><li>SAF's GraphQL journal-post lookup.</li><li>innsending-api's submitted-file endpoint with canned PDF files.</li><li>A control API for response codes, malformed bodies, and delays per submission key.</li><li>Kafka observations that let system tests assert received entities and call counts.</li></ul></section>
+  <section class="detail-panel"><h2>Role in testing</h2><p>archiving-infrastructure routes soknadsarkiverer and parts of innsending-api to arkiv-mock. This keeps the test chain local while preserving the external protocols that production uses.</p></section>
+  <section class="detail-panel"><h2>What it does not do</h2><p>It is not a development version of Joark and must not appear in production. Its stored behavior and fixtures exist to make tests deterministic.</p></section>
+</div><aside>
+  <section class="detail-panel"><h2>Technical details</h2><ul><li>Kotlin, Spring Boot, Java 21</li><li>REST and GraphQL endpoints</li><li>Kafka test observations</li><li>Configurable fault injection</li><li>PDF fixtures in several sizes</li><li>Docker image for local orchestration</li></ul></section>
+  <section class="detail-panel"><h2>Connections</h2><ul class="connection-list"><li><strong><a href="soknadsarkiverer.html">soknadsarkiverer</a></strong>Joark, SAF, and file test endpoints</li><li><strong><a href="innsending-api.html">innsending-api</a></strong>SAF and Joark test behavior</li><li><strong><a href="archiving-infrastructure.html">archiving-infrastructure</a></strong>Starts and controls the mock</li></ul></section>
+  <section class="detail-panel"><h2>Source</h2><a class="repo-link" href="https://github.com/navikt/arkiv-mock">github.com/navikt/arkiv-mock</a></section>
+</aside></div>
+<div class="next-links"><a class="next-link" href="archiving-infrastructure.html"><small>Test orchestration</small><strong>archiving-infrastructure</strong></a><a class="next-link" href="soknadsarkiverer.html"><small>Main client</small><strong>soknadsarkiverer</strong></a></div>
+</div></main><footer class="site-footer"><div class="footer-inner"><p>Part of the <a href="../index.html">FyllUt and SendInn system guide</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body></html>

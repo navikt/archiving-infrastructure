@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="innsending-admin application profile."><title>innsending-admin | FyllUt and SendInn</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/site.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button><nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="../index.html">Overview</a><a href="../flow.html">System flow</a><a href="../applications.html" aria-current="page">Applications</a><a href="../technology.html">Technology</a></nav></div></header>
+<main id="main"><section class="page-hero"><div class="page-hero-inner"><div class="breadcrumbs"><a href="../applications.html">Applications</a> / innsending-admin</div><p class="eyebrow">Submission operations</p><h1>innsending-admin</h1><p>An internal web interface for investigating and operating submissions without direct access to databases or file storage.</p></div></section>
+<div class="content"><dl class="facts-grid"><div class="fact-card"><dt>Type</dt><dd>Employee frontend</dd></div><div class="fact-card"><dt>Users</dt><dd>NAV operations and support</dd></div><div class="fact-card"><dt>Runtime</dt><dd>Next.js and Node.js</dd></div><div class="fact-card"><dt>Login</dt><dd>Azure AD</dd></div></dl>
+<p class="lede">The admin application puts a narrow, authenticated UI in front of operational endpoints. innsending-api remains the owner of state and actions.</p>
+<div class="detail-grid"><div>
+  <section class="detail-panel"><h2>What it does</h2><ul><li>Looks up whether a submission has been archived.</li><li>Triggers a rerun for a stuck archive process and links operators to logs.</li><li>Checks whether a specific attachment is still available.</li><li>Starts named maintenance jobs.</li><li>Reads and updates selected configuration values.</li></ul></section>
+  <section class="detail-panel"><h2>Role in the flow</h2><p>It sits beside the normal citizen flow. Server-side Next.js API routes exchange employee or machine tokens and proxy each action to innsending-api.</p></section>
+  <section class="detail-panel"><h2>What it does not do</h2><p>It has no citizen-facing form logic and does not read storage directly. It is not the submission state machine or archive worker.</p></section>
+</div><aside>
+  <section class="detail-panel"><h2>Technical details</h2><ul><li>Next.js 14 Pages Router</li><li>TypeScript and NAV design system</li><li>Axios and server-side proxy routes</li><li>Azure AD sidecar login</li><li>OBO tokens for employee actions</li><li>Machine-to-machine token for file checks</li><li>NAIS on port 3000</li></ul></section>
+  <section class="detail-panel"><h2>Connections</h2><ul class="connection-list"><li><strong><a href="innsending-api.html">innsending-api</a></strong>Status, rerun, jobs, configuration, and file checks</li><li><strong><a href="soknadsarkiverer.html">soknadsarkiverer</a></strong>Deployment access is allowed, though the main UI actions proxy to innsending-api</li></ul></section>
+  <section class="detail-panel"><h2>Source</h2><a class="repo-link" href="https://github.com/navikt/innsending-admin">github.com/navikt/innsending-admin</a></section>
+</aside></div>
+<div class="next-links"><a class="next-link" href="innsending-api.html"><small>Backend</small><strong>innsending-api</strong></a><a class="next-link" href="../flow.html#archiving"><small>Context</small><strong>Archive flow and failure path</strong></a></div>
+</div></main><footer class="site-footer"><div class="footer-inner"><p>Part of the <a href="../index.html">FyllUt and SendInn system guide</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body></html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="End-to-end data flows for form publishing, submission, additional documentation, and archiving.">
+  <title>System flow | FyllUt and SendInn</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html" aria-current="page">System flow</a><a href="applications.html">Applications</a><a href="technology.html">Technology</a></nav>
+  </div></header>
+  <main id="main">
+    <section class="page-hero"><div class="page-hero-inner">
+      <div class="breadcrumbs"><a href="index.html">Overview</a> / System flow</div>
+      <p class="eyebrow">End to end</p>
+      <h1>How information moves through the system</h1>
+      <p>There are two main flows to understand. Form definitions move from authoring to the FyllUt runtime. User submissions move through temporary storage and Kafka before they reach Joark.</p>
+    </div></section>
+
+    <div class="content">
+      <section id="publishing">
+        <h2>Flow 1: publish a form</h2>
+        <p class="lede">This flow changes what FyllUt can render. It does not submit citizen data.</p>
+        <div class="flow">
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Build in Bygger</h3><p>A form builder edits form.io definitions, translations, and recipient information. Bygger reads and writes this material through forms-api, which persists it in PostgreSQL.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">2</div><h3>Publish to GitHub</h3><p>Bygger backend writes the selected form JSON, translations, and resources to skjemautfylling-formio. It also pins the skjemabygging-formio commit that contains the FyllUt application code.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">3</div><h3>Build the production image</h3><p>skjemautfylling-formio builds on the pinned FyllUt base image and adds the published content. The result is one deployable image with application code and form content.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Render in FyllUt</h3><p>Citizens open FyllUt and receive the published form. Development and preproduction may read forms directly from forms-api, but production uses the GitHub-bundled content.</p></article>
+        </div>
+        <div class="callout"><h3>Two sources can look authoritative</h3><p>forms-api stores editable form data and publication metadata. Production FyllUt currently renders content bundled from skjemautfylling-formio. Keep that distinction in mind when a form differs between staging and production.</p></div>
+      </section>
+
+      <section id="user-paths" class="section">
+        <h2>Flow 2: choose a user path</h2>
+        <p class="lede">The route depends on what the user needs to send. All digital routes converge on innsending-api.</p>
+        <div class="branch-grid">
+          <article class="branch"><h3>New form</h3><p>FyllUt renders the form and asks innsending-api to store the application and produce its PDF. When attachments are needed, the user continues in SendInn to upload and submit them.</p></article>
+          <article class="branch"><h3>Additional documentation</h3><p>fyllut-ettersending helps the user identify the existing form or case and choose paper or digital delivery. The digital route creates an ettersending in innsending-api and redirects to SendInn for file upload and submission.</p></article>
+          <article class="branch"><h3>Logged-in document submission</h3><p>SendInn lets an ID-porten user resume an application, upload documents, and submit. Its server proxies calls to innsending-api with a TokenX token.</p></article>
+          <article class="branch"><h3>Paper route</h3><p>FyllUt and fyllut-ettersending can direct users to a paper process. That branch does not use the full digital upload and Kafka path described below.</p></article>
+        </div>
+      </section>
+
+      <section id="archiving">
+        <h2>Flow 3: submit and archive</h2>
+        <p class="lede">Files stay in innsending-api until the archiver asks for them. Kafka carries metadata and status, not the uploaded file bytes.</p>
+        <div class="flow">
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Work in progress</h3><p>innsending-api stores application and attachment metadata in PostgreSQL and file content in Google Cloud Storage. It also scans uploads with ClamAV and supports PDF generation and merging.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">2</div><h3>Submission handoff</h3><p>When the user submits, innsending-api calls soknadsmottaker over REST with application and document metadata.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">3</div><h3>Kafka intake</h3><p>soknadsmottaker maps the request to an InnsendingTopicMsg and publishes JSON to the logged-in or no-login Kafka topic. This keeps user-facing submission separate from archive processing.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Enrich with files</h3><p>soknadsarkiverer consumes the message and fetches the referenced files from innsending-api over an Azure AD protected REST endpoint.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">5</div><h3>Check and archive</h3><p>The archiver queries SAF by external reference to avoid duplicate journal posts. If no prior archive entry exists, it sends a journal post and documents to Joark.</p></article>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <article class="flow-stage"><div class="flow-number">6</div><h3>Report the outcome</h3><p>soknadsarkiverer publishes success or failure feedback to Kafka. innsending-api consumes it, updates the submission state, sends user notifications where relevant, and later cleans up temporary data.</p></article>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Failure and retry path</h2>
+        <p>soknadsarkiverer tracks each submission through received, started, archived, and finished states. Transient failures are retried with increasing delays. A submission reaches failure after the retry plan is exhausted, and the negative result is sent back to innsending-api. Duplicate archive entries and already-deleted files have separate handling because repeating the same work would not help.</p>
+        <div class="callout"><h3>Operations are visible from innsending-admin</h3><p>NAV staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
+      </section>
+
+      <section>
+        <h2>Contracts to know</h2>
+        <div class="tech-table-wrap"><table class="tech-table">
+          <thead><tr><th>Boundary</th><th>Mechanism</th><th>Information</th><th>Owner</th></tr></thead>
+          <tbody>
+            <tr><td>Bygger to forms-api</td><td>REST</td><td>Forms, translations, recipients, publications</td><td>forms-api</td></tr>
+            <tr><td>Bygger to published FyllUt</td><td>GitHub files and Docker image</td><td>Form JSON, translations, resources, code SHA</td><td>skjemautfylling-formio</td></tr>
+            <tr><td>FyllUt and SendInn to storage</td><td>REST with TokenX where logged in</td><td>Application metadata, PDFs, attachment files</td><td>innsending-api OpenAPI contracts</td></tr>
+            <tr><td>Submission intake</td><td>REST</td><td>Application and document metadata</td><td>soknadsmottaker API</td></tr>
+            <tr><td>Intake to archiver</td><td>Kafka JSON</td><td>InnsendingTopicMsg, no file bytes</td><td>soknadsmottaker API model</td></tr>
+            <tr><td>Archive feedback</td><td>Kafka</td><td>Success or failure state</td><td>soknadsarkiverer publisher contract</td></tr>
+            <tr><td>Historical processing and metrics</td><td>Kafka Avro</td><td>Legacy event and metric records</td><td>soknadarkiv-schema</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout"><h3>The primary Kafka payload is JSON</h3><p>soknadarkiv-schema still contains shared Avro records and supports legacy processing-event and metrics compatibility. The current primary submission message between soknadsmottaker and soknadsarkiverer is plain JSON. Older repository descriptions may not make this migration clear.</p></div>
+      </section>
+
+      <div class="next-links">
+        <a class="next-link" href="applications.html"><small>Next</small><strong>Open the application catalog</strong></a>
+        <a class="next-link" href="technology.html"><small>Compare</small><strong>See the technical matrix</strong></a>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body>
+</html>

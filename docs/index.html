@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A guide to the applications managed by Team FyllUt and SendInn, and how a form becomes an archived submission.">
+  <title>FyllUt and SendInn system guide</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">FS</span>
+        <span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation">
+        <a href="index.html" aria-current="page">Overview</a>
+        <a href="flow.html">System flow</a>
+        <a href="applications.html">Applications</a>
+        <a href="technology.html">Technology</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="home-main">
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <p class="eyebrow">Start here</p>
+          <h1>One form. Many cooperating systems.</h1>
+          <p class="hero-copy">We help people fill out forms, attach documentation, submit it to NAV, and get it safely into the archive. This guide shows the whole path before it asks you to learn each service.</p>
+          <div class="actions">
+            <a class="button button-primary" href="flow.html">Follow a submission</a>
+            <a class="button button-secondary" href="applications.html">Browse all applications</a>
+          </div>
+        </div>
+        <div class="system-map" aria-label="Simplified system map">
+          <div class="map-row">
+            <div class="map-node"><strong>Bygger</strong><span>Build and publish forms</span></div>
+            <div class="map-node"><strong>FyllUt</strong><span>Fill in a form</span></div>
+          </div>
+          <div class="map-arrow">form definition and user journey</div>
+          <div class="map-row">
+            <div class="map-node"><strong>SendInn</strong><span>Upload and submit</span></div>
+            <div class="map-node"><strong>Ettersending</strong><span>Add documentation later</span></div>
+          </div>
+          <div class="map-arrow">application, metadata, and files</div>
+          <div class="map-row map-row-wide">
+            <div class="map-node core"><strong>innsending-api</strong><span>Temporary storage and submission handoff</span></div>
+          </div>
+          <div class="map-arrow">REST to Kafka to archive</div>
+          <div class="map-row">
+            <div class="map-node archive"><strong>soknadsmottaker</strong><span>Publish submission metadata</span></div>
+            <div class="map-node archive"><strong>soknadsarkiverer</strong><span>Fetch files and create journal post</span></div>
+          </div>
+          <div class="map-arrow">Joark is the final archive</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-heading">
+          <div><p class="eyebrow">The short version</p><h2>What the team delivers</h2></div>
+          <p>The system covers two connected domains. Form tooling defines what users fill in. Submission and archiving services move the result into NAV's archive.</p>
+        </div>
+        <div class="card-grid">
+          <article class="card">
+            <h3>Build and publish forms</h3>
+            <p>Internal form builders create definitions and translations in Bygger. Production FyllUt bundles published content from the skjemautfylling-formio repository.</p>
+            <a href="apps/skjemabygging-formio.html">See Bygger and FyllUt</a>
+          </article>
+          <article class="card">
+            <h3>Guide users through submission</h3>
+            <p>FyllUt renders forms. SendInn handles document uploads and final submission. Ettersending starts a new document delivery for an existing case.</p>
+            <a href="flow.html#user-paths">Compare user paths</a>
+          </article>
+          <article class="card">
+            <h3>Store and archive documents</h3>
+            <p>innsending-api stores work in progress. After submission, Kafka separates intake from the archiver, which fetches files and writes a journal post to Joark.</p>
+            <a href="flow.html#archiving">Trace the archive path</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="section-inner">
+        <div class="section-heading">
+          <div><p class="eyebrow">A citizen's submission</p><h2>Four stages, end to end</h2></div>
+          <p>The form definition takes a separate publishing path. Once a user starts filling it in, the live submission path looks like this.</p>
+        </div>
+        <div class="journey-grid">
+          <article class="journey-step"><h3>Fill in</h3><p>FyllUt renders a published form. The user may continue to SendInn when the submission needs attachments.</p></article>
+          <article class="journey-step"><h3>Store and submit</h3><p>innsending-api holds application metadata and files while the user works, then sends metadata to soknadsmottaker.</p></article>
+          <article class="journey-step"><h3>Queue and enrich</h3><p>soknadsmottaker publishes JSON to Kafka. soknadsarkiverer consumes it and fetches the file bytes from innsending-api.</p></article>
+          <article class="journey-step"><h3>Archive and report</h3><p>soknadsarkiverer checks SAF for duplicates, creates the journal post in Joark, and reports the outcome back through Kafka.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-heading">
+          <div><p class="eyebrow">Choose your depth</p><h2>Learn the system your way</h2></div>
+          <p>New to the area? Follow the flow first. Working on a change? Use the application catalog and technical matrix to find boundaries and integrations.</p>
+        </div>
+        <div class="card-grid">
+          <article class="card"><h3>Understand the flow</h3><p>See normal submission, additional documentation, publishing, retries, and feedback as connected sequences.</p><a href="flow.html">Open system flow</a></article>
+          <article class="card"><h3>Zoom into an application</h3><p>Each profile explains purpose, responsibilities, data, integrations, runtime, and what the application deliberately does not do.</p><a href="applications.html">Open application catalog</a></article>
+          <article class="card"><h3>Compare technology</h3><p>Find frontend frameworks, backend servers, storage, authentication, messaging, deployment, and testing tools in one matrix.</p><a href="technology.html">Open technical overview</a></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt and SendInn</p></div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Bygger and FyllUt application profile."><title>skjemabygging-formio | FyllUt and SendInn</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/site.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button><nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="../index.html">Overview</a><a href="../flow.html">System flow</a><a href="../applications.html" aria-current="page">Applications</a><a href="../technology.html">Technology</a></nav></div></header>
+<main id="main">
+<section class="page-hero"><div class="page-hero-inner"><div class="breadcrumbs"><a href="../applications.html">Applications</a> / skjemabygging-formio</div><p class="eyebrow">Forms and user journeys</p><h1>Bygger and FyllUt</h1><p>One monorepo contains the internal form-building tools and the citizen-facing form runtime, along with shared packages and backend services.</p></div></section>
+<div class="content">
+<dl class="facts-grid"><div class="fact-card"><dt>Repository</dt><dd>skjemabygging-formio</dd></div><div class="fact-card"><dt>Users</dt><dd>Form builders and citizens</dd></div><div class="fact-card"><dt>Runtime</dt><dd>React and Express</dd></div><div class="fact-card"><dt>Deployment</dt><dd>Separate Bygger and FyllUt images</dd></div></dl>
+<p class="lede">Bygger defines the form. FyllUt renders it. Keeping both applications in one monorepo lets them share form models and components, but they have different audiences, authentication, and release paths.</p>
+<div class="detail-grid"><div>
+  <section class="detail-panel"><h2>What it does</h2><ul><li>Bygger lets NAV employees create, edit, migrate, translate, preview, and publish form.io form definitions.</li><li>FyllUt renders published forms for citizens, supports logged-in and unauthenticated use, and coordinates digital or paper submission.</li><li>Shared packages hold common domain models, backend utilities, and frontend components.</li><li>Bygger backend publishes selected form content to skjemautfylling-formio through the GitHub API.</li></ul></section>
+  <section class="detail-panel"><h2>Role in the flow</h2><p>Bygger reads and writes form data in forms-api. Publishing creates a deployable content change in skjemautfylling-formio. FyllUt later renders that content, asks innsending-api to store the application and create a PDF, and sends attachment-heavy digital submissions to SendInn.</p></section>
+  <section class="detail-panel"><h2>What it does not do</h2><p>It does not own permanent application storage or archive documents in Joark. It also does not hold production's published form content as the final deployment artifact. skjemautfylling-formio fills that role.</p></section>
+</div><aside>
+  <section class="detail-panel"><h2>Technical details</h2><ul><li>TypeScript and React 18</li><li>Express backends</li><li>pnpm workspaces</li><li>Vitest and Cypress</li><li>Azure AD for Bygger</li><li>ID-porten and TokenX for citizen paths</li></ul></section>
+  <section class="detail-panel"><h2>Connections</h2><ul class="connection-list"><li><strong><a href="forms-api.html">forms-api</a></strong>Editable forms, translations, and recipients</li><li><strong><a href="skjemautfylling-formio.html">skjemautfylling-formio</a></strong>Published production content</li><li><strong><a href="innsending-api.html">innsending-api</a></strong>Application storage and PDF work</li><li><strong><a href="send-inn-frontend.html">SendInn</a></strong>Attachment upload and final submission</li></ul></section>
+  <section class="detail-panel"><h2>Source</h2><a class="repo-link" href="https://github.com/navikt/skjemabygging-formio">github.com/navikt/skjemabygging-formio</a></section>
+</aside></div>
+<div class="next-links"><a class="next-link" href="forms-api.html"><small>Form data</small><strong>forms-api</strong></a><a class="next-link" href="skjemautfylling-formio.html"><small>Published runtime</small><strong>skjemautfylling-formio</strong></a></div>
+</div></main>
+<footer class="site-footer"><div class="footer-inner"><p>Part of the <a href="../index.html">FyllUt and SendInn system guide</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body></html>

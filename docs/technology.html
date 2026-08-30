@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Technical matrix for the FyllUt, SendInn, and archiving applications.">
+  <title>Technology | FyllUt and SendInn</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><div class="header-inner">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html">System flow</a><a href="applications.html">Applications</a><a href="technology.html" aria-current="page">Technology</a></nav>
+  </div></header>
+  <main id="main">
+    <section class="page-hero"><div class="page-hero-inner">
+      <div class="breadcrumbs"><a href="index.html">Overview</a> / Technology</div>
+      <p class="eyebrow">Technical overview</p>
+      <h1>Frameworks, runtimes, and integration choices</h1>
+      <p>Use this page when planning work across repositories. The application profiles contain the finer details and explicit boundaries.</p>
+    </div></section>
+    <div class="content">
+      <h2>Application matrix</h2>
+      <div class="tech-table-wrap"><table class="tech-table">
+        <thead><tr><th>Repository</th><th>Runtime and framework</th><th>State</th><th>Main integrations</th><th>Authentication</th></tr></thead>
+        <tbody>
+          <tr><td><a href="apps/skjemabygging-formio.html">skjemabygging-formio</a></td><td>TypeScript, React, Express, pnpm monorepo</td><td>forms-api and published Git content</td><td>forms-api, GitHub API, innsending-api, Pusher, NAV services</td><td>Entra ID for Bygger, ID-porten and TokenX for citizen paths</td></tr>
+          <tr><td><a href="apps/forms-api.html">forms-api</a></td><td>Kotlin, Spring Boot, Java 21</td><td>PostgreSQL with Flyway</td><td>REST API used by Bygger and staging FyllUt</td><td>Open reads, Entra ID groups for writes</td></tr>
+          <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker content layer on FyllUt base image</td><td>Git files</td><td>GitHub Actions, NAIS deployment</td><td>Not a user-facing service on its own</td></tr>
+          <tr><td><a href="apps/fyllut-ettersending.html">fyllut-ettersending</a></td><td>Next.js 16, React 19, Node.js</td><td>Session and downstream state</td><td>FyllUt, innsending-api, SendInn</td><td>ID-porten, TokenX</td></tr>
+          <tr><td><a href="apps/send-inn-frontend.html">send-inn-frontend</a></td><td>Next.js 16, React 19, Node.js</td><td>Downstream application state</td><td>innsending-api, FyllUt</td><td>ID-porten, TokenX</td></tr>
+          <tr><td><a href="apps/innsending-api.html">innsending-api</a></td><td>Kotlin, Spring Boot, Java 21, Maven modules</td><td>PostgreSQL, Google Cloud Storage</td><td>REST, Kafka, Gotenberg, ClamAV, PDL, SAF and other NAV APIs</td><td>TokenX and Azure AD by endpoint</td></tr>
+          <tr><td><a href="apps/innsending-admin.html">innsending-admin</a></td><td>Next.js 14, React, TypeScript</td><td>No direct domain storage</td><td>Server-side proxies to innsending-api</td><td>Azure AD OBO and machine-to-machine</td></tr>
+          <tr><td><a href="apps/soknadsmottaker.html">soknadsmottaker</a></td><td>Kotlin, Spring Boot 4, Java 21</td><td>Kafka</td><td>REST in, Kafka out</td><td>Service authentication according to API path</td></tr>
+          <tr><td><a href="apps/soknadsarkiverer.html">soknadsarkiverer</a></td><td>Kotlin, Spring Boot 4, Java 21, coroutines</td><td>Kafka-backed processing state</td><td>Kafka, innsending-api, SAF GraphQL, Joark REST</td><td>Azure AD client credentials, JWT resource server</td></tr>
+          <tr><td><a href="apps/soknadarkiv-schema.html">soknadarkiv-schema</a></td><td>Avro schemas, Maven artifact</td><td>Versioned schema files</td><td>Maven package consumers</td><td>Not applicable at runtime</td></tr>
+          <tr><td><a href="apps/arkiv-mock.html">arkiv-mock</a></td><td>Kotlin, Spring Boot, Java 21</td><td>In-memory test behavior and fixtures</td><td>Joark, SAF, and file API simulations; Kafka observations</td><td>Test environments only</td></tr>
+          <tr><td><a href="apps/archiving-infrastructure.html">archiving-infrastructure</a></td><td>Docker Compose, Testcontainers, Kotlin system tests</td><td>Ephemeral local test state</td><td>All archiving services, PostgreSQL, Kafka, mocks</td><td>Local test configuration</td></tr>
+        </tbody>
+      </table></div>
+
+      <section class="section">
+        <h2>Recurring patterns</h2>
+        <div class="card-grid">
+          <article class="card"><h3>NAIS and GCP</h3><p>Deployable applications run on NAIS. Java services use Java 21. innsending-api also provisions Cloud SQL and Google Cloud Storage.</p></article>
+          <article class="card"><h3>Identity by audience</h3><p>Citizen calls use ID-porten and TokenX. Employee tools use Azure AD or Entra ID. Service calls use Azure AD client credentials or OBO tokens.</p></article>
+          <article class="card"><h3>REST before Kafka</h3><p>User-facing clients call synchronous REST APIs. Kafka begins after submission, where asynchronous processing and retry behavior are useful.</p></article>
+          <article class="card"><h3>OpenAPI at service edges</h3><p>Several services generate API interfaces or clients from OpenAPI. Contract changes should account for both the producer and generated consumers.</p></article>
+          <article class="card"><h3>Temporary versus permanent data</h3><p>innsending-api owns temporary application and file storage. Joark owns the permanent journal post. SAF provides archive lookup.</p></article>
+          <article class="card"><h3>End-to-end tests</h3><p>archiving-infrastructure tests the assembled archive chain. arkiv-mock makes success, failure, delay, and duplicate scenarios reproducible.</p></article>
+        </div>
+      </section>
+
+      <section>
+        <h2>Change planning checklist</h2>
+        <p>Before changing a shared flow, identify the source of truth, generated clients, asynchronous consumers, and rollout order. Pay particular attention to form publication versus runtime content, the REST-to-Kafka handoff, JSON versus legacy Avro records, and how archive feedback changes cleanup or user notifications.</p>
+      </section>
+      <div class="next-links"><a class="next-link" href="flow.html"><small>Context</small><strong>Return to system flow</strong></a><a class="next-link" href="applications.html"><small>Details</small><strong>Open application profiles</strong></a></div>
+    </div>
+  </main>
+  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+</body>
+</html>
