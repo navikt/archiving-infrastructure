@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="End-to-end data flows for form publishing, submission, additional documentation, and archiving.">
-  <title>System flow | FyllUt and SendInn</title>
+  <title>System flow | FyllUt-SendInn</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/site.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header"><div class="header-inner">
-    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt and SendInn</strong></span></a>
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt-SendInn</strong></span></a>
     <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
     <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html" aria-current="page">System flow</a><a href="applications.html">Applications</a><a href="technology.html">Technology</a></nav>
   </div></header>
@@ -81,7 +81,7 @@
           <tbody>
             <tr><td>Bygger to forms-api</td><td>REST</td><td>Forms, translations, recipients, publications</td><td>forms-api</td></tr>
             <tr><td>Bygger to published FyllUt</td><td>GitHub files and Docker image</td><td>Form JSON, translations, resources, code SHA</td><td>skjemautfylling-formio</td></tr>
-            <tr><td>FyllUt and SendInn to storage</td><td>REST with TokenX where logged in</td><td>Application metadata, PDFs, attachment files</td><td>innsending-api OpenAPI contracts</td></tr>
+            <tr><td>Form clients to storage</td><td>REST with TokenX where logged in</td><td>Application metadata, PDFs, attachment files</td><td>innsending-api OpenAPI contracts</td></tr>
             <tr><td>Submission intake</td><td>REST</td><td>Application and document metadata</td><td>soknadsmottaker API</td></tr>
             <tr><td>Intake to archiver</td><td>Kafka JSON</td><td>InnsendingTopicMsg, no file bytes</td><td>soknadsmottaker API model</td></tr>
             <tr><td>Archive feedback</td><td>Kafka</td><td>Success or failure state</td><td>soknadsarkiverer publisher contract</td></tr>
@@ -97,6 +97,6 @@
       </div>
     </div>
   </main>
-  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt and SendInn</p></div></footer>
+  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
 </body>
 </html>
