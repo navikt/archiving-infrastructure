@@ -33,7 +33,7 @@
 		<dependency>
 			<groupId>no.nav.soknad.innsending</groupId>
 			<artifactId>innsending-api</artifactId>
-			<version>c21da5c-prod</version>
+			<version>19753d3-prod</version>
 			<classifier>openapi-spec</classifier>
 			<type>zip</type>
 		</dependency>
@@ -58,6 +58,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
+				<version>${maven-dependency-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>unpack-openapi-spec</id>
