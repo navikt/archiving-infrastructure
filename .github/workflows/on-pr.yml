@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
 
       # Not using the Maven cache built into setup-java: it derives the cache key from **/pom.xml,
       # and the sibling repositories are cloned into the workspace between restore and save, so the
