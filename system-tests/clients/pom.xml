@@ -40,7 +40,7 @@
 
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
+			<artifactId>okhttp-jvm</artifactId>
 			<version>${okhttp3.version}</version>
 		</dependency>
 		<dependency>
@@ -93,10 +93,13 @@
 							<inputSpec>${project.basedir}/src/main/resources/soknadsmottaker-api.yml</inputSpec>
 							<output>target/generated-sources/openapi</output>
 							<generatorName>kotlin</generatorName>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
 							<apiPackage>no.nav.soknad.arkivering.soknadsmottaker.api</apiPackage>
 							<modelPackage>no.nav.soknad.arkivering.soknadsmottaker.model</modelPackage>
 							<configOptions>
 								<serializationLibrary>jackson</serializationLibrary>
+								<enumPropertyNaming>camelCase</enumPropertyNaming>
 								<omitGradlePluginVersions>true</omitGradlePluginVersions>
 								<groupId>no.nav.soknad.arkivering</groupId>
 								<artifactId>soknadsmottaker-client</artifactId>
@@ -114,10 +117,13 @@
 							<inputSpec>${project.build.directory}/innsending-api-spec/innsending-api.yml</inputSpec>
 							<output>target/generated-sources/openapi</output>
 							<generatorName>kotlin</generatorName>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
 							<apiPackage>no.nav.soknad.arkivering.innsending.api</apiPackage>
 							<modelPackage>no.nav.soknad.arkivering.innsending.model</modelPackage>
 							<configOptions>
 								<serializationLibrary>jackson</serializationLibrary>
+								<enumPropertyNaming>camelCase</enumPropertyNaming>
 								<omitGradlePluginVersions>true</omitGradlePluginVersions>
 								<groupId>no.nav.soknad.arkivering</groupId>
 								<artifactId>innsending-client</artifactId>
