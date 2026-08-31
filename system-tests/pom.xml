@@ -29,7 +29,7 @@
 		<coroutines.version>1.11.0</coroutines.version>
 
 		<!-- Kafka -->
-		<kafka.version>3.9.1</kafka.version>
+		<kafka.version>3.9.2</kafka.version>
 		<arkivering-schemas.version>1.4.4-bf301c4492e2</arkivering-schemas.version>
 
 		<!-- Logging -->
