@@ -33,7 +33,7 @@
 		<arkivering-schemas.version>1.4.4-bf301c4492e2</arkivering-schemas.version>
 
 		<!-- Logging -->
-		<logstash.version>7.4</logstash.version>
+		<logstash.version>9.0</logstash.version>
 
 		<!-- Test -->
 		<testcontainers.version>2.0.5</testcontainers.version>
