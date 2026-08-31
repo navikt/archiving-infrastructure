@@ -22,7 +22,7 @@ class EmbeddedDockerImages {
 
 	// Pinned rather than "latest" for reproducible test runs and to avoid pulling a new image
 	// whenever Confluent publishes one. Keep in sync with the pre-pull list in the workflows.
-	private val confluentVersion = "7.9.1"
+	private val confluentVersion = "7.9.9"
 
 	private lateinit var authServerContainer: GenericContainer<*>
 	private lateinit var gotenbergContainer: GenericContainer<*>
@@ -38,7 +38,7 @@ class EmbeddedDockerImages {
 	fun startContainers() {
 		val network = Network.newNetwork()
 
-		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.6"))
+		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.19"))
 			.withNetworkAliases("postgres-innsending")
 			.withExposedPorts(defaultPorts["database"]!!)
 			.withNetwork(network)
@@ -46,12 +46,12 @@ class EmbeddedDockerImages {
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
 
-		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
+		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.36.0"))
 			.withNetworkAliases("gotenberg")
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
 
-		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
+		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:6.0.2"))
 			.withNetworkAliases("authserver")
 			.withExposedPorts(6969)
 			.withNetwork(network)
