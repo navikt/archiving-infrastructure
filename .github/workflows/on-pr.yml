@@ -10,7 +10,7 @@ jobs:
       id-token: "write"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -21,7 +21,7 @@ jobs:
       # and the sibling repositories are cloned into the workspace between restore and save, so the
       # cache ends up saved under a key that can never be restored ("maven cache is not found").
       - name: Cache Maven dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository
           key: e2e-m2-${{ runner.os }}-${{ hashFiles('system-tests/**/pom.xml') }}
