@@ -71,7 +71,7 @@
       <section class="section">
         <h2>Failure and retry path</h2>
         <p>soknadsarkiverer tracks each submission through received, started, archived, and finished states. Transient failures are retried with increasing delays. A submission reaches failure after the retry plan is exhausted, and the negative result is sent back to innsending-api. Duplicate archive entries and already-deleted files have separate handling because repeating the same work would not help.</p>
-        <div class="callout"><h3>Operations are visible from innsending-admin</h3><p>NAV staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
+        <div class="callout"><h3>Operations are visible from innsending-admin</h3><p>Nav staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
       </section>
 
       <section>
