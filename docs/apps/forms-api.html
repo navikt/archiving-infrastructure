@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="forms-api application profile."><title>forms-api | FyllUt-SendInn</title><link rel="stylesheet" href="../assets/styles.css"><script src="../assets/site.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner"><a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt-SendInn</strong></span></a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button><nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="../index.html">Overview</a><a href="../flow.html">System flow</a><a href="../applications.html" aria-current="page">Applications</a><a href="../technology.html">Technology</a></nav></div></header>
+<main id="main"><section class="page-hero"><div class="page-hero-inner"><div class="breadcrumbs"><a href="../applications.html">Applications</a> / forms-api</div><p class="eyebrow">Forms and user journeys</p><h1>forms-api</h1><p>The persistent backend for form definitions, translations, recipient addresses, publication records, and static PDFs.</p></div></section>
+<div class="content"><dl class="facts-grid"><div class="fact-card"><dt>Type</dt><dd>Backend service</dd></div><div class="fact-card"><dt>Primary client</dt><dd>Bygger</dd></div><div class="fact-card"><dt>Runtime</dt><dd>Kotlin and Spring Boot</dd></div><div class="fact-card"><dt>Storage</dt><dd>PostgreSQL</dd></div></dl>
+<p class="lede">forms-api is the editable source of form data. It supports form-building work and the newer publication model, while the production FyllUt image still receives its published content through GitHub.</p>
+<div class="detail-grid"><div>
+  <section class="detail-panel"><h2>What it does</h2><ul><li>Creates and updates form definitions and form translations.</li><li>Stores global translations, recipient and archive addresses, and static PDFs.</li><li>Tracks publications so one render can refer to a consistent form revision and translation set.</li><li>Exposes read APIs and protects write operations with Entra ID groups.</li></ul></section>
+  <section class="detail-panel"><h2>Role in the flow</h2><p>Bygger uses forms-api throughout authoring. Non-production FyllUt can also load forms directly from it for staging. In production, publishing still copies selected content into skjemautfylling-formio before FyllUt serves it.</p></section>
+  <section class="detail-panel"><h2>What it does not do</h2><p>It does not render forms, publish Git commits, accept citizen submissions, or archive documents.</p></section>
+</div><aside>
+  <section class="detail-panel"><h2>Technical details</h2><ul><li>Kotlin, Spring Boot 4, Java 21</li><li>PostgreSQL with Flyway</li><li>REST API and Swagger UI</li><li>NAIS on GCP</li><li>Prometheus through Actuator</li><li>Entra ID group authorization for writes</li></ul></section>
+  <section class="detail-panel"><h2>Connections</h2><ul class="connection-list"><li><strong><a href="skjemabygging-formio.html">Bygger</a></strong>Main read and write client</li><li><strong><a href="skjemabygging-formio.html">FyllUt staging</a></strong>Optional direct reads outside production</li><li><strong><a href="skjemautfylling-formio.html">Published content</a></strong>Related data, copied by Bygger rather than forms-api itself</li></ul></section>
+  <section class="detail-panel"><h2>Source</h2><a class="repo-link" href="https://github.com/navikt/forms-api">github.com/navikt/forms-api</a></section>
+</aside></div>
+<div class="next-links"><a class="next-link" href="skjemabygging-formio.html"><small>Main client</small><strong>Bygger and FyllUt</strong></a><a class="next-link" href="../flow.html#publishing"><small>Flow</small><strong>How a form is published</strong></a></div>
+</div></main><footer class="site-footer"><div class="footer-inner"><p>Part of the <a href="../index.html">FyllUt-SendInn system guide</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
+</body></html>
