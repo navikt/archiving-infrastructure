@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<kotlin.version>2.2.0</kotlin.version>
+		<kotlin.version>2.4.10</kotlin.version>
 		<maven.version>3.8.8</maven.version>
 		<maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
 		<maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
@@ -42,7 +42,7 @@
 		<mockk.version>1.14.5</mockk.version>
 		<springmockk.version>4.0.2</springmockk.version>
 		<wiremock.version>3.13.2</wiremock.version>
-		<okhttp3.version>4.11.0</okhttp3.version>
+		<okhttp3.version>5.5.0</okhttp3.version>
 		<token-support.version>6.0.12</token-support.version>
 		<logback.version>1.6.3</logback.version>
 		<slf4j.version>2.0.18</slf4j.version>
@@ -58,7 +58,7 @@
 
 
 		<!-- Plugins -->
-		<openapi-generator-maven-plugin.version>7.0.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.24.0</openapi-generator-maven-plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
