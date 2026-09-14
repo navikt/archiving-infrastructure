@@ -48,7 +48,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
 
       # See the comment in on-pr.yml for why setup-java's own Maven cache is not used
       - name: Cache Maven dependencies
