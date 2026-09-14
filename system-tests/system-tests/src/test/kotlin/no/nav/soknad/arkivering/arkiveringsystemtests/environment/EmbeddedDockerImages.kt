@@ -6,9 +6,9 @@ import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.kafka.ConfluentKafkaContainer
+import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
@@ -22,11 +22,11 @@ class EmbeddedDockerImages {
 
 	// Pinned rather than "latest" for reproducible test runs and to avoid pulling a new image
 	// whenever Confluent publishes one. Keep in sync with the pre-pull list in the workflows.
-	private val confluentVersion = "7.9.9"
+	private val confluentVersion = "7.9.1"
 
 	private lateinit var authServerContainer: GenericContainer<*>
 	private lateinit var gotenbergContainer: GenericContainer<*>
-	private lateinit var postgresInnsendingContainer: PostgreSQLContainer
+	private lateinit var postgresInnsendingContainer: PostgreSQLContainer<*>
 	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
 	private lateinit var schemaRegistryContainer: GenericContainer<*>
 	private lateinit var arkivMockContainer: GenericContainer<*>
@@ -38,7 +38,7 @@ class EmbeddedDockerImages {
 	fun startContainers() {
 		val network = Network.newNetwork()
 
-		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.19"))
+		postgresInnsendingContainer = PostgreSQLContainer(DockerImageName.parse("postgres:15.6"))
 			.withNetworkAliases("postgres-innsending")
 			.withExposedPorts(defaultPorts["database"]!!)
 			.withNetwork(network)
@@ -46,12 +46,12 @@ class EmbeddedDockerImages {
 			.withPassword(postgresUsername)
 			.withDatabaseName(databaseName)
 
-		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.36.0"))
+		gotenbergContainer = GenericContainer(DockerImageName.parse("gotenberg/gotenberg:8.25.1"))
 			.withNetworkAliases("gotenberg")
 			.withExposedPorts(defaultPorts["gotenberg"]!!)
 			.withNetwork(network)
 
-		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:6.0.2"))
+		authServerContainer = GenericContainer(DockerImageName.parse("ghcr.io/navikt/mock-oauth2-server:0.5.5"))
 			.withNetworkAliases("authserver")
 			.withExposedPorts(6969)
 			.withNetwork(network)
