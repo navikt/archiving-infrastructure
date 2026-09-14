@@ -89,7 +89,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
+			<artifactId>okhttp-jvm</artifactId>
 			<version>${okhttp3.version}</version>
 		</dependency>
 
@@ -115,7 +115,7 @@
 			<version>${arkivering-schemas.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.github.tomakehurst</groupId>
+			<groupId>org.wiremock</groupId>
 			<artifactId>wiremock-standalone</artifactId>
 			<version>${wiremock.version}</version>
 			<scope>test</scope>
@@ -130,13 +130,13 @@
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>kafka</artifactId>
+			<artifactId>testcontainers-kafka</artifactId>
 			<version>${testcontainers-kafka.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<version>${testcontainers-postgresql.version}</version>
 			<scope>test</scope>
 		</dependency>
