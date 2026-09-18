@@ -28,6 +28,7 @@
         <thead><tr><th>Repository</th><th>Runtime and framework</th><th>State</th><th>Main integrations</th><th>Authentication</th></tr></thead>
         <tbody>
           <tr><td><a href="apps/skjemabygging-formio.html">skjemabygging-formio</a></td><td>TypeScript, React, Express, pnpm monorepo</td><td>forms-api and published Git content</td><td>forms-api, GitHub API, innsending-api, Pusher, Nav services</td><td>Entra ID for Bygger, ID-porten and TokenX for citizen paths</td></tr>
+          <tr><td><a href="apps/skjemabygging-proxy.html">skjemabygging-proxy</a></td><td>Node.js 24, Express 5</td><td>Cached short-lived STS token only</td><td>Bygger, FyllUt, STS, Foerstesidegenerator</td><td>Azure AD token introspection inbound; service user and STS token outbound</td></tr>
           <tr><td><a href="apps/forms-api.html">forms-api</a></td><td>Kotlin, Spring Boot, Java 21</td><td>PostgreSQL with Flyway</td><td>REST API used by Bygger and staging FyllUt</td><td>Open reads, Entra ID groups for writes</td></tr>
           <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker content layer on FyllUt base image</td><td>Git files</td><td>GitHub Actions, NAIS deployment</td><td>Not a user-facing service on its own</td></tr>
           <tr><td><a href="apps/fyllut-ettersending.html">fyllut-ettersending</a></td><td>Next.js 16, React 19, Node.js</td><td>Session and downstream state</td><td>FyllUt, innsending-api, SendInn</td><td>ID-porten, TokenX</td></tr>
