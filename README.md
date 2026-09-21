@@ -26,6 +26,19 @@ This mode is especially useful for debugging. The downsides are that the user ne
 ### GitHub Actions
 Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for innsending-api, soknadsmottaker, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
 
+For the `feat/grant-user-digital-access` coordinated change, the pull-request workflow selects these branches:
+
+* `soknadsmottaker@feat/grant-user-digital-access-contract`
+* `soknadsarkiverer@feat/grant-user-digital-access`
+* `innsending-api@feat/grant-user-digital-access`
+* `skjemabygging-formio@feat/grant-user-digital-access`
+* `arkiv-mock@feat/grant-user-digital-access`
+
+To run the same configuration locally, check out these branches in the sibling repositories before running `./run-end-to-end-tests.sh`. The manual workflow accepts the same branch names through its inputs and otherwise defaults each component to `main`.
+
+The system-test client uses the published innsending-api OpenAPI artifact. For this coordinated
+change, use `-Dinnsending-api.openapi.version=78f5483-dev`; the default remains `19753d3-prod`.
+
 ## Scripts
 * Run `./run-end-to-end-tests.sh` to build all applications and run the end-to-end tests. This will use testcontainers to start the applications and their dependencies, as described above. By running `./run-end-to-end-tests.sh no-testcontainers`, the applications will start up in "external" Docker containers, and the tests will run against the containers. Running this script is all it takes to run the end-to-end tests; the other scripts will be called by this script.
 * Run `./build.sh` to build all applications and create docker images from them.

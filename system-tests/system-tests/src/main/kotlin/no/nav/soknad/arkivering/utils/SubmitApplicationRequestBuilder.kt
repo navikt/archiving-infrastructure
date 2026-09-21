@@ -21,7 +21,8 @@ class SubmitApplicationRequestBuilder(
 	var vedleggsListe: List<AttachmentDto>? = emptyList(),
 	var kanLasteOppAnnet: Boolean? = false,
 	var skjemaPath: String = createSkjemaPathFromSkjemanr(skjemanr),
-	var fileIds: List<UUID>? = emptyList()
+	var fileIds: List<UUID>? = emptyList(),
+	var grantUserDigitalAccess: Boolean? = null
 
 	) {
 
@@ -37,6 +38,9 @@ class SubmitApplicationRequestBuilder(
 	fun medSkjemanr(skjemanr: String) = apply { this.skjemanr = skjemanr }
 	fun medTittel(tittel: String) = apply { this.tittel = tittel }
 	fun medTema(tema: String) = apply { this.tema = tema }
+	fun medGrantUserDigitalAccess(grantUserDigitalAccess: Boolean) = apply {
+		this.grantUserDigitalAccess = grantUserDigitalAccess
+	}
 
 	fun build() = SubmitApplicationRequest(
 		formNumber = skjemanr,
@@ -48,7 +52,8 @@ class SubmitApplicationRequestBuilder(
 		mainDocument = hoveddokument,
 		mainDocumentAlt = hoveddokumentVariant,
 		attachments = vedleggsListe,
-		otherUploadAvailable = false
+		otherUploadAvailable = false,
+		grantUserDigitalAccess = grantUserDigitalAccess
 	)
 
 }

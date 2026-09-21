@@ -17,6 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
+		<innsending-api.openapi.version>19753d3-prod</innsending-api.openapi.version>
 		<kotlin.version>2.4.10</kotlin.version>
 		<maven.version>3.8.8</maven.version>
 		<maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>

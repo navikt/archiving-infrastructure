@@ -17,6 +17,12 @@ on:
         default: 'main'
         type: string
 
+      innsending_openapi_version:
+        description: 'Innsending-api OpenAPI artifact version used by the system tests'
+        required: true
+        default: '19753d3-prod'
+        type: string
+
       soknadsmottaker:
         description: 'Soknadsmottaker branch'
         required: true
@@ -31,6 +37,12 @@ on:
 
       arkivmock:
         description: 'Arkivmock branch'
+        required: true
+        default: 'main'
+        type: string
+
+      skjemabygging_formio:
+        description: 'Skjemabygging-formio branch'
         required: true
         default: 'main'
         type: string
@@ -60,7 +72,7 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: ./.github/checkout-and-build
         with:
           component_names: |
             soknadsmottaker@${{ inputs.soknadsmottaker }}
@@ -71,8 +83,21 @@ jobs:
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
+      - name: 'Checkout skjemabygging-formio'
+        uses: actions/checkout@v7
+        with:
+          repository: navikt/skjemabygging-formio
+          ref: ${{ inputs.skjemabygging_formio }}
+          path: skjemabygging-formio
+          token: ${{ secrets.READER_TOKEN }}
+
+      - name: 'Confirm skjemabygging-formio branch'
+        run: git -C skjemabygging-formio rev-parse HEAD
+
       - name: 'Build and run the end-to-end-tests'
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-        run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
+        run: >-
+          mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
+          -Dinnsending-api.openapi.version=${{ inputs.innsending_openapi_version }}
