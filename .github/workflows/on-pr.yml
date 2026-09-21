@@ -29,22 +29,35 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: ./.github/checkout-and-build
         with:
           component_names: |
-            soknadsmottaker
-            soknadsarkiverer
-            arkiv-mock
-            innsending-api
+            soknadsmottaker@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access-contract' || 'main' }}
+            soknadsarkiverer@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
+            arkiv-mock@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
+            innsending-api@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
           prepull_test_images: true
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
 
+      - name: 'Checkout skjemabygging-formio'
+        uses: actions/checkout@v7
+        with:
+          repository: navikt/skjemabygging-formio
+          ref: ${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
+          path: skjemabygging-formio
+          token: ${{ secrets.READER_TOKEN }}
+
+      - name: 'Confirm skjemabygging-formio branch'
+        run: git -C skjemabygging-formio rev-parse HEAD
+
       - name: 'Run the end-to-end-tests (this PR)'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: ./.github/checkout-and-build
         with:
           component_name: archiving-infrastructure
           branch: ${GITHUB_HEAD_REF} # Branch of current PR
           sub_directory: system-tests
           skip_tests: false
           run_docker_build: false
+          maven_arguments: >-
+            -Dinnsending-api.openapi.version=${{ github.head_ref == 'feat/grant-user-digital-access' && '78f5483-dev' || '19753d3-prod' }}

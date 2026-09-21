@@ -103,6 +103,9 @@ components:
           $ref: "../common/components.yaml#/components/schemas/BrukerId"
         avsender:
           $ref: "../common/components.yaml#/components/schemas/AvsenderDto"
+        grantUserDigitalAccess:
+          type: boolean
+          description: Whether the user should receive digital access to the archived journalpost
 
     ApplicationSubmissionResponse:
       type: object

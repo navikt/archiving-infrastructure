@@ -33,7 +33,7 @@
 		<dependency>
 			<groupId>no.nav.soknad.innsending</groupId>
 			<artifactId>innsending-api</artifactId>
-			<version>19753d3-prod</version>
+			<version>${innsending-api.openapi.version}</version>
 			<classifier>openapi-spec</classifier>
 			<type>zip</type>
 		</dependency>

@@ -29,6 +29,10 @@ inputs:
     description: 'Whether external images used by the system tests should be pulled in the background while the components are built. Pull failures are only warnings - the test run will pull the image on demand.'
     required: false
     default: "false"
+  maven_arguments:
+    description: 'Additional arguments passed to Maven'
+    required: false
+    default: ""
 
 
 runs:
@@ -46,6 +50,7 @@ runs:
         skip_tests="${{ inputs.skip_tests }}"
         run_docker_build="${{ inputs.run_docker_build }}"
         prepull_test_images="${{ inputs.prepull_test_images }}"
+        maven_arguments="${{ inputs.maven_arguments }}"
 
         components="${{ inputs.component_names }} ${{ inputs.component_name }}"
         if [[ -z "$(echo $components)" ]]; then
@@ -100,7 +105,7 @@ runs:
           cd "$component/$sub_directory" || return 1
 
           # No need to clean - the components are freshly cloned onto an ephemeral runner
-          mvn install --settings maven-settings.xml $MVN_FLAGS || return 1
+          mvn install --settings maven-settings.xml $MVN_FLAGS $maven_arguments || return 1
 
           if [[ "$run_docker_build" == "true" ]]; then
             APP_NAME=$(echo $(pwd) | rev | cut -f1 -d"/" | rev)
