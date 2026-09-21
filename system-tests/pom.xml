@@ -17,10 +17,10 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<kotlin.version>2.4.10</kotlin.version>
+		<kotlin.version>2.4.20</kotlin.version>
 		<maven.version>3.8.8</maven.version>
 		<maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
-		<maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+		<maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<springframework.version>7.0.9</springframework.version>
@@ -45,7 +45,7 @@
 		<okhttp3.version>5.5.0</okhttp3.version>
 		<token-support.version>6.0.12</token-support.version>
 		<logback.version>1.6.3</logback.version>
-		<slf4j.version>2.0.18</slf4j.version>
+		<slf4j.version>2.0.19</slf4j.version>
 		<postgresql.version>42.7.13</postgresql.version>
 		<jackson.version>2.22.2</jackson.version>
 		<junit-jupiter.version>6.1.3</junit-jupiter.version>
@@ -58,7 +58,7 @@
 
 
 		<!-- Plugins -->
-		<openapi-generator-maven-plugin.version>7.24.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>7.25.0</openapi-generator-maven-plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
