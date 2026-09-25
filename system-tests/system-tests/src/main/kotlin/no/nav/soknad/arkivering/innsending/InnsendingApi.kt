@@ -30,8 +30,6 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 	private val sendInnFil = if (authClient != null) SendinnFilApi(config.innsendingApiUrl, authClient) else SendinnFilApi(config.innsendingApiUrl)
 	private val endtoend = if (authClient != null) EndtoendApi(config.innsendingApiUrl, authClient) else EndtoendApi(config.innsendingApiUrl)
 
-	private val nologinFillager = if (authClient != null) NologinApi(config.innsendingApiUrl, authClient) else NologinApi(config.innsendingApiUrl)
-	private val nologinSoknad = if (authClient != null) NologinSoknadApi(config.innsendingApiUrl, authClient) else NologinSoknadApi(config.innsendingApiUrl)
 	private val nologinApplicationApi = if (authClient != null) NologinApplicationApi(config.innsendingApiUrl, authClient) else NologinApplicationApi(config.innsendingApiUrl)
 
 
@@ -89,26 +87,29 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		return endtoend.getArkiveringsstatus(innsendingsId)
 	}
 
-	fun lagreOgSendInnNoLoginSoknad(nologinSoknadDto: SkjemaDtoV2) = runCatching {
-		logger.info("Lagrer og sender inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
-		nologinSoknad.opprettNologinSoknad(nologinSoknadDto)
-		logger.info("Lagret og sendt inn ikke innlogget søknad: ${nologinSoknadDto.innsendingsId}")
-	}
-
 	fun sendInNoLoginApplication(innsendingsID: UUID, submitApplicationRequest: SubmitApplicationRequest) = runCatching {
 		logger.info("Submits not logged in Application ${innsendingsID}")
-		nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
+		val response = nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
 		logger.info("Submitted and sent in not logged in Application ${innsendingsID}")
+		response
 	}
 
 	fun lastOppNoLoginFil(innsendingId: String, vedleggsId: String, fil: File) = runCatching {
 		logger.info("Lagrer og sender inn ikke innlogget søknad: ${innsendingId}")
-		nologinFillager.lastOppFil(vedleggId = vedleggsId,  filinnhold = fil, innsendingId = UUID.fromString(innsendingId))
+		nologinApplicationApi.uploadNologinAttachmentFile(
+			innsendingsId = UUID.fromString(innsendingId),
+			attachmentId = vedleggsId,
+			file = fil,
+		)
 	}
 
-	fun slettNoLoginFil(innsendingId: String,  filId: String) = runCatching {
+	fun slettNoLoginFil(innsendingId: String, vedleggsId: String, filId: String) = runCatching {
 		logger.info("Sletter opplastet fil til ikke innlogget søknad: ${innsendingId}")
-		nologinFillager.slettFilV2(filId = UUID.fromString(filId), innsendingId = UUID.fromString(innsendingId))
+		nologinApplicationApi.deleteNologinAttachmentFile(
+			innsendingsId = UUID.fromString(innsendingId),
+			attachmentId = vedleggsId,
+			fileId = UUID.fromString(filId),
+		)
 	}
 
 }
