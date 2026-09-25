@@ -4,8 +4,6 @@ This repository contains scripts to run the entire archiving system locally. It 
 The end-to-end tests perform various tests on the system as a whole from the outside and verify different behaviours across the archiving flow.
 Note that in order to simulate the external interfaces, JOARK and SAF, to the archiving system uses an application, [arkiv-mock](https://github.com/navikt/arkiv-mock), is used.
 
-The no-login scenarios upload attachments and submit applications through `innsending-api`'s `/v1/application-nologin/{innsendingsId}` endpoints. The upload response supplies each file ID for the submission request; deletion uses the same attachment ID as the upload.
-
 ### Repository overview
 * **docs**: Documentation resources.
 * **system-tests**: Contains the end-to-end tests.
