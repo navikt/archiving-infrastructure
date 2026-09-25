@@ -1,26 +1,16 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
 import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.innsending.model.ArkiveringsStatusDto
 import no.nav.soknad.arkivering.innsending.model.AttachmentDto
-import no.nav.soknad.arkivering.innsending.model.Mimetype
-import no.nav.soknad.arkivering.innsending.model.SkjemaDokumentDtoV2
-import no.nav.soknad.arkivering.innsending.model.SkjemaDtoV2
+import no.nav.soknad.arkivering.innsending.model.OpplastingsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
-import no.nav.soknad.arkivering.innsending.model.VisningsType
-import no.nav.soknad.arkivering.utils.SkjemaDokumentDtoV2TestBuilder
+import no.nav.soknad.arkivering.utils.Skjema.generateVedleggsnr
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
-import no.nav.soknad.arkivering.utils.retry
-import no.nav.soknad.innsending.utils.builders.SkjemaDtoV2TestBuilder
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -31,7 +21,6 @@ import org.junit.jupiter.api.parallel.ResourceAccessMode
 import org.junit.jupiter.api.parallel.ResourceLock
 import java.io.File
 import java.util.*
-import kotlin.io.path.createTempFile
 
 @Execution(ExecutionMode.CONCURRENT)
 class EndToEndTests : SystemTestBase() {
@@ -385,111 +374,38 @@ class EndToEndTests : SystemTestBase() {
 		val uploadResponse = innsendingApi.lastOppNoLoginFil(innsendingsId, vedleggsId, loadFile(fileOfSize1mb))
 		assertTrue(uploadResponse.isSuccess)
 
-		val fileId = uploadResponse.getOrThrow().filId
+		val fileId = uploadResponse.getOrThrow().id
 		assertTrue { fileId.toString().isNotEmpty() }
 
-		val deleteResponse = innsendingApi.slettNoLoginFil(innsendingsId, fileId.toString())
+		val deleteResponse = innsendingApi.slettNoLoginFil(innsendingsId, vedleggsId, fileId.toString())
 		assertTrue(deleteResponse.isSuccess)
 	}
 
-	// Lagster opp filer på vedlegg til søknad, og returnerer SkjemaDtoV2 klar for innsending
-	private fun prepareNoLoginSoknad(vedleggMap: Map<String, List<File>>): SkjemaDtoV2 {
-		val brukerId = testpersonid
-		val innsendingsId = UUID.randomUUID().toString()
-
-		val vedleggsListe: List<SkjemaDokumentDtoV2> = lastOppFilerTilSoknad(innsendingsId, vedleggMap) // returnerer map med fyllutVedleggIds til liste med lagringsId for opplastede filer til vedlegg
-
-		val skjemDtoV2 = SkjemaDtoV2TestBuilder(
-			brukerId = brukerId,
-			innsendingsId = innsendingsId,
-			status = SoknadsStatusDto.utfylt,
-			visningsType = VisningsType.nologin,
-		)
-			.medVedlegg(vedleggsListe)
-			.build()
-
-		return skjemDtoV2
-	}
-
-
-	// Lagster opp filer på vedlegg til søknad, og returnerer SkjemaDtoV2 klar for innsending
 	private fun prepareNoLoginApplication(innsendingsId: UUID, vedleggMap: Map<String, List<File>>): SubmitApplicationRequest {
-		val brukerId = testpersonid
-
-		val vedleggsListe: List<SkjemaDokumentDtoV2> = lastOppFilerTilSoknad(innsendingsId.toString(), vedleggMap) // returnerer map med fyllutVedleggIds til liste med lagringsId for opplastede filer til vedlegg
-		val attachmentDto = vedleggsListe.map{ AttachmentDto(it.vedleggsnr, it.label, it.opplastingsStatus,
-			it.tittel, it.beskrivelse,it.vedleggsurl, it.filIdListe?.map{filId -> UUID.fromString(filId)}) }
-		val soknad = SubmitApplicationRequestBuilder(
-			brukerId = brukerId,
+		val attachments = vedleggMap.map { (attachmentId, files) ->
+			val fileIds = files.map { file ->
+				innsendingApi.lastOppNoLoginFil(innsendingsId.toString(), attachmentId, file).getOrThrow().id
+			}
+			AttachmentDto(
+				attachmentCode = generateVedleggsnr(),
+				label = "Inntektsopplysninger for selvstendig næringsdrivende og frilansere som skal ha foreldrepenger eller svangerskapspenger.",
+				uploadStatus = OpplastingsStatusDto.lastetOpp,
+				title = "Vedleggseksempel",
+				description = "Dette er opplysninger som er nødvendig for beregning av utbetaling av foreldrepenger eller svangerskapspenger.",
+				fileIds = fileIds,
+			)
+		}
+		return SubmitApplicationRequestBuilder(
+			brukerId = testpersonid,
 			status = SoknadsStatusDto.utfylt,
 		)
-			.medVedlegg(attachmentDto)
+			.medVedlegg(attachments)
 			.build()
-
-		return soknad
-	}
-
-
-	private fun lastOppFilerTilSoknad(innsendingsId: String, vedleggMap: Map<String, List<File>>) = runBlocking {
-		val vedleggListe = vedleggMap
-			.mapValues { (vedleggRef, files) ->
-				// Upload all files for this vedleggRef
-				lastOppFilerTilVedlegg(innsendingsId, vedleggRef, files)
-					.map { it.filId.toString() } // extract just the fileId
-			}
-
-		vedleggListe
-			.mapKeys {
-				SkjemaDokumentDtoV2TestBuilder(
-					tittel = "Vedleggseksempel", mimetype = Mimetype.applicationSlashPdf, formioId = it.key
-				)
-					.withFilIdListe(it.value)
-					.build()
-			}.keys
-	}.toList()
-
-	private fun sendInnSoknader_NoLogin(nologinSoknader: List<SkjemaDtoV2>) = runBlocking {
-		nologinSoknader.map{ async { runCatching { sendInnSoknad(it) } }}.awaitAll()
-	}
-
-	private fun lastOppFilerTilVedlegg(innsendingsId: String, vedleggRef: String, files: List<File>) = runBlocking {
-		files
-			.map { file ->
-				async {
-					lastOppEnFil(
-						innsendingsId = innsendingsId,
-						vedleggRef = vedleggRef,
-						file = file
-					).getOrThrow() // unwrap Result or throw
-				}
-			}
-			.awaitAll()
-	}
-
-	private suspend fun sendInnSoknad(nologinSoknad: SkjemaDtoV2) {
-		return withContext(Dispatchers.IO) {
-			retry(3, logThrowable = logThrowableAsWarning("${nologinSoknad.innsendingsId}: Feil ved innsending")) { innsendingApi.lagreOgSendInnNoLoginSoknad(nologinSoknad) }}
-	}
-
-
-	private fun lastOppEnFil(innsendingsId: String, vedleggRef: String, file: File) =
-		innsendingApi.lastOppNoLoginFil(innsendingsId, vedleggRef, file)
-			.onSuccess { System.out.println("Lastet opp filId=${it.filId} til vedleggRef=$vedleggRef for innsendingsId=$innsendingsId") }
-			.onFailure { throw it }
-
-	private fun logThrowableAsWarning(message: String): (Throwable) -> Unit {
-		return { t -> System.out.println("$message - ${t.message}") }
 	}
 
 	private fun loadFile(fileName: String): File {
-		val resource = Config::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
-		val file = createTempFile().toFile()
-		resource.use { input ->
-			file.outputStream().use { output ->
-				input.copyTo(output)
-			}
-		}
-		return file
+		val resource = Config::class.java.getResource(fileName) ?: throw Exception("$fileName not found")
+		return File(resource.toURI())
 	}
 
 
