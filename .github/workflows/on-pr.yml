@@ -32,10 +32,10 @@ jobs:
         uses: ./.github/checkout-and-build
         with:
           component_names: |
-            soknadsmottaker@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access-contract' || 'main' }}
-            soknadsarkiverer@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
-            arkiv-mock@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
-            innsending-api@${{ github.head_ref == 'feat/grant-user-digital-access' && 'feat/grant-user-digital-access' || 'main' }}
+            soknadsmottaker@main
+            soknadsarkiverer@feat/grant-user-digital-access
+            arkiv-mock@feat/grant-user-digital-access
+            innsending-api@feat/grant-user-digital-access
           prepull_test_images: true
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
