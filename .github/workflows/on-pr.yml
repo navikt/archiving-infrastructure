@@ -44,7 +44,7 @@ jobs:
         uses: ./.github/checkout-and-build
         with:
           component_name: archiving-infrastructure
-          branch: ${GITHUB_HEAD_REF} # Branch of current PR
+          branch: feat/grant-user-digital-access
           sub_directory: system-tests
           skip_tests: false
           run_docker_build: false
