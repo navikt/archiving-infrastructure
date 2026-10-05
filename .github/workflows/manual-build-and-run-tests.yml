@@ -35,12 +35,6 @@ on:
         default: 'main'
         type: string
 
-      skjemabygging_formio:
-        description: 'Skjemabygging-formio branch'
-        required: true
-        default: 'main'
-        type: string
-
 jobs:
   build-and-push:
     permissions:
@@ -76,17 +70,6 @@ jobs:
           prepull_test_images: true
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
-
-      - name: 'Checkout skjemabygging-formio'
-        uses: actions/checkout@v7
-        with:
-          repository: navikt/skjemabygging-formio
-          ref: ${{ inputs.skjemabygging_formio }}
-          path: skjemabygging-formio
-          token: ${{ secrets.READER_TOKEN }}
-
-      - name: 'Confirm skjemabygging-formio branch'
-        run: git -C skjemabygging-formio rev-parse HEAD
 
       - name: 'Build and run the end-to-end-tests'
         env:
