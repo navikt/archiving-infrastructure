@@ -59,5 +59,3 @@ jobs:
           sub_directory: system-tests
           skip_tests: false
           run_docker_build: false
-          maven_arguments: >-
-            -Dinnsending-api.openapi.version=${{ github.head_ref == 'feat/grant-user-digital-access' && '78f5483-dev' || '19753d3-prod' }}

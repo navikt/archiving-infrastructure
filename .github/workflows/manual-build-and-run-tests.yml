@@ -17,12 +17,6 @@ on:
         default: 'main'
         type: string
 
-      innsending_openapi_version:
-        description: 'Innsending-api OpenAPI artifact version used by the system tests'
-        required: true
-        default: '19753d3-prod'
-        type: string
-
       soknadsmottaker:
         description: 'Soknadsmottaker branch'
         required: true
@@ -98,6 +92,4 @@ jobs:
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-        run: >-
-          mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
-          -Dinnsending-api.openapi.version=${{ inputs.innsending_openapi_version }}
+        run: mvn install --settings system-tests/maven-settings.xml --file system-tests/pom.xml
