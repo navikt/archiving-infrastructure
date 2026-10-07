@@ -20,7 +20,7 @@
       <div class="breadcrumbs"><a href="index.html">Overview</a> / System flow</div>
       <p class="eyebrow">End to end</p>
       <h1>How information moves through the system</h1>
-      <p>There are two main flows to understand. Form definitions move from authoring to the FyllUt runtime. User submissions move through temporary storage and Kafka before they reach Joark.</p>
+      <p>Form publishing and user submission are separate flows. Publishing makes form definitions available to the FyllUt runtime. User submissions pass through temporary storage and Kafka before they reach Joark.</p>
     </div></section>
 
     <div class="content">
@@ -28,7 +28,7 @@
         <h2>Flow 1: publish a form</h2>
         <p class="lede">This flow changes what FyllUt can render. It does not submit citizen data.</p>
         <div class="flow">
-          <article class="flow-stage"><div class="flow-number">1</div><h3>Build in Bygger</h3><p>A form builder edits form.io definitions, translations, and recipient information. Bygger reads and writes this material through forms-api, which persists it in PostgreSQL.</p></article>
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Build in Bygger</h3><p>A form builder edits form.io definitions, translations, and recipient information. Bygger reads and writes this data through forms-api, which stores it in PostgreSQL.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">2</div><h3>Publish to GitHub</h3><p>Bygger backend writes the selected form JSON, translations, and resources to skjemautfylling-formio. It also pins the skjemabygging-formio commit that contains the FyllUt application code.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
@@ -36,12 +36,12 @@
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">4</div><h3>Render in FyllUt</h3><p>Citizens open FyllUt and receive the published form. Development and preproduction may read forms directly from forms-api, but production uses the GitHub-bundled content.</p></article>
         </div>
-        <div class="callout"><h3>Two sources can look authoritative</h3><p>forms-api stores editable form data and publication metadata. Production FyllUt currently renders content bundled from skjemautfylling-formio. Keep that distinction in mind when a form differs between staging and production.</p></div>
+        <div class="callout"><h3>Editable forms and production content</h3><p>forms-api stores editable form data and publication metadata. Production FyllUt renders content bundled from skjemautfylling-formio. Check which source an environment uses when a form differs between staging and production.</p></div>
       </section>
 
       <section id="user-paths" class="section">
         <h2>Flow 2: choose a user path</h2>
-        <p class="lede">The route depends on what the user needs to send. All digital routes converge on innsending-api.</p>
+        <p class="lede">The route depends on what the user needs to send. All digital routes use innsending-api.</p>
         <div class="branch-grid">
           <article class="branch"><h3>New form</h3><p>FyllUt renders the form, uploads its attachments through innsending-api, and submits the completed application. The user stays in FyllUt throughout the current flow.</p></article>
           <article class="branch"><h3>Additional documentation</h3><p>fyllut-ettersending helps the user identify the existing form or case and choose paper or digital delivery. The digital route creates an ettersending in innsending-api and redirects to SendInn for file upload and submission.</p></article>
@@ -60,7 +60,7 @@
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">3</div><h3>Kafka intake</h3><p>soknadsmottaker maps the request to an InnsendingTopicMsg and publishes JSON to the logged-in or no-login Kafka topic. This keeps user-facing submission separate from archive processing.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">4</div><h3>Enrich with files</h3><p>soknadsarkiverer consumes the message and fetches the referenced files from innsending-api over an Azure AD protected REST endpoint.</p></article>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Fetch the files</h3><p>soknadsarkiverer consumes the message and fetches the referenced files from innsending-api over an Azure AD protected REST endpoint.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">5</div><h3>Check and archive</h3><p>The archiver queries SAF by external reference to avoid duplicate journal posts. If no prior archive entry exists, it sends a journal post and documents to Joark.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
@@ -70,8 +70,8 @@
 
       <section class="section">
         <h2>Failure and retry path</h2>
-        <p>soknadsarkiverer tracks each submission through received, started, archived, and finished states. Transient failures are retried with increasing delays. A submission reaches failure after the retry plan is exhausted, and the negative result is sent back to innsending-api. Duplicate archive entries and already-deleted files have separate handling because repeating the same work would not help.</p>
-        <div class="callout"><h3>Operations are visible from innsending-admin</h3><p>Nav staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
+        <p>soknadsarkiverer tracks each submission through received, started, archived, and finished states. It retries transient failures with increasing delays. When it exhausts the retry plan, it moves the submission to the failure state and sends the negative result to innsending-api. It handles duplicate archive entries and already-deleted files separately because repeating the same work would not help.</p>
+        <div class="callout"><h3>Inspect and manage submissions in innsending-admin</h3><p>Nav staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
       </section>
 
       <section>
