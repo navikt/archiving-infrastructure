@@ -20,7 +20,7 @@
       <div class="breadcrumbs"><a href="index.html">Overview</a> / Technology</div>
       <p class="eyebrow">Technical overview</p>
       <h1>Frameworks, runtimes, and integration choices</h1>
-      <p>Use this page when planning work across repositories. The application profiles contain the finer details and explicit boundaries.</p>
+      <p>Use this page when planning work across repositories. The application profiles describe each service's responsibilities and integrations in more detail.</p>
     </div></section>
     <div class="content">
       <h2>Application matrix</h2>
@@ -48,8 +48,8 @@
         <div class="card-grid">
           <article class="card"><h3>NAIS and GCP</h3><p>Deployable applications run on NAIS. Java services use Java 21. innsending-api also provisions Cloud SQL and Google Cloud Storage.</p></article>
           <article class="card"><h3>Identity by audience</h3><p>Citizen calls use ID-porten and TokenX. Employee tools use Azure AD or Entra ID. Service calls use Azure AD client credentials or OBO tokens.</p></article>
-          <article class="card"><h3>REST before Kafka</h3><p>User-facing clients call synchronous REST APIs. Kafka begins after submission, where asynchronous processing and retry behavior are useful.</p></article>
-          <article class="card"><h3>OpenAPI at service edges</h3><p>Several services generate API interfaces or clients from OpenAPI. Contract changes should account for both the producer and generated consumers.</p></article>
+          <article class="card"><h3>REST before Kafka</h3><p>User-facing clients call synchronous REST APIs. After submission, Kafka separates archive processing and retries from the user-facing request.</p></article>
+          <article class="card"><h3>OpenAPI contracts</h3><p>Several services generate API interfaces or clients from OpenAPI. When changing a contract, check the service that implements it and the generated clients that call it.</p></article>
           <article class="card"><h3>Temporary versus permanent data</h3><p>innsending-api owns temporary application and file storage. Joark owns the permanent journal post. SAF provides archive lookup.</p></article>
           <article class="card"><h3>End-to-end tests</h3><p>archiving-infrastructure tests the assembled archive chain. arkiv-mock makes success, failure, delay, and duplicate scenarios reproducible.</p></article>
         </div>
@@ -57,7 +57,7 @@
 
       <section>
         <h2>Change planning checklist</h2>
-        <p>Before changing a shared flow, identify the source of truth, generated clients, asynchronous consumers, and rollout order. Pay particular attention to form publication versus runtime content, the REST-to-Kafka handoff, JSON versus legacy Avro records, and how archive feedback changes cleanup or user notifications.</p>
+        <p>Before changing a shared flow, identify which service owns the data and which generated clients and asynchronous consumers use it. Decide the rollout order. Check how published forms reach the runtime and how REST submissions become Kafka messages. Distinguish current JSON messages from legacy Avro records, and check how archive feedback affects cleanup and user notifications.</p>
       </section>
       <div class="next-links"><a class="next-link" href="flow.html"><small>Context</small><strong>Return to system flow</strong></a><a class="next-link" href="applications.html"><small>Details</small><strong>Open application profiles</strong></a></div>
     </div>
