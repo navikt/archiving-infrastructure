@@ -355,6 +355,39 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
+	@Test
+	fun `Granting user digital access sets the Joark access override`() {
+		val innsendingsUUID = UUID.randomUUID()
+		val application = prepareNoLoginApplication(
+			innsendingsUUID,
+			mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb))),
+			grantUserDigitalAccess = true
+		)
+
+		assertTrue(innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).isSuccess)
+
+		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsUUID.toString())
+			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), "VISES_MASKINELT_GODKJENT")
+			.verify()
+	}
+
+	@Test
+	fun `Absent user digital access leaves the Joark access override absent`() {
+		val innsendingsUUID = UUID.randomUUID()
+		val application = prepareNoLoginApplication(
+			innsendingsUUID,
+			mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb)))
+		)
+
+		assertTrue(innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).isSuccess)
+
+		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsUUID.toString())
+			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), null)
+			.verify()
+	}
+
 	// Ten submissions in a loop put a lot of load on the shared containers, so this test is kept apart
 	// from the other resource heavy tests.
 	@ResourceLock(value = heavyTestsResource, mode = ResourceAccessMode.READ_WRITE)
@@ -381,7 +414,11 @@ class EndToEndTests : SystemTestBase() {
 		assertTrue(deleteResponse.isSuccess)
 	}
 
-	private fun prepareNoLoginApplication(innsendingsId: UUID, vedleggMap: Map<String, List<File>>): SubmitApplicationRequest {
+	private fun prepareNoLoginApplication(
+		innsendingsId: UUID,
+		vedleggMap: Map<String, List<File>>,
+		grantUserDigitalAccess: Boolean? = null
+	): SubmitApplicationRequest {
 		val attachments = vedleggMap.map { (attachmentId, files) ->
 			val fileIds = files.map { file ->
 				innsendingApi.lastOppNoLoginFil(innsendingsId.toString(), attachmentId, file).getOrThrow().id
@@ -398,6 +435,7 @@ class EndToEndTests : SystemTestBase() {
 		return SubmitApplicationRequestBuilder(
 			brukerId = testpersonid,
 			status = SoknadsStatusDto.utfylt,
+			grantUserDigitalAccess = grantUserDigitalAccess
 		)
 			.medVedlegg(attachments)
 			.build()

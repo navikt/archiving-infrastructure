@@ -60,7 +60,7 @@ jobs:
             e2e-m2-${{ runner.os }}-
 
       - name: 'Build the code for the components'
-        uses: navikt/archiving-infrastructure/.github/checkout-and-build@main
+        uses: ./.github/checkout-and-build
         with:
           component_names: |
             soknadsmottaker@${{ inputs.soknadsmottaker }}

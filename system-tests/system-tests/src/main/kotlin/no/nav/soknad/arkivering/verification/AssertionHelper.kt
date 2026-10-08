@@ -86,6 +86,22 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
+	fun hasEntityInArchiveWithOverstyrInnsynsregler(key: String, expectedValue: String?): AssertionHelper {
+		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
+			.withManager(verificationTaskManager)
+			.forKey(key)
+			.verifyPresence()
+			.verifyThat({ it.overstyrInnsynsregler == expectedValue }) { entity ->
+				"For key $key: Expected overstyrInnsynsregler to be $expectedValue, but was ${entity.overstyrInnsynsregler}"
+			}
+			.build()
+
+		verificationTaskManager.registerTask(verificationTask)
+		consumerRegistrations.add(kafkaListener.addConsumerForEntities(verificationTask))
+
+		return this
+	}
+
 	fun hasNoEntityInArchive(key: String): AssertionHelper {
 		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
