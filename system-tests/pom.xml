@@ -30,7 +30,7 @@
 
 		<!-- Kafka -->
 		<kafka.version>3.9.2</kafka.version>
-		<arkivering-schemas.version>1.4.4-bf301c4492e2</arkivering-schemas.version>
+		<arkivering-schemas.version>29ee75ed</arkivering-schemas.version>
 
 		<!-- Logging -->
 		<logstash.version>9.0</logstash.version>
