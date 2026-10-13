@@ -29,7 +29,7 @@
 		<coroutines.version>1.11.0</coroutines.version>
 
 		<!-- Kafka -->
-		<kafka.version>3.9.2</kafka.version>
+		<kafka.version>4.3.1</kafka.version>
 		<arkivering-schemas.version>1.4.4-bf301c4492e2</arkivering-schemas.version>
 
 		<!-- Logging -->
@@ -49,7 +49,7 @@
 		<postgresql.version>42.7.13</postgresql.version>
 		<jackson.version>2.22.2</jackson.version>
 		<junit-jupiter.version>6.1.3</junit-jupiter.version>
-		<xml-apis.version>1.4.01</xml-apis.version>
+		<xml-apis.version>2.0.2</xml-apis.version>
 <!--
 		<xml-apis-ext.version>1.3.04</xml-apis-ext.version>
 -->
