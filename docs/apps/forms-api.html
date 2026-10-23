@@ -12,7 +12,7 @@
    <section class="detail-panel"><h2>Rolle i flyten</h2><p>Bygger bruker forms-api gjennom hele arbeidet med å lage skjemaer. Utenfor produksjon kan FyllUt også hente skjemaer direkte fra tjenesten for staging. I produksjon kopierer publiseringen fortsatt utvalgt innhold til skjemautfylling-formio før FyllUt viser det.</p></section>
    <section class="detail-panel"><h2>Avgrensning</h2><p>Tjenesten viser ikke skjemaer, publiserer ikke Git-commits, tar ikke imot innsendinger fra brukere og arkiverer ikke dokumenter.</p></section>
 </div><aside>
-   <section class="detail-panel"><h2>Tekniske detaljer</h2><ul><li>Kotlin, Spring Boot 4, Java 21</li><li>PostgreSQL med Flyway</li><li>REST-API og Swagger UI</li><li>NAIS på GCP</li><li>Prometheus via Actuator</li><li>Entra ID-gruppebasert tilgangskontroll for skriving</li></ul></section>
+   <section class="detail-panel"><h2>Tekniske detaljer</h2><ul><li>Kotlin, Spring Boot, Java</li><li>PostgreSQL med Flyway</li><li>REST-API og Swagger UI</li><li>NAIS på GCP</li><li>Prometheus via Actuator</li><li>Entra ID-gruppebasert tilgangskontroll for skriving</li></ul></section>
    <section class="detail-panel"><h2>Integrasjoner</h2><ul class="connection-list"><li><strong><a href="skjemabygging-formio.html">Bygger</a></strong>Hovedklient for lesing og skriving</li><li><strong><a href="skjemabygging-formio.html">FyllUt staging</a></strong>Valgfri direkte lesing utenfor produksjon</li><li><strong><a href="skjemautfylling-formio.html">Publisert innhold</a></strong>Bygger kopierer disse dataene, ikke forms-api</li></ul></section>
    <section class="detail-panel"><h2>Kildekode</h2><a class="repo-link" href="https://github.com/navikt/forms-api">github.com/navikt/forms-api</a></section>
 </aside></div>
