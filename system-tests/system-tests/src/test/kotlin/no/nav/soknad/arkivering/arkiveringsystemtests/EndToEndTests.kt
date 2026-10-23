@@ -9,9 +9,11 @@ import no.nav.soknad.arkivering.innsending.model.AttachmentDto
 import no.nav.soknad.arkivering.innsending.model.OpplastingsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
+import no.nav.soknad.arkivering.tokensupport.E2eTokenConfig
 import no.nav.soknad.arkivering.utils.Skjema.generateVedleggsnr
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -28,7 +30,7 @@ class EndToEndTests : SystemTestBase() {
 	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 	private lateinit var innsendingApi: InnsendingApi
 
-	val testpersonid = "19876898104"
+	val testpersonid = E2eTokenConfig.TEST_PERSON_ID
 
 	@BeforeAll
 	fun setup() {
@@ -39,7 +41,7 @@ class EndToEndTests : SystemTestBase() {
 
 		setUp()
 		soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
-		innsendingApi = InnsendingApi(config)
+		innsendingApi = InnsendingApi(config, tokens)
 	}
 
 	@AfterAll
@@ -58,6 +60,33 @@ class EndToEndTests : SystemTestBase() {
 		assertTrue(health.status == "UP")
 
 	}
+
+	// Innsending-api validerer ikke token i e2e ennå, så resten av testene ville passert med feil token.
+	// Denne testen sikrer at tokenene har issueren og claimene innsending-api vil kreve når valideringen slås på.
+	@Test
+	fun `tokens sent to innsending-api have the issuer and claims used in production`() {
+		if (!tokens.enabled) return
+
+		val citizen = jwtPayload(tokens.citizen()!!)
+		assertEquals("http://${E2eTokenConfig.AUTH_SERVER_HOST}/tokenx", citizen["iss"].asText())
+		assertEquals(listOf(E2eTokenConfig.TOKEN_X_AUDIENCE), audience(citizen))
+		assertEquals(testpersonid, citizen["pid"].asText())
+		assertEquals("idporten-loa-high", citizen["acr"].asText())
+		assertTrue(citizen.has("exp") && citizen.has("iat") && citizen.has("sub"))
+
+		val nologin = jwtPayload(tokens.nologin()!!)
+		assertEquals("http://${E2eTokenConfig.AUTH_SERVER_HOST}/azuread", nologin["iss"].asText())
+		assertEquals(listOf(E2eTokenConfig.AZURE_AUDIENCE), audience(nologin))
+		assertEquals("app", nologin["idtyp"].asText())
+		assertTrue(nologin["roles"].map { it.asText() }.contains("nologin-access"))
+		assertTrue(!nologin.has("pid"), "Azure-token skal ikke ha personident")
+	}
+
+	private fun jwtPayload(token: String) =
+		objectMapper.readTree(Base64.getUrlDecoder().decode(token.split(".")[1]))
+
+	private fun audience(payload: com.fasterxml.jackson.databind.JsonNode): List<String> =
+		payload["aud"].let { aud -> if (aud.isArray) aud.map { it.asText() } else listOf(aud.asText()) }
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {

@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
+import no.nav.soknad.arkivering.tokensupport.E2eTokenConfig
 import org.junit.jupiter.api.fail
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
@@ -58,7 +59,7 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SERVER_PORT" to "6969",
-					"JSON_CONFIG" to """{"interactiveLogin":true,"httpServer":"NettyWrapper"}"""
+					"JSON_CONFIG" to E2eTokenConfig.mockOAuth2ServerJsonConfig()
 				)
 			)
 			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
@@ -290,6 +291,7 @@ class EmbeddedDockerImages {
 	}
 
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
+	fun getUrlForAuthServer()       = "http://localhost:" + authServerContainer      .firstMappedPort
 	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
 	fun getUrlForSoknadsarkiverer() = "http://localhost:" + soknadsarkivererContainer.firstMappedPort
 	fun getUrlForSoknadsmottaker()  = "http://localhost:" + soknadsmottakerContainer .firstMappedPort

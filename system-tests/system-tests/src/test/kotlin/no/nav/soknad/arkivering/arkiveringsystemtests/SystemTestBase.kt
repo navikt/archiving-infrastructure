@@ -9,6 +9,7 @@ import no.nav.soknad.arkivering.innsending.InnsendingApi
 import no.nav.soknad.arkivering.innsending.performGetCall
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.KafkaPublisher
+import no.nav.soknad.arkivering.tokensupport.E2eTokens
 import no.nav.soknad.arkivering.verification.AssertionHelper
 import no.nav.soknad.arkivering.verification.SoknadAssertionHelper
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,6 +27,8 @@ abstract class SystemTestBase {
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false
 	val env = EnvironmentConfig(targetEnvironment)
 	lateinit var config: Config
+	// Ekte token fra mock-oauth2-server når testene styrer containerne selv. docker-compose har ingen auth-server ennå
+	lateinit var tokens: E2eTokens
 	protected val objectMapper = ObjectMapper().also { it.findAndRegisterModules() }
 	private lateinit var kafkaPublisher: KafkaPublisher
 	lateinit var kafkaListener: KafkaListener
@@ -41,6 +44,7 @@ abstract class SystemTestBase {
 		} else {
 			Config()
 		}
+		tokens = E2eTokens(dockerImages?.getUrlForAuthServer())
 		val kafkaConfig = if (dockerImages != null) {
 			KafkaConfig(brokers = dockerImages.getUrlForKafkaBroker())
 		} else {
@@ -81,7 +85,7 @@ abstract class SystemTestBase {
 
 	fun assertThatArkivMock() = AssertionHelper(kafkaListener)
 
-	fun assertThatSoknad(innsendingsId: String) = SoknadAssertionHelper(InnsendingApi(config), innsendingsId)
+	fun assertThatSoknad(innsendingsId: String) = SoknadAssertionHelper(InnsendingApi(config, tokens), innsendingsId)
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

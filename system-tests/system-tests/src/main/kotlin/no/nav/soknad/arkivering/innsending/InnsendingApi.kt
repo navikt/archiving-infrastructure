@@ -2,35 +2,32 @@ package no.nav.soknad.arkivering.innsending
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Config
-import no.nav.soknad.arkivering.OAuth2Config
 import no.nav.soknad.arkivering.innsending.api.*
+import no.nav.soknad.arkivering.innsending.infrastructure.ApiClient
 import no.nav.soknad.arkivering.innsending.model.*
 import no.nav.soknad.arkivering.innsending.infrastructure.Serializer.jacksonObjectMapper
-import no.nav.soknad.arkivering.tokensupport.createOkHttpAuthorizationClient
-import okhttp3.OkHttpClient
+import no.nav.soknad.arkivering.tokensupport.E2eTokens
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
 import kotlin.runCatching
 
-fun authorizationClient(): OkHttpClient {
-	val scopeProvider = { oauth2Conf: OAuth2Config -> listOf(oauth2Conf.scopeInnsendingApi) }
-	return createOkHttpAuthorizationClient(scopeProvider)
-}
-
-class InnsendingApi(config: Config, useOauth: Boolean? = false) {
+/**
+ * Klient mot innsending-api. Med [tokens] sender den samme tokentype som produksjonskonsumentene:
+ * TokenX for innbyggerkall og Azure M2M med nologin-access for kall uten innlogging.
+ */
+class InnsendingApi(config: Config, tokens: E2eTokens = E2eTokens.none) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private val authClient = if (useOauth == true) {
-		authorizationClient()
-	} else null
+	private val citizenClient = tokens.clientWithBearer(ApiClient.defaultClient, tokens::citizen)
+	private val nologinClient = tokens.clientWithBearer(ApiClient.defaultClient, tokens::nologin)
 
-	private val ettersending = if (authClient != null) EttersendingApi(config.innsendingApiUrl, authClient) else EttersendingApi(config.innsendingApiUrl)
-	private val sendInnSoknad = if (authClient != null) SendinnSoknadApi(config.innsendingApiUrl, authClient) else SendinnSoknadApi(config.innsendingApiUrl)
-	private val sendInnFil = if (authClient != null) SendinnFilApi(config.innsendingApiUrl, authClient) else SendinnFilApi(config.innsendingApiUrl)
-	private val endtoend = if (authClient != null) EndtoendApi(config.innsendingApiUrl, authClient) else EndtoendApi(config.innsendingApiUrl)
+	private val ettersending = EttersendingApi(config.innsendingApiUrl, citizenClient)
+	private val sendInnSoknad = SendinnSoknadApi(config.innsendingApiUrl, citizenClient)
+	private val sendInnFil = SendinnFilApi(config.innsendingApiUrl, citizenClient)
+	private val endtoend = EndtoendApi(config.innsendingApiUrl, citizenClient)
 
-	private val nologinApplicationApi = if (authClient != null) NologinApplicationApi(config.innsendingApiUrl, authClient) else NologinApplicationApi(config.innsendingApiUrl)
+	private val nologinApplicationApi = NologinApplicationApi(config.innsendingApiUrl, nologinClient)
 
 
 	init {
