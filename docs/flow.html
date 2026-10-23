@@ -20,7 +20,7 @@
       <div class="breadcrumbs"><a href="index.html">Oversikt</a> / Systemflyt</div>
       <p class="eyebrow">Fra start til slutt</p>
       <h1>Slik flyter informasjonen gjennom systemet</h1>
-      <p>Skjemapublisering og brukerinnsending er separate flyter. Publisering gjør skjemadefinisjoner tilgjengelige for FyllUt-runtime. Brukerinnsendinger går gjennom midlertidig lagring og Kafka før de når Joark.</p>
+      <p>Skjemapublisering og innsending er separate flyter. Publisering gjør skjemadefinisjoner tilgjengelige i FyllUt. Når brukeren sender inn, lagres filene midlertidig mens metadata går via Kafka til arkivering i Joark.</p>
     </div></section>
 
     <div class="content">
@@ -30,23 +30,23 @@
         <div class="flow">
           <article class="flow-stage"><div class="flow-number">1</div><h3>Bygg i Bygger</h3><p>En skjemabygger redigerer form.io-definisjoner, oversettelser og mottakerinformasjon. Bygger leser og skriver disse dataene gjennom forms-api, som lagrer dem i PostgreSQL.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">2</div><h3>Publiser til GitHub</h3><p>Bygger-backenden skriver valgt skjema-JSON, oversettelser og ressurser til skjemautfylling-formio. Den låser også versjonen til commiten i skjemabygging-formio som inneholder applikasjonskoden til FyllUt.</p></article>
+          <article class="flow-stage"><div class="flow-number">2</div><h3>Publiser til GitHub</h3><p>Bygger-backenden skriver valgt skjema-JSON, oversettelser og ressurser til skjemautfylling-formio. Den låser også FyllUt-koden til en bestemt commit i skjemabygging-formio.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">3</div><h3>Bygg produksjonsimaget</h3><p>skjemautfylling-formio bygger på det versjonslåste FyllUt-baseimaget og legger til det publiserte innholdet. Resultatet er ett image med applikasjonskode og skjemainnhold som kan deployes.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">4</div><h3>Vis i FyllUt</h3><p>Brukere åpner FyllUt og får det publiserte skjemaet. Utviklings- og testmiljøer kan lese skjemaer direkte fra forms-api, men produksjon bruker innholdet pakket fra GitHub.</p></article>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Vis i FyllUt</h3><p>Brukere åpner FyllUt og får det publiserte skjemaet. Utviklings- og testmiljøer kan lese skjemaer direkte fra forms-api. I produksjon bruker FyllUt innholdet fra GitHub som er pakket i imaget.</p></article>
         </div>
-        <div class="callout"><h3>Redigerbare skjemaer og produksjonsinnhold</h3><p>forms-api lagrer redigerbare skjemadata og publiseringsmetadata. FyllUt i produksjon viser innhold pakket fra skjemautfylling-formio. Sjekk hvilken kilde et miljø bruker når et skjema er ulikt i test og produksjon.</p></div>
+        <div class="callout"><h3>Redigerbare skjemaer og produksjonsinnhold</h3><p>forms-api lagrer redigerbare skjemadata og publiseringsmetadata. FyllUt i produksjon viser innhold fra skjemautfylling-formio som er pakket i imaget. Sjekk hvilken kilde miljøene bruker hvis et skjema er ulikt i test og produksjon.</p></div>
       </section>
 
       <section id="user-paths" class="section">
         <h2>Flyt 2: velg en brukerreise</h2>
-        <p class="lede">Veien avhenger av hva brukeren skal sende. Alle digitale veier bruker innsending-api.</p>
+        <p class="lede">Brukerreisen avhenger av hva brukeren skal sende. Alle digitale innsendinger bruker innsending-api.</p>
         <div class="branch-grid">
           <article class="branch"><h3>Nytt skjema</h3><p>FyllUt viser skjemaet, laster opp vedleggene gjennom innsending-api og sender inn den ferdige søknaden. Brukeren blir i FyllUt gjennom hele dagens flyt.</p></article>
-          <article class="branch"><h3>Ettersending</h3><p>fyllut-ettersending hjelper brukeren med å finne eksisterende skjema eller sak og velge papirbasert eller digital innsending. Den digitale veien oppretter en ettersending i innsending-api og videresender til SendInn for filopplasting og innsending.</p></article>
+          <article class="branch"><h3>Ettersending</h3><p>fyllut-ettersending hjelper brukeren med å finne eksisterende skjema eller sak og velge papirbasert eller digital innsending. Ved digital innsending oppretter tjenesten en ettersending i innsending-api og sender brukeren videre til SendInn for å laste opp filer og sende inn.</p></article>
           <article class="branch"><h3>Dokumentinnsending i SendInn</h3><p>SendInn håndterer digital ettersending og rene dokumentinnsendinger. Den lar også brukeren fullføre et gammelt FyllUt-utkast når vedlegg tidligere ble lastet opp i SendInn. Serveren videresender kall til innsending-api med et TokenX-token.</p></article>
-          <article class="branch"><h3>Papirinnsending</h3><p>FyllUt og fyllut-ettersending kan sende brukeren til en papirprosess. FyllUt kaller skjemabygging-proxy for å nå Foerstesidegenerator i FSS og opprette førstesiden. Denne varianten bruker ikke hele den digitale opplastings- og Kafka-flyten beskrevet nedenfor.</p></article>
+          <article class="branch"><h3>Papirinnsending</h3><p>FyllUt og fyllut-ettersending kan la brukeren sende inn på papir. FyllUt kaller skjemabygging-proxy for å nå Foerstesidegenerator i FSS og opprette førstesiden. Papirinnsending bruker ikke hele flyten for digital opplasting og Kafka som er beskrevet nedenfor.</p></article>
         </div>
       </section>
 
@@ -54,23 +54,23 @@
         <h2>Flyt 3: send inn og arkiver</h2>
         <p class="lede">Filene blir i innsending-api til arkivereren ber om dem. Kafka overfører metadata og status, ikke det opplastede filinnholdet.</p>
         <div class="flow">
-          <article class="flow-stage"><div class="flow-number">1</div><h3>Påbegynt arbeid</h3><p>innsending-api lagrer søknads- og vedleggsmetadata i PostgreSQL og filinnhold i Google Cloud Storage. Den skanner også opplastinger med ClamAV og støtter generering og sammenføyning av PDF-er.</p></article>
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Lagre utkast og vedlegg</h3><p>innsending-api lagrer søknads- og vedleggsmetadata i PostgreSQL og filinnhold i Google Cloud Storage. Tjenesten skanner også opplastede filer med ClamAV og kan generere og slå sammen PDF-er.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">2</div><h3>Overlevering av innsending</h3><p>Når brukeren sender inn, kaller innsending-api soknadsmottaker over REST med søknads- og dokumentmetadata.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">3</div><h3>Kafka-mottak</h3><p>soknadsmottaker mapper forespørselen til en InnsendingTopicMsg og publiserer JSON til Kafka-topicet for innsending med eller uten innlogging. Dette holder den brukerrettede innsendingen atskilt fra arkivbehandlingen.</p></article>
+          <article class="flow-stage"><div class="flow-number">3</div><h3>Publiser til Kafka</h3><p>soknadsmottaker mapper forespørselen til en InnsendingTopicMsg og publiserer JSON til Kafka-topicet for innsending med eller uten innlogging. Brukerens forespørsel trenger dermed ikke vente på arkiveringen.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">4</div><h3>Hent filene</h3><p>soknadsarkiverer konsumerer meldingen og henter filene den refererer til fra innsending-api over et Azure AD-beskyttet REST-endpoint.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
           <article class="flow-stage"><div class="flow-number">5</div><h3>Sjekk og arkiver</h3><p>Arkivereren spør SAF med ekstern referanse for å unngå duplikate journalposter. Hvis det ikke finnes en tidligere arkivoppføring, sender den en journalpost og dokumenter til Joark.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">6</div><h3>Rapporter resultatet</h3><p>soknadsarkiverer publiserer tilbakemelding om suksess eller feil til Kafka. innsending-api konsumerer den, oppdaterer innsendingstilstanden, sender brukervarsler der det er relevant, og rydder senere opp i midlertidige data.</p></article>
+          <article class="flow-stage"><div class="flow-number">6</div><h3>Rapporter resultatet</h3><p>soknadsarkiverer publiserer resultatet av arkiveringen til Kafka. innsending-api konsumerer meldingen og oppdaterer statusen for innsendingen. Tjenesten sender brukervarsler der det er relevant, og rydder senere opp i midlertidige data.</p></article>
         </div>
       </section>
 
       <section class="section">
         <h2>Feil og nye forsøk</h2>
-        <p>soknadsarkiverer følger hver innsending gjennom tilstandene received, started, archived og finished. Den prøver på nytt ved forbigående feil med økende ventetid. Når alle planlagte forsøk er brukt opp, flytter den innsendingen til tilstanden failure og sender det negative resultatet til innsending-api. Den håndterer duplikate arkivoppføringer og allerede slettede filer separat fordi det ikke hjelper å gjenta det samme arbeidet.</p>
+        <p>soknadsarkiverer følger hver innsending gjennom tilstandene received, started, archived og finished. Ved forbigående feil prøver tjenesten på nytt med økende ventetid. Når tjenesten har brukt opp alle planlagte forsøk, setter den innsendingen til failure og melder fra om feilen til innsending-api. Duplikate arkivoppføringer og allerede slettede filer håndteres separat fordi det ikke hjelper å gjenta det samme arbeidet.</p>
         <div class="callout"><h3>Undersøk og administrer innsendinger i innsending-admin</h3><p>Nav-ansatte kan undersøke arkivstatus, kjøre en fastlåst innsending på nytt, starte vedlikeholdsjobber, sjekke om vedlegg er tilgjengelige og administrere utvalgt konfigurasjon i innsending-api. Administrasjonsgrensesnittet har ikke direkte tilgang til databaser eller lagringsbøtter.</p></div>
       </section>
 
@@ -88,12 +88,12 @@
             <tr><td>Historisk behandling og metrikker</td><td>Kafka Avro</td><td>Eldre hendelses- og metrikkposter</td><td>soknadarkiv-schema</td></tr>
           </tbody>
         </table></div>
-        <div class="callout"><h3>Den primære Kafka-payloaden er JSON</h3><p>soknadarkiv-schema inneholder fortsatt felles Avro-poster og støtter kompatibilitet med eldre behandlingshendelser og metrikker. Dagens primære innsendingsmelding mellom soknadsmottaker og soknadsarkiverer er vanlig JSON. Eldre repobeskrivelser gjør ikke nødvendigvis denne migreringen tydelig.</p></div>
+        <div class="callout"><h3>Innsendingsmeldingen i Kafka er JSON</h3><p>soknadarkiv-schema inneholder fortsatt felles Avro-poster for eldre behandlingshendelser og metrikker. Dagens primære innsendingsmelding mellom soknadsmottaker og soknadsarkiverer er vanlig JSON. Eldre repobeskrivelser kan gi inntrykk av at meldingen fortsatt bruker Avro.</p></div>
       </section>
 
       <div class="next-links">
         <a class="next-link" href="applications.html"><small>Neste</small><strong>Åpne applikasjonskatalogen</strong></a>
-        <a class="next-link" href="technology.html"><small>Sammenlign</small><strong>Se teknologimatrisen</strong></a>
+        <a class="next-link" href="technology.html"><small>Sammenlign</small><strong>Se teknologitabellen</strong></a>
       </div>
     </div>
   </main>

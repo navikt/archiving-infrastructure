@@ -32,7 +32,7 @@
         <div>
           <p class="eyebrow">Start her</p>
           <h1>Slik når skjemaene Navs arkiv</h1>
-          <p class="hero-copy">FyllUt-SendInn lar brukere fylle ut skjemaer, legge ved dokumenter og sende dem til Nav for arkivering. Denne guiden forklarer innsendingsflyten og rollen til hver tjeneste.</p>
+          <p class="hero-copy">Brukerne fyller ut skjemaer og legger ved dokumenter i FyllUt-SendInn før de sender dem til Nav for arkivering. Guiden forklarer innsendingsflyten og ansvaret til hver tjeneste.</p>
           <div class="actions">
             <a class="button button-primary" href="flow.html">Følg en innsending</a>
             <a class="button button-secondary" href="applications.html">Se alle applikasjonene</a>
@@ -50,7 +50,7 @@
           </div>
           <div class="map-arrow">søknad, metadata og filer</div>
           <div class="map-row map-row-wide">
-            <div class="map-node core"><strong>innsending-api</strong><span>Midlertidig lagring og overlevering av innsending</span></div>
+            <div class="map-node core"><strong>innsending-api</strong><span>Lagrer midlertidig og sender til arkivering</span></div>
           </div>
           <div class="map-arrow">REST til Kafka til arkiv</div>
           <div class="map-row">
@@ -66,22 +66,22 @@
       <div class="section-inner">
         <div class="section-heading">
           <div><p class="eyebrow">Kortversjonen</p><h2>Dette leverer teamet</h2></div>
-          <p>Systemet dekker to sammenhengende domener. Skjemaverktøyene definerer hva brukerne fyller ut. Innsendings- og arkiveringstjenestene flytter resultatet til Navs arkiv.</p>
+          <p>Skjemaverktøyene definerer hva brukerne fyller ut. Innsendings- og arkiveringstjenestene sender resultatet til Navs arkiv.</p>
         </div>
         <div class="card-grid">
           <article class="card">
             <h3>Bygg og publiser skjemaer</h3>
-            <p>Interne skjemabyggere oppretter definisjoner og oversettelser i Bygger. FyllUt i produksjon pakker publisert innhold fra repoet skjemautfylling-formio.</p>
+            <p>Skjemabyggerne oppretter skjemadefinisjoner og oversettelser i Bygger. FyllUt-imaget for produksjon inneholder publisert innhold fra repoet skjemautfylling-formio.</p>
             <a href="apps/skjemabygging-formio.html">Se Bygger og FyllUt</a>
           </article>
           <article class="card">
             <h3>Veiled brukerne gjennom innsendingen</h3>
-            <p>FyllUt viser nye skjemaer og håndterer vedleggene deres gjennom innsending-api. SendInn håndterer ettersending og de gjenværende eldre utkastene fra den gamle overleveringen.</p>
+            <p>FyllUt viser nye skjemaer og håndterer vedlegg gjennom innsending-api. SendInn håndterer ettersending og eldre FyllUt-utkast der brukeren allerede har lastet opp vedlegg i SendInn.</p>
             <a href="flow.html#user-paths">Sammenlign brukerreisene</a>
           </article>
           <article class="card">
             <h3>Lagre og arkiver dokumenter</h3>
-            <p>innsending-api lagrer påbegynt arbeid. Etter innsending skiller Kafka mottaket fra arkivereren, som henter filer og skriver en journalpost til Joark.</p>
+            <p>innsending-api lagrer utkast. Etter innsending behandler arkiveringstjenesten metadata fra Kafka, henter filene og oppretter en journalpost i Joark. Mottaket trenger derfor ikke vente på arkiveringen.</p>
             <a href="flow.html#archiving">Følg arkiveringsflyten</a>
           </article>
         </div>
@@ -97,7 +97,7 @@
         <div class="journey-grid">
           <article class="journey-step"><h3>Fyll ut og legg ved</h3><p>FyllUt viser et publisert skjema og laster opp vedlegg til den nye søknaden direkte gjennom innsending-api.</p></article>
           <article class="journey-step"><h3>Lagre og send inn</h3><p>innsending-api lagrer søknadsmetadata og filer mens brukeren arbeider, og sender deretter metadata til soknadsmottaker.</p></article>
-          <article class="journey-step"><h3>Legg i kø og berik</h3><p>soknadsmottaker publiserer JSON til Kafka. soknadsarkiverer konsumerer meldingen og henter filinnholdet fra innsending-api.</p></article>
+          <article class="journey-step"><h3>Publiser metadata og hent filer</h3><p>soknadsmottaker publiserer JSON til Kafka. soknadsarkiverer konsumerer meldingen og henter filinnholdet fra innsending-api.</p></article>
           <article class="journey-step"><h3>Arkiver og rapporter</h3><p>soknadsarkiverer sjekker SAF for duplikater, oppretter journalposten i Joark og rapporterer resultatet tilbake gjennom Kafka.</p></article>
         </div>
       </div>
@@ -107,12 +107,12 @@
       <div class="section-inner">
         <div class="section-heading">
           <div><p class="eyebrow">Bruk guiden</p><h2>Finn detaljene du trenger</h2></div>
-          <p>Er du ny i systemet, les om flyten først. Når du planlegger en endring, bruk applikasjonskatalogen og teknologimatrisen for å finne tjenestenes ansvar og integrasjoner.</p>
+          <p>Les om flyten først hvis du er ny i systemet. Bruk applikasjonskatalogen og teknologitabellen når du planlegger en endring og trenger å finne tjenestenes ansvar og integrasjoner.</p>
         </div>
         <div class="card-grid">
           <article class="card"><h3>Forstå flyten</h3><p>Følg skjemapublisering, vanlig innsending og ettersending. Se hvordan nye forsøk og tilbakemeldinger fra arkivet fungerer.</p><a href="flow.html">Åpne systemflyten</a></article>
-          <article class="card"><h3>Les om en applikasjon</h3><p>Hver profil beskriver applikasjonens formål, ansvar, data, integrasjoner og runtime. Den angir også hvilke oppgaver som tilhører andre tjenester.</p><a href="applications.html">Åpne applikasjonskatalogen</a></article>
-          <article class="card"><h3>Sammenlign teknologi</h3><p>Finn frontend-framework, backend-servere, lagring, autentisering, meldingsutveksling, deployment og testverktøy i én matrise.</p><a href="technology.html">Åpne teknologioversikten</a></article>
+          <article class="card"><h3>Les om en applikasjon</h3><p>Hver profil beskriver applikasjonens formål, ansvar, data, integrasjoner og runtime. Den viser også hvilke oppgaver andre tjenester har ansvar for.</p><a href="applications.html">Åpne applikasjonskatalogen</a></article>
+          <article class="card"><h3>Sammenlign teknologi</h3><p>Tabellen viser frontend-framework, backend-servere, lagring, autentisering, meldingsutveksling, deployment og testverktøy.</p><a href="technology.html">Åpne teknologioversikten</a></article>
         </div>
       </div>
     </section>

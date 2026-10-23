@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Teknologimatrise for FyllUt, SendInn og arkiveringsapplikasjonene.">
+  <meta name="description" content="Teknologioversikt for FyllUt, SendInn og arkiveringsapplikasjonene.">
   <title>Teknologi | FyllUt-SendInn</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/site.js" defer></script>
@@ -19,18 +19,18 @@
     <section class="page-hero"><div class="page-hero-inner">
       <div class="breadcrumbs"><a href="index.html">Oversikt</a> / Teknologi</div>
       <p class="eyebrow">Teknologioversikt</p>
-      <h1>Framework, runtimer og integrasjonsvalg</h1>
+      <h1>Teknologien i applikasjonene</h1>
       <p>Bruk denne siden når du planlegger arbeid på tvers av repoer. Applikasjonsprofilene beskriver hver tjenestes ansvar og integrasjoner mer detaljert.</p>
     </div></section>
     <div class="content">
-      <h2>Applikasjonsmatrise</h2>
+      <h2>Teknologi per applikasjon</h2>
       <div class="tech-table-wrap"><table class="tech-table">
         <thead><tr><th>Repo</th><th>Runtime og framework</th><th>Tilstand</th><th>Viktigste integrasjoner</th><th>Autentisering</th></tr></thead>
         <tbody>
           <tr><td><a href="apps/skjemabygging-formio.html">skjemabygging-formio</a></td><td>TypeScript, React, Express, pnpm-monorepo</td><td>forms-api og publisert Git-innhold</td><td>forms-api, GitHub API, innsending-api, Pusher, Nav-tjenester</td><td>Entra ID for Bygger, ID-porten og TokenX for brukerreiser</td></tr>
           <tr><td><a href="apps/skjemabygging-proxy.html">skjemabygging-proxy</a></td><td>Node.js 24, Express 5</td><td>Kun et mellomlagret, kortlivet STS-token</td><td>Bygger, FyllUt, STS, Foerstesidegenerator</td><td>Azure AD-tokenintrospeksjon inn, tjenestebruker og STS-token ut</td></tr>
           <tr><td><a href="apps/forms-api.html">forms-api</a></td><td>Kotlin, Spring Boot, Java 21</td><td>PostgreSQL med Flyway</td><td>REST-API brukt av Bygger og FyllUt i testmiljø</td><td>Åpen lesetilgang, Entra ID-grupper for skrivetilgang</td></tr>
-          <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker-innholdslag på FyllUt-baseimage</td><td>Git-filer</td><td>GitHub Actions, NAIS-deployment</td><td>Ikke en brukerrettet tjeneste alene</td></tr>
+          <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker-image med FyllUt-baseimage og skjemainnhold</td><td>Git-filer</td><td>GitHub Actions, NAIS-deployment</td><td>Ikke en brukerrettet tjeneste alene</td></tr>
           <tr><td><a href="apps/fyllut-ettersending.html">fyllut-ettersending</a></td><td>Next.js 16, React 19, Node.js</td><td>Sesjon og tilstand i nedstrømstjenester</td><td>FyllUt, innsending-api, SendInn</td><td>ID-porten, TokenX</td></tr>
           <tr><td><a href="apps/send-inn-frontend.html">send-inn-frontend</a></td><td>Next.js 16, React 19, Node.js</td><td>Søknadstilstand i nedstrømstjenester</td><td>innsending-api, FyllUt</td><td>ID-porten, TokenX</td></tr>
           <tr><td><a href="apps/innsending-api.html">innsending-api</a></td><td>Kotlin, Spring Boot, Java 21, Maven-moduler</td><td>PostgreSQL, Google Cloud Storage</td><td>REST, Kafka, Gotenberg, ClamAV, PDL, SAF og andre Nav-API-er</td><td>TokenX og Azure AD avhengig av endpoint</td></tr>
@@ -47,17 +47,17 @@
         <h2>Felles mønstre</h2>
         <div class="card-grid">
           <article class="card"><h3>NAIS og GCP</h3><p>Applikasjonene som deployes, kjører på NAIS. Java-tjenestene bruker Java 21. innsending-api oppretter også Cloud SQL og Google Cloud Storage.</p></article>
-          <article class="card"><h3>Identitet etter målgruppe</h3><p>Brukerkall bruker ID-porten og TokenX. Ansattverktøy bruker Azure AD eller Entra ID. Tjenestekall bruker Azure AD client credentials eller OBO-token.</p></article>
-          <article class="card"><h3>REST før Kafka</h3><p>Brukerrettede klienter kaller synkrone REST-API-er. Etter innsending skiller Kafka arkivering og nye forsøk fra den brukerrettede forespørselen.</p></article>
+          <article class="card"><h3>Autentisering etter målgruppe</h3><p>Brukerrettede tjenester bruker ID-porten og TokenX. Ansattverktøy bruker Azure AD eller Entra ID. Ved tjenestekall brukes Azure AD client credentials eller OBO-token.</p></article>
+          <article class="card"><h3>REST før Kafka</h3><p>Brukerrettede klienter kaller synkrone REST-API-er. Etter innsending går metadata via Kafka. Arkiveringen og eventuelle nye forsøk kan dermed fortsette etter at brukeren har fått svar.</p></article>
           <article class="card"><h3>OpenAPI-kontrakter</h3><p>Flere tjenester genererer API-grensesnitt eller klienter fra OpenAPI. Når du endrer en kontrakt, sjekk tjenesten som implementerer den og de genererte klientene som kaller den.</p></article>
-          <article class="card"><h3>Midlertidige og permanente data</h3><p>innsending-api eier midlertidig lagring av søknader og filer. Joark eier den permanente journalposten. SAF tilbyr arkivoppslag.</p></article>
-          <article class="card"><h3>Ende-til-ende-tester</h3><p>archiving-infrastructure tester den samlede arkiveringskjeden. arkiv-mock gjør scenarioer med suksess, feil, forsinkelse og duplikater reproduserbare.</p></article>
+          <article class="card"><h3>Midlertidige og permanente data</h3><p>innsending-api lagrer søknader og filer midlertidig. Joark lagrer den permanente journalposten. SAF tilbyr arkivoppslag.</p></article>
+          <article class="card"><h3>Ende-til-ende-tester</h3><p>archiving-infrastructure tester hele arkiveringskjeden. Med arkiv-mock kan testene gjenta scenarioer med vellykket arkivering, feil, forsinkelser og duplikater.</p></article>
         </div>
       </section>
 
       <section>
-        <h2>Sjekkliste for endringsplanlegging</h2>
-        <p>Før du endrer en felles flyt, finn ut hvilken tjeneste som eier dataene og hvilke genererte klienter og asynkrone konsumenter som bruker dem. Bestem rekkefølgen for deployment. Sjekk hvordan publiserte skjemaer når runtime, og hvordan REST-innsendinger blir Kafka-meldinger. Skill dagens JSON-meldinger fra eldre Avro-poster, og sjekk hvordan tilbakemeldinger fra arkivet påvirker opprydding og brukervarsler.</p>
+        <h2>Før du endrer en felles flyt</h2>
+        <p>Finn tjenesten som eier dataene, og de genererte klientene og asynkrone konsumentene som bruker dem. Bestem rekkefølgen for deployment. Sjekk hvordan publiserte skjemaer blir tilgjengelige i FyllUt, og hvordan REST-innsendinger blir Kafka-meldinger. Skill dagens JSON-meldinger fra eldre Avro-poster. Sjekk også hvordan tilbakemeldinger fra arkivet påvirker opprydding og brukervarsler.</p>
       </section>
       <div class="next-links"><a class="next-link" href="flow.html"><small>Sammenheng</small><strong>Tilbake til systemflyten</strong></a><a class="next-link" href="applications.html"><small>Detaljer</small><strong>Åpne applikasjonsprofilene</strong></a></div>
     </div>
