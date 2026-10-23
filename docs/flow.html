@@ -1,102 +1,102 @@
 <!doctype html>
-<html lang="en">
+<html lang="nb">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="End-to-end data flows for form publishing, submission, additional documentation, and archiving.">
-  <title>System flow | FyllUt-SendInn</title>
+  <meta name="description" content="Dataflyt fra start til slutt for skjemapublisering, innsending, ettersending og arkivering.">
+  <title>Systemflyt | FyllUt-SendInn</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/site.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Hopp til innhold</a>
   <header class="site-header"><div class="header-inner">
-    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt-SendInn</strong></span></a>
-    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
-    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html" aria-current="page">System flow</a><a href="applications.html">Applications</a><a href="technology.html">Technology</a></nav>
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Teamets systemguide</small><strong>FyllUt-SendInn</strong></span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Meny</button>
+    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Hovedmeny"><a href="index.html">Oversikt</a><a href="flow.html" aria-current="page">Systemflyt</a><a href="applications.html">Applikasjoner</a><a href="technology.html">Teknologi</a></nav>
   </div></header>
   <main id="main">
     <section class="page-hero"><div class="page-hero-inner">
-      <div class="breadcrumbs"><a href="index.html">Overview</a> / System flow</div>
-      <p class="eyebrow">End to end</p>
-      <h1>How information moves through the system</h1>
-      <p>Form publishing and user submission are separate flows. Publishing makes form definitions available to the FyllUt runtime. User submissions pass through temporary storage and Kafka before they reach Joark.</p>
+      <div class="breadcrumbs"><a href="index.html">Oversikt</a> / Systemflyt</div>
+      <p class="eyebrow">Fra start til slutt</p>
+      <h1>Slik flyter informasjonen gjennom systemet</h1>
+      <p>Skjemapublisering og brukerinnsending er separate flyter. Publisering gjør skjemadefinisjoner tilgjengelige for FyllUt-runtime. Brukerinnsendinger går gjennom midlertidig lagring og Kafka før de når Joark.</p>
     </div></section>
 
     <div class="content">
       <section id="publishing">
-        <h2>Flow 1: publish a form</h2>
-        <p class="lede">This flow changes what FyllUt can render. It does not submit citizen data.</p>
+        <h2>Flyt 1: publiser et skjema</h2>
+        <p class="lede">Denne flyten endrer hva FyllUt kan vise. Den sender ikke inn brukerdata.</p>
         <div class="flow">
-          <article class="flow-stage"><div class="flow-number">1</div><h3>Build in Bygger</h3><p>A form builder edits form.io definitions, translations, and recipient information. Bygger reads and writes this data through forms-api, which stores it in PostgreSQL.</p></article>
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Bygg i Bygger</h3><p>En skjemabygger redigerer form.io-definisjoner, oversettelser og mottakerinformasjon. Bygger leser og skriver disse dataene gjennom forms-api, som lagrer dem i PostgreSQL.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">2</div><h3>Publish to GitHub</h3><p>Bygger backend writes the selected form JSON, translations, and resources to skjemautfylling-formio. It also pins the skjemabygging-formio commit that contains the FyllUt application code.</p></article>
+          <article class="flow-stage"><div class="flow-number">2</div><h3>Publiser til GitHub</h3><p>Bygger-backenden skriver valgt skjema-JSON, oversettelser og ressurser til skjemautfylling-formio. Den låser også versjonen til commiten i skjemabygging-formio som inneholder applikasjonskoden til FyllUt.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">3</div><h3>Build the production image</h3><p>skjemautfylling-formio builds on the pinned FyllUt base image and adds the published content. The result is one deployable image with application code and form content.</p></article>
+          <article class="flow-stage"><div class="flow-number">3</div><h3>Bygg produksjonsimaget</h3><p>skjemautfylling-formio bygger på det versjonslåste FyllUt-baseimaget og legger til det publiserte innholdet. Resultatet er ett image med applikasjonskode og skjemainnhold som kan deployes.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">4</div><h3>Render in FyllUt</h3><p>Citizens open FyllUt and receive the published form. Development and preproduction may read forms directly from forms-api, but production uses the GitHub-bundled content.</p></article>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Vis i FyllUt</h3><p>Brukere åpner FyllUt og får det publiserte skjemaet. Utviklings- og testmiljøer kan lese skjemaer direkte fra forms-api, men produksjon bruker innholdet pakket fra GitHub.</p></article>
         </div>
-        <div class="callout"><h3>Editable forms and production content</h3><p>forms-api stores editable form data and publication metadata. Production FyllUt renders content bundled from skjemautfylling-formio. Check which source an environment uses when a form differs between staging and production.</p></div>
+        <div class="callout"><h3>Redigerbare skjemaer og produksjonsinnhold</h3><p>forms-api lagrer redigerbare skjemadata og publiseringsmetadata. FyllUt i produksjon viser innhold pakket fra skjemautfylling-formio. Sjekk hvilken kilde et miljø bruker når et skjema er ulikt i test og produksjon.</p></div>
       </section>
 
       <section id="user-paths" class="section">
-        <h2>Flow 2: choose a user path</h2>
-        <p class="lede">The route depends on what the user needs to send. All digital routes use innsending-api.</p>
+        <h2>Flyt 2: velg en brukerreise</h2>
+        <p class="lede">Veien avhenger av hva brukeren skal sende. Alle digitale veier bruker innsending-api.</p>
         <div class="branch-grid">
-          <article class="branch"><h3>New form</h3><p>FyllUt renders the form, uploads its attachments through innsending-api, and submits the completed application. The user stays in FyllUt throughout the current flow.</p></article>
-          <article class="branch"><h3>Additional documentation</h3><p>fyllut-ettersending helps the user identify the existing form or case and choose paper or digital delivery. The digital route creates an ettersending in innsending-api and redirects to SendInn for file upload and submission.</p></article>
-          <article class="branch"><h3>SendInn document submission</h3><p>SendInn handles digital ettersending and document-only submission. It also lets a user finish an old FyllUt draft when attachments were previously uploaded in SendInn. Its server proxies calls to innsending-api with a TokenX token.</p></article>
-          <article class="branch"><h3>Paper route</h3><p>FyllUt and fyllut-ettersending can direct users to a paper process. FyllUt calls skjemabygging-proxy to reach Foerstesidegenerator in FSS and create the cover page. This branch does not use the full digital upload and Kafka path described below.</p></article>
+          <article class="branch"><h3>Nytt skjema</h3><p>FyllUt viser skjemaet, laster opp vedleggene gjennom innsending-api og sender inn den ferdige søknaden. Brukeren blir i FyllUt gjennom hele dagens flyt.</p></article>
+          <article class="branch"><h3>Ettersending</h3><p>fyllut-ettersending hjelper brukeren med å finne eksisterende skjema eller sak og velge papirbasert eller digital innsending. Den digitale veien oppretter en ettersending i innsending-api og videresender til SendInn for filopplasting og innsending.</p></article>
+          <article class="branch"><h3>Dokumentinnsending i SendInn</h3><p>SendInn håndterer digital ettersending og rene dokumentinnsendinger. Den lar også brukeren fullføre et gammelt FyllUt-utkast når vedlegg tidligere ble lastet opp i SendInn. Serveren videresender kall til innsending-api med et TokenX-token.</p></article>
+          <article class="branch"><h3>Papirinnsending</h3><p>FyllUt og fyllut-ettersending kan sende brukeren til en papirprosess. FyllUt kaller skjemabygging-proxy for å nå Foerstesidegenerator i FSS og opprette førstesiden. Denne varianten bruker ikke hele den digitale opplastings- og Kafka-flyten beskrevet nedenfor.</p></article>
         </div>
       </section>
 
       <section id="archiving">
-        <h2>Flow 3: submit and archive</h2>
-        <p class="lede">Files stay in innsending-api until the archiver asks for them. Kafka carries metadata and status, not the uploaded file bytes.</p>
+        <h2>Flyt 3: send inn og arkiver</h2>
+        <p class="lede">Filene blir i innsending-api til arkivereren ber om dem. Kafka overfører metadata og status, ikke det opplastede filinnholdet.</p>
         <div class="flow">
-          <article class="flow-stage"><div class="flow-number">1</div><h3>Work in progress</h3><p>innsending-api stores application and attachment metadata in PostgreSQL and file content in Google Cloud Storage. It also scans uploads with ClamAV and supports PDF generation and merging.</p></article>
+          <article class="flow-stage"><div class="flow-number">1</div><h3>Påbegynt arbeid</h3><p>innsending-api lagrer søknads- og vedleggsmetadata i PostgreSQL og filinnhold i Google Cloud Storage. Den skanner også opplastinger med ClamAV og støtter generering og sammenføyning av PDF-er.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">2</div><h3>Submission handoff</h3><p>When the user submits, innsending-api calls soknadsmottaker over REST with application and document metadata.</p></article>
+          <article class="flow-stage"><div class="flow-number">2</div><h3>Overlevering av innsending</h3><p>Når brukeren sender inn, kaller innsending-api soknadsmottaker over REST med søknads- og dokumentmetadata.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">3</div><h3>Kafka intake</h3><p>soknadsmottaker maps the request to an InnsendingTopicMsg and publishes JSON to the logged-in or no-login Kafka topic. This keeps user-facing submission separate from archive processing.</p></article>
+          <article class="flow-stage"><div class="flow-number">3</div><h3>Kafka-mottak</h3><p>soknadsmottaker mapper forespørselen til en InnsendingTopicMsg og publiserer JSON til Kafka-topicet for innsending med eller uten innlogging. Dette holder den brukerrettede innsendingen atskilt fra arkivbehandlingen.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">4</div><h3>Fetch the files</h3><p>soknadsarkiverer consumes the message and fetches the referenced files from innsending-api over an Azure AD protected REST endpoint.</p></article>
+          <article class="flow-stage"><div class="flow-number">4</div><h3>Hent filene</h3><p>soknadsarkiverer konsumerer meldingen og henter filene den refererer til fra innsending-api over et Azure AD-beskyttet REST-endpoint.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">5</div><h3>Check and archive</h3><p>The archiver queries SAF by external reference to avoid duplicate journal posts. If no prior archive entry exists, it sends a journal post and documents to Joark.</p></article>
+          <article class="flow-stage"><div class="flow-number">5</div><h3>Sjekk og arkiver</h3><p>Arkivereren spør SAF med ekstern referanse for å unngå duplikate journalposter. Hvis det ikke finnes en tidligere arkivoppføring, sender den en journalpost og dokumenter til Joark.</p></article>
           <div class="flow-connector" aria-hidden="true"></div>
-          <article class="flow-stage"><div class="flow-number">6</div><h3>Report the outcome</h3><p>soknadsarkiverer publishes success or failure feedback to Kafka. innsending-api consumes it, updates the submission state, sends user notifications where relevant, and later cleans up temporary data.</p></article>
+          <article class="flow-stage"><div class="flow-number">6</div><h3>Rapporter resultatet</h3><p>soknadsarkiverer publiserer tilbakemelding om suksess eller feil til Kafka. innsending-api konsumerer den, oppdaterer innsendingstilstanden, sender brukervarsler der det er relevant, og rydder senere opp i midlertidige data.</p></article>
         </div>
       </section>
 
       <section class="section">
-        <h2>Failure and retry path</h2>
-        <p>soknadsarkiverer tracks each submission through received, started, archived, and finished states. It retries transient failures with increasing delays. When it exhausts the retry plan, it moves the submission to the failure state and sends the negative result to innsending-api. It handles duplicate archive entries and already-deleted files separately because repeating the same work would not help.</p>
-        <div class="callout"><h3>Inspect and manage submissions in innsending-admin</h3><p>Nav staff can inspect archive status, rerun a stuck submission, trigger maintenance jobs, check attachment availability, and manage selected innsending-api configuration. The admin UI does not access databases or buckets directly.</p></div>
+        <h2>Feil og nye forsøk</h2>
+        <p>soknadsarkiverer følger hver innsending gjennom tilstandene received, started, archived og finished. Den prøver på nytt ved forbigående feil med økende ventetid. Når alle planlagte forsøk er brukt opp, flytter den innsendingen til tilstanden failure og sender det negative resultatet til innsending-api. Den håndterer duplikate arkivoppføringer og allerede slettede filer separat fordi det ikke hjelper å gjenta det samme arbeidet.</p>
+        <div class="callout"><h3>Undersøk og administrer innsendinger i innsending-admin</h3><p>Nav-ansatte kan undersøke arkivstatus, kjøre en fastlåst innsending på nytt, starte vedlikeholdsjobber, sjekke om vedlegg er tilgjengelige og administrere utvalgt konfigurasjon i innsending-api. Administrasjonsgrensesnittet har ikke direkte tilgang til databaser eller lagringsbøtter.</p></div>
       </section>
 
       <section>
-        <h2>Contracts to know</h2>
+        <h2>Kontrakter du bør kjenne</h2>
         <div class="tech-table-wrap"><table class="tech-table">
-          <thead><tr><th>Boundary</th><th>Mechanism</th><th>Information</th><th>Owner</th></tr></thead>
+          <thead><tr><th>Grense</th><th>Mekanisme</th><th>Informasjon</th><th>Eier</th></tr></thead>
           <tbody>
-            <tr><td>Bygger to forms-api</td><td>REST</td><td>Forms, translations, recipients, publications</td><td>forms-api</td></tr>
-            <tr><td>Bygger to published FyllUt</td><td>GitHub files and Docker image</td><td>Form JSON, translations, resources, code SHA</td><td>skjemautfylling-formio</td></tr>
-            <tr><td>Form clients to storage</td><td>REST with TokenX where logged in</td><td>Application metadata, PDFs, attachment files</td><td>innsending-api OpenAPI contracts</td></tr>
-            <tr><td>Submission intake</td><td>REST</td><td>Application and document metadata</td><td>soknadsmottaker API</td></tr>
-            <tr><td>Intake to archiver</td><td>Kafka JSON</td><td>InnsendingTopicMsg, no file bytes</td><td>soknadsmottaker API model</td></tr>
-            <tr><td>Archive feedback</td><td>Kafka</td><td>Success or failure state</td><td>soknadsarkiverer publisher contract</td></tr>
-            <tr><td>Historical processing and metrics</td><td>Kafka Avro</td><td>Legacy event and metric records</td><td>soknadarkiv-schema</td></tr>
+            <tr><td>Bygger til forms-api</td><td>REST</td><td>Skjemaer, oversettelser, mottakere, publiseringer</td><td>forms-api</td></tr>
+            <tr><td>Bygger til publisert FyllUt</td><td>GitHub-filer og Docker-image</td><td>Skjema-JSON, oversettelser, ressurser, kode-SHA</td><td>skjemautfylling-formio</td></tr>
+            <tr><td>Skjemaklienter til lagring</td><td>REST med TokenX ved innlogging</td><td>Søknadsmetadata, PDF-er, vedleggsfiler</td><td>OpenAPI-kontraktene til innsending-api</td></tr>
+            <tr><td>Innsendingsmottak</td><td>REST</td><td>Søknads- og dokumentmetadata</td><td>API-et til soknadsmottaker</td></tr>
+            <tr><td>Mottak til arkiverer</td><td>Kafka JSON</td><td>InnsendingTopicMsg, ikke filinnhold</td><td>API-modellen til soknadsmottaker</td></tr>
+            <tr><td>Tilbakemelding fra arkivet</td><td>Kafka</td><td>Suksess- eller feiltilstand</td><td>Publiseringskontrakten til soknadsarkiverer</td></tr>
+            <tr><td>Historisk behandling og metrikker</td><td>Kafka Avro</td><td>Eldre hendelses- og metrikkposter</td><td>soknadarkiv-schema</td></tr>
           </tbody>
         </table></div>
-        <div class="callout"><h3>The primary Kafka payload is JSON</h3><p>soknadarkiv-schema still contains shared Avro records and supports legacy processing-event and metrics compatibility. The current primary submission message between soknadsmottaker and soknadsarkiverer is plain JSON. Older repository descriptions may not make this migration clear.</p></div>
+        <div class="callout"><h3>Den primære Kafka-payloaden er JSON</h3><p>soknadarkiv-schema inneholder fortsatt felles Avro-poster og støtter kompatibilitet med eldre behandlingshendelser og metrikker. Dagens primære innsendingsmelding mellom soknadsmottaker og soknadsarkiverer er vanlig JSON. Eldre repobeskrivelser gjør ikke nødvendigvis denne migreringen tydelig.</p></div>
       </section>
 
       <div class="next-links">
-        <a class="next-link" href="applications.html"><small>Next</small><strong>Open the application catalog</strong></a>
-        <a class="next-link" href="technology.html"><small>Compare</small><strong>See the technical matrix</strong></a>
+        <a class="next-link" href="applications.html"><small>Neste</small><strong>Åpne applikasjonskatalogen</strong></a>
+        <a class="next-link" href="technology.html"><small>Sammenlign</small><strong>Se teknologimatrisen</strong></a>
       </div>
     </div>
   </main>
-  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
+  <footer class="site-footer"><div class="footer-inner"><p>Vedlikeholdes i <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
 </body>
 </html>

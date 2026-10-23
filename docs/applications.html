@@ -1,52 +1,52 @@
 <!doctype html>
-<html lang="en">
+<html lang="nb">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Catalog of applications and repositories managed by Team FyllUt-SendInn.">
-  <title>Applications | FyllUt-SendInn</title>
+  <meta name="description" content="Katalog over applikasjoner og repoer Team FyllUt-SendInn forvalter.">
+  <title>Applikasjoner | FyllUt-SendInn</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/site.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Hopp til innhold</a>
   <header class="site-header"><div class="header-inner">
-    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt-SendInn</strong></span></a>
-    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
-    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html">System flow</a><a href="applications.html" aria-current="page">Applications</a><a href="technology.html">Technology</a></nav>
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Teamets systemguide</small><strong>FyllUt-SendInn</strong></span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Meny</button>
+    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Hovedmeny"><a href="index.html">Oversikt</a><a href="flow.html">Systemflyt</a><a href="applications.html" aria-current="page">Applikasjoner</a><a href="technology.html">Teknologi</a></nav>
   </div></header>
   <main id="main">
     <section class="page-hero"><div class="page-hero-inner">
-      <div class="breadcrumbs"><a href="index.html">Overview</a> / Applications</div>
-      <p class="eyebrow">Application catalog</p>
-      <h1>Applications and repositories</h1>
-      <p>The catalog lists deployable applications, shared contracts, published form content, test infrastructure, and mocks. Filter by area, then open a profile to see what each application does and which services it calls.</p>
+      <div class="breadcrumbs"><a href="index.html">Oversikt</a> / Applikasjoner</div>
+      <p class="eyebrow">Applikasjonskatalog</p>
+      <h1>Applikasjoner og repoer</h1>
+      <p>Katalogen viser applikasjoner som kan deployes, felles kontrakter, publisert skjemainnhold, testinfrastruktur og mocker. Filtrer etter område, og åpne en profil for å se hva hver applikasjon gjør og hvilke tjenester den kaller.</p>
     </div></section>
     <section class="section section-alt"><div class="section-inner">
-      <div class="filter-bar" aria-label="Filter applications">
-        <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">All 13</button>
-        <button class="filter-button" type="button" data-filter="forms" aria-pressed="false">Forms and user journeys</button>
-        <button class="filter-button" type="button" data-filter="submission" aria-pressed="false">Submission and operations</button>
-        <button class="filter-button" type="button" data-filter="archiving" aria-pressed="false">Archiving</button>
-        <button class="filter-button" type="button" data-filter="support" aria-pressed="false">Testing and shared assets</button>
+      <div class="filter-bar" aria-label="Filtrer applikasjoner">
+        <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">Alle 13</button>
+        <button class="filter-button" type="button" data-filter="forms" aria-pressed="false">Skjemaer og brukerreiser</button>
+        <button class="filter-button" type="button" data-filter="submission" aria-pressed="false">Innsending og drift</button>
+        <button class="filter-button" type="button" data-filter="archiving" aria-pressed="false">Arkivering</button>
+        <button class="filter-button" type="button" data-filter="support" aria-pressed="false">Testing og felles ressurser</button>
       </div>
       <div class="app-grid">
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Internal UI</li><li class="tag">Citizen UI</li><li class="tag">Monorepo</li></ul><h2>skjemabygging-formio</h2><p>Contains Bygger for authoring forms and FyllUt for filling, attaching documents, and submitting new applications.</p><a class="button" href="apps/skjemabygging-formio.html">Open profile</a></article>
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Backend proxy</li><li class="tag">FSS bridge</li></ul><h2>skjemabygging-proxy</h2><p>Lets Bygger and FyllUt call the cover page generator across the GCP-to-FSS boundary.</p><a class="button" href="apps/skjemabygging-proxy.html">Open profile</a></article>
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Backend</li><li class="tag">Source data</li></ul><h2>forms-api</h2><p>Stores form definitions, translations, publication records, recipient addresses, and static PDFs for Bygger and non-production FyllUt.</p><a class="button" href="apps/forms-api.html">Open profile</a></article>
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Published content</li><li class="tag">Production image</li></ul><h2>skjemautfylling-formio</h2><p>Holds published forms and translations and combines them with a pinned FyllUt base image for production deployment.</p><a class="button" href="apps/skjemautfylling-formio.html">Open profile</a></article>
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Citizen UI</li><li class="tag">Additional documents</li></ul><h2>fyllut-ettersending</h2><p>Starts paper or digital delivery of additional documentation for an existing application or case.</p><a class="button" href="apps/fyllut-ettersending.html">Open profile</a></article>
-        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Citizen UI</li><li class="tag">File upload</li></ul><h2>send-inn-frontend</h2><p>Handles additional documentation, document-only submissions, and legacy FyllUt drafts through innsending-api.</p><a class="button" href="apps/send-inn-frontend.html">Open profile</a></article>
-        <article class="app-card" data-area="submission"><ul class="tag-list"><li class="tag">Core backend</li><li class="tag">Temporary storage</li></ul><h2>innsending-api</h2><p>Stores work in progress and files, creates PDFs, hands submitted metadata to the archiving flow, and consumes archive feedback.</p><a class="button" href="apps/innsending-api.html">Open profile</a></article>
-        <article class="app-card" data-area="submission"><ul class="tag-list"><li class="tag">Internal UI</li><li class="tag">Operations</li></ul><h2>innsending-admin</h2><p>Gives Nav operators a controlled UI for archive status, reruns, jobs, attachment checks, and configuration.</p><a class="button" href="apps/innsending-admin.html">Open profile</a></article>
-        <article class="app-card" data-area="archiving"><ul class="tag-list"><li class="tag">REST intake</li><li class="tag">Kafka producer</li></ul><h2>soknadsmottaker</h2><p>Receives submitted application metadata over REST and publishes it to the correct Kafka topic.</p><a class="button" href="apps/soknadsmottaker.html">Open profile</a></article>
-        <article class="app-card" data-area="archiving"><ul class="tag-list"><li class="tag">Kafka consumer</li><li class="tag">Joark</li></ul><h2>soknadsarkiverer</h2><p>Fetches files, checks for duplicate archiving, creates journal posts in Joark, and reports the result.</p><a class="button" href="apps/soknadsarkiverer.html">Open profile</a></article>
-        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">Shared contract</li><li class="tag">Legacy Avro</li></ul><h2>soknadarkiv-schema</h2><p>Publishes shared Avro records used for historical processing events and metrics compatibility.</p><a class="button" href="apps/soknadarkiv-schema.html">Open profile</a></article>
-        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">Test double</li><li class="tag">Fault injection</li></ul><h2>arkiv-mock</h2><p>Simulates Joark, SAF, and file retrieval for end-to-end and load tests. It is never used in production.</p><a class="button" href="apps/arkiv-mock.html">Open profile</a></article>
-        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">System tests</li><li class="tag">Local environment</li></ul><h2>archiving-infrastructure</h2><p>Starts the full archiving chain locally and runs black-box tests against the assembled services.</p><a class="button" href="apps/archiving-infrastructure.html">Open profile</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Internt grensesnitt</li><li class="tag">Brukergrensesnitt</li><li class="tag">Monorepo</li></ul><h2>skjemabygging-formio</h2><p>Inneholder Bygger for å lage skjemaer og FyllUt for å fylle ut, legge ved dokumenter og sende inn nye søknader.</p><a class="button" href="apps/skjemabygging-formio.html">Åpne profil</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Backend-proxy</li><li class="tag">FSS-forbindelse</li></ul><h2>skjemabygging-proxy</h2><p>Lar Bygger og FyllUt kalle førstesidegeneratoren på tvers av grensen mellom GCP og FSS.</p><a class="button" href="apps/skjemabygging-proxy.html">Åpne profil</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Backend</li><li class="tag">Kildedata</li></ul><h2>forms-api</h2><p>Lagrer skjemadefinisjoner, oversettelser, publiseringsoppføringer, mottakeradresser og statiske PDF-er for Bygger og FyllUt utenfor produksjon.</p><a class="button" href="apps/forms-api.html">Åpne profil</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Publisert innhold</li><li class="tag">Produksjonsimage</li></ul><h2>skjemautfylling-formio</h2><p>Inneholder publiserte skjemaer og oversettelser og kombinerer dem med et versjonslåst FyllUt-baseimage for deployment til produksjon.</p><a class="button" href="apps/skjemautfylling-formio.html">Åpne profil</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Brukergrensesnitt</li><li class="tag">Ettersending</li></ul><h2>fyllut-ettersending</h2><p>Starter papirbasert eller digital ettersending av dokumentasjon til en eksisterende søknad eller sak.</p><a class="button" href="apps/fyllut-ettersending.html">Åpne profil</a></article>
+        <article class="app-card" data-area="forms"><ul class="tag-list"><li class="tag">Brukergrensesnitt</li><li class="tag">Filopplasting</li></ul><h2>send-inn-frontend</h2><p>Håndterer ettersending, rene dokumentinnsendinger og eldre FyllUt-utkast gjennom innsending-api.</p><a class="button" href="apps/send-inn-frontend.html">Åpne profil</a></article>
+        <article class="app-card" data-area="submission"><ul class="tag-list"><li class="tag">Sentral backend</li><li class="tag">Midlertidig lagring</li></ul><h2>innsending-api</h2><p>Lagrer påbegynt arbeid og filer, oppretter PDF-er, overleverer innsendte metadata til arkiveringsflyten og konsumerer tilbakemeldinger fra arkivet.</p><a class="button" href="apps/innsending-api.html">Åpne profil</a></article>
+        <article class="app-card" data-area="submission"><ul class="tag-list"><li class="tag">Internt grensesnitt</li><li class="tag">Drift</li></ul><h2>innsending-admin</h2><p>Gir Navs driftsmedarbeidere et kontrollert grensesnitt for arkivstatus, omkjøringer, jobber, vedleggskontroller og konfigurasjon.</p><a class="button" href="apps/innsending-admin.html">Åpne profil</a></article>
+        <article class="app-card" data-area="archiving"><ul class="tag-list"><li class="tag">REST-mottak</li><li class="tag">Kafka-produsent</li></ul><h2>soknadsmottaker</h2><p>Mottar innsendte søknadsmetadata over REST og publiserer dem til riktig Kafka-topic.</p><a class="button" href="apps/soknadsmottaker.html">Åpne profil</a></article>
+        <article class="app-card" data-area="archiving"><ul class="tag-list"><li class="tag">Kafka-konsument</li><li class="tag">Joark</li></ul><h2>soknadsarkiverer</h2><p>Henter filer, sjekker for duplikatarkivering, oppretter journalposter i Joark og rapporterer resultatet.</p><a class="button" href="apps/soknadsarkiverer.html">Åpne profil</a></article>
+        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">Felles kontrakt</li><li class="tag">Eldre Avro</li></ul><h2>soknadarkiv-schema</h2><p>Publiserer felles Avro-poster som brukes til historiske behandlingshendelser og kompatibilitet med metrikker.</p><a class="button" href="apps/soknadarkiv-schema.html">Åpne profil</a></article>
+        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">Testdobbel</li><li class="tag">Feilinjeksjon</li></ul><h2>arkiv-mock</h2><p>Simulerer Joark, SAF og filhenting for ende-til-ende-tester og lasttester. Brukes aldri i produksjon.</p><a class="button" href="apps/arkiv-mock.html">Åpne profil</a></article>
+        <article class="app-card" data-area="support"><ul class="tag-list"><li class="tag">Systemtester</li><li class="tag">Lokalt miljø</li></ul><h2>archiving-infrastructure</h2><p>Starter hele arkiveringskjeden lokalt og kjører svartbokstester mot tjenestene samlet.</p><a class="button" href="apps/archiving-infrastructure.html">Åpne profil</a></article>
       </div>
     </div></section>
   </main>
-  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
+  <footer class="site-footer"><div class="footer-inner"><p>Vedlikeholdes i <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
 </body>
 </html>

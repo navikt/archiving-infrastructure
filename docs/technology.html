@@ -1,67 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html lang="nb">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Technical matrix for the FyllUt, SendInn, and archiving applications.">
-  <title>Technology | FyllUt-SendInn</title>
+  <meta name="description" content="Teknologimatrise for FyllUt, SendInn og arkiveringsapplikasjonene.">
+  <title>Teknologi | FyllUt-SendInn</title>
   <link rel="stylesheet" href="assets/styles.css">
   <script src="assets/site.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Hopp til innhold</a>
   <header class="site-header"><div class="header-inner">
-    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Team system guide</small><strong>FyllUt-SendInn</strong></span></a>
-    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
-    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Primary navigation"><a href="index.html">Overview</a><a href="flow.html">System flow</a><a href="applications.html">Applications</a><a href="technology.html" aria-current="page">Technology</a></nav>
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">FS</span><span class="brand-text"><small>Teamets systemguide</small><strong>FyllUt-SendInn</strong></span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Meny</button>
+    <nav class="site-nav" id="site-nav" data-site-nav aria-label="Hovedmeny"><a href="index.html">Oversikt</a><a href="flow.html">Systemflyt</a><a href="applications.html">Applikasjoner</a><a href="technology.html" aria-current="page">Teknologi</a></nav>
   </div></header>
   <main id="main">
     <section class="page-hero"><div class="page-hero-inner">
-      <div class="breadcrumbs"><a href="index.html">Overview</a> / Technology</div>
-      <p class="eyebrow">Technical overview</p>
-      <h1>Frameworks, runtimes, and integration choices</h1>
-      <p>Use this page when planning work across repositories. The application profiles describe each service's responsibilities and integrations in more detail.</p>
+      <div class="breadcrumbs"><a href="index.html">Oversikt</a> / Teknologi</div>
+      <p class="eyebrow">Teknologioversikt</p>
+      <h1>Framework, runtimer og integrasjonsvalg</h1>
+      <p>Bruk denne siden når du planlegger arbeid på tvers av repoer. Applikasjonsprofilene beskriver hver tjenestes ansvar og integrasjoner mer detaljert.</p>
     </div></section>
     <div class="content">
-      <h2>Application matrix</h2>
+      <h2>Applikasjonsmatrise</h2>
       <div class="tech-table-wrap"><table class="tech-table">
-        <thead><tr><th>Repository</th><th>Runtime and framework</th><th>State</th><th>Main integrations</th><th>Authentication</th></tr></thead>
+        <thead><tr><th>Repo</th><th>Runtime og framework</th><th>Tilstand</th><th>Viktigste integrasjoner</th><th>Autentisering</th></tr></thead>
         <tbody>
-          <tr><td><a href="apps/skjemabygging-formio.html">skjemabygging-formio</a></td><td>TypeScript, React, Express, pnpm monorepo</td><td>forms-api and published Git content</td><td>forms-api, GitHub API, innsending-api, Pusher, Nav services</td><td>Entra ID for Bygger, ID-porten and TokenX for citizen paths</td></tr>
-          <tr><td><a href="apps/skjemabygging-proxy.html">skjemabygging-proxy</a></td><td>Node.js 24, Express 5</td><td>Cached short-lived STS token only</td><td>Bygger, FyllUt, STS, Foerstesidegenerator</td><td>Azure AD token introspection inbound; service user and STS token outbound</td></tr>
-          <tr><td><a href="apps/forms-api.html">forms-api</a></td><td>Kotlin, Spring Boot, Java 21</td><td>PostgreSQL with Flyway</td><td>REST API used by Bygger and staging FyllUt</td><td>Open reads, Entra ID groups for writes</td></tr>
-          <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker content layer on FyllUt base image</td><td>Git files</td><td>GitHub Actions, NAIS deployment</td><td>Not a user-facing service on its own</td></tr>
-          <tr><td><a href="apps/fyllut-ettersending.html">fyllut-ettersending</a></td><td>Next.js 16, React 19, Node.js</td><td>Session and downstream state</td><td>FyllUt, innsending-api, SendInn</td><td>ID-porten, TokenX</td></tr>
-          <tr><td><a href="apps/send-inn-frontend.html">send-inn-frontend</a></td><td>Next.js 16, React 19, Node.js</td><td>Downstream application state</td><td>innsending-api, FyllUt</td><td>ID-porten, TokenX</td></tr>
-          <tr><td><a href="apps/innsending-api.html">innsending-api</a></td><td>Kotlin, Spring Boot, Java 21, Maven modules</td><td>PostgreSQL, Google Cloud Storage</td><td>REST, Kafka, Gotenberg, ClamAV, PDL, SAF and other Nav APIs</td><td>TokenX and Azure AD by endpoint</td></tr>
-          <tr><td><a href="apps/innsending-admin.html">innsending-admin</a></td><td>Next.js 14, React, TypeScript</td><td>No direct domain storage</td><td>Server-side proxies to innsending-api</td><td>Azure AD OBO and machine-to-machine</td></tr>
-          <tr><td><a href="apps/soknadsmottaker.html">soknadsmottaker</a></td><td>Kotlin, Spring Boot 4, Java 21</td><td>Kafka</td><td>REST in, Kafka out</td><td>Service authentication according to API path</td></tr>
-          <tr><td><a href="apps/soknadsarkiverer.html">soknadsarkiverer</a></td><td>Kotlin, Spring Boot 4, Java 21, coroutines</td><td>Kafka-backed processing state</td><td>Kafka, innsending-api, SAF GraphQL, Joark REST</td><td>Azure AD client credentials, JWT resource server</td></tr>
-          <tr><td><a href="apps/soknadarkiv-schema.html">soknadarkiv-schema</a></td><td>Avro schemas, Maven artifact</td><td>Versioned schema files</td><td>Maven package consumers</td><td>Not applicable at runtime</td></tr>
-          <tr><td><a href="apps/arkiv-mock.html">arkiv-mock</a></td><td>Kotlin, Spring Boot, Java 21</td><td>In-memory test behavior and fixtures</td><td>Joark, SAF, and file API simulations; Kafka observations</td><td>Test environments only</td></tr>
-          <tr><td><a href="apps/archiving-infrastructure.html">archiving-infrastructure</a></td><td>Docker Compose, Testcontainers, Kotlin system tests</td><td>Ephemeral local test state</td><td>All archiving services, PostgreSQL, Kafka, mocks</td><td>Local test configuration</td></tr>
+          <tr><td><a href="apps/skjemabygging-formio.html">skjemabygging-formio</a></td><td>TypeScript, React, Express, pnpm-monorepo</td><td>forms-api og publisert Git-innhold</td><td>forms-api, GitHub API, innsending-api, Pusher, Nav-tjenester</td><td>Entra ID for Bygger, ID-porten og TokenX for brukerreiser</td></tr>
+          <tr><td><a href="apps/skjemabygging-proxy.html">skjemabygging-proxy</a></td><td>Node.js 24, Express 5</td><td>Kun et mellomlagret, kortlivet STS-token</td><td>Bygger, FyllUt, STS, Foerstesidegenerator</td><td>Azure AD-tokenintrospeksjon inn, tjenestebruker og STS-token ut</td></tr>
+          <tr><td><a href="apps/forms-api.html">forms-api</a></td><td>Kotlin, Spring Boot, Java 21</td><td>PostgreSQL med Flyway</td><td>REST-API brukt av Bygger og FyllUt i testmiljø</td><td>Åpen lesetilgang, Entra ID-grupper for skrivetilgang</td></tr>
+          <tr><td><a href="apps/skjemautfylling-formio.html">skjemautfylling-formio</a></td><td>Docker-innholdslag på FyllUt-baseimage</td><td>Git-filer</td><td>GitHub Actions, NAIS-deployment</td><td>Ikke en brukerrettet tjeneste alene</td></tr>
+          <tr><td><a href="apps/fyllut-ettersending.html">fyllut-ettersending</a></td><td>Next.js 16, React 19, Node.js</td><td>Sesjon og tilstand i nedstrømstjenester</td><td>FyllUt, innsending-api, SendInn</td><td>ID-porten, TokenX</td></tr>
+          <tr><td><a href="apps/send-inn-frontend.html">send-inn-frontend</a></td><td>Next.js 16, React 19, Node.js</td><td>Søknadstilstand i nedstrømstjenester</td><td>innsending-api, FyllUt</td><td>ID-porten, TokenX</td></tr>
+          <tr><td><a href="apps/innsending-api.html">innsending-api</a></td><td>Kotlin, Spring Boot, Java 21, Maven-moduler</td><td>PostgreSQL, Google Cloud Storage</td><td>REST, Kafka, Gotenberg, ClamAV, PDL, SAF og andre Nav-API-er</td><td>TokenX og Azure AD avhengig av endpoint</td></tr>
+          <tr><td><a href="apps/innsending-admin.html">innsending-admin</a></td><td>Next.js 14, React, TypeScript</td><td>Ingen direkte lagring av domenedata</td><td>Proxyer til innsending-api på serversiden</td><td>Azure AD OBO og maskin-til-maskin</td></tr>
+          <tr><td><a href="apps/soknadsmottaker.html">soknadsmottaker</a></td><td>Kotlin, Spring Boot 4, Java 21</td><td>Kafka</td><td>REST inn, Kafka ut</td><td>Tjenesteautentisering avhengig av API-sti</td></tr>
+          <tr><td><a href="apps/soknadsarkiverer.html">soknadsarkiverer</a></td><td>Kotlin, Spring Boot 4, Java 21, coroutines</td><td>Behandlingstilstand lagret i Kafka</td><td>Kafka, innsending-api, SAF GraphQL, Joark REST</td><td>Azure AD client credentials, JWT-ressursserver</td></tr>
+          <tr><td><a href="apps/soknadarkiv-schema.html">soknadarkiv-schema</a></td><td>Avro-skjemaer, Maven-artefakt</td><td>Versjonerte skjemafiler</td><td>Konsumenter av Maven-pakken</td><td>Ikke aktuelt ved kjøring</td></tr>
+          <tr><td><a href="apps/arkiv-mock.html">arkiv-mock</a></td><td>Kotlin, Spring Boot, Java 21</td><td>Testoppførsel og testdata i minnet</td><td>Simulerte Joark-, SAF- og fil-API-er, Kafka-observasjoner</td><td>Kun testmiljøer</td></tr>
+          <tr><td><a href="apps/archiving-infrastructure.html">archiving-infrastructure</a></td><td>Docker Compose, Testcontainers, systemtester i Kotlin</td><td>Kortvarig lokal testtilstand</td><td>Alle arkiveringstjenestene, PostgreSQL, Kafka, mocker</td><td>Lokal testkonfigurasjon</td></tr>
         </tbody>
       </table></div>
 
       <section class="section">
-        <h2>Recurring patterns</h2>
+        <h2>Felles mønstre</h2>
         <div class="card-grid">
-          <article class="card"><h3>NAIS and GCP</h3><p>Deployable applications run on NAIS. Java services use Java 21. innsending-api also provisions Cloud SQL and Google Cloud Storage.</p></article>
-          <article class="card"><h3>Identity by audience</h3><p>Citizen calls use ID-porten and TokenX. Employee tools use Azure AD or Entra ID. Service calls use Azure AD client credentials or OBO tokens.</p></article>
-          <article class="card"><h3>REST before Kafka</h3><p>User-facing clients call synchronous REST APIs. After submission, Kafka separates archive processing and retries from the user-facing request.</p></article>
-          <article class="card"><h3>OpenAPI contracts</h3><p>Several services generate API interfaces or clients from OpenAPI. When changing a contract, check the service that implements it and the generated clients that call it.</p></article>
-          <article class="card"><h3>Temporary versus permanent data</h3><p>innsending-api owns temporary application and file storage. Joark owns the permanent journal post. SAF provides archive lookup.</p></article>
-          <article class="card"><h3>End-to-end tests</h3><p>archiving-infrastructure tests the assembled archive chain. arkiv-mock makes success, failure, delay, and duplicate scenarios reproducible.</p></article>
+          <article class="card"><h3>NAIS og GCP</h3><p>Applikasjonene som deployes, kjører på NAIS. Java-tjenestene bruker Java 21. innsending-api oppretter også Cloud SQL og Google Cloud Storage.</p></article>
+          <article class="card"><h3>Identitet etter målgruppe</h3><p>Brukerkall bruker ID-porten og TokenX. Ansattverktøy bruker Azure AD eller Entra ID. Tjenestekall bruker Azure AD client credentials eller OBO-token.</p></article>
+          <article class="card"><h3>REST før Kafka</h3><p>Brukerrettede klienter kaller synkrone REST-API-er. Etter innsending skiller Kafka arkivering og nye forsøk fra den brukerrettede forespørselen.</p></article>
+          <article class="card"><h3>OpenAPI-kontrakter</h3><p>Flere tjenester genererer API-grensesnitt eller klienter fra OpenAPI. Når du endrer en kontrakt, sjekk tjenesten som implementerer den og de genererte klientene som kaller den.</p></article>
+          <article class="card"><h3>Midlertidige og permanente data</h3><p>innsending-api eier midlertidig lagring av søknader og filer. Joark eier den permanente journalposten. SAF tilbyr arkivoppslag.</p></article>
+          <article class="card"><h3>Ende-til-ende-tester</h3><p>archiving-infrastructure tester den samlede arkiveringskjeden. arkiv-mock gjør scenarioer med suksess, feil, forsinkelse og duplikater reproduserbare.</p></article>
         </div>
       </section>
 
       <section>
-        <h2>Change planning checklist</h2>
-        <p>Before changing a shared flow, identify which service owns the data and which generated clients and asynchronous consumers use it. Decide the rollout order. Check how published forms reach the runtime and how REST submissions become Kafka messages. Distinguish current JSON messages from legacy Avro records, and check how archive feedback affects cleanup and user notifications.</p>
+        <h2>Sjekkliste for endringsplanlegging</h2>
+        <p>Før du endrer en felles flyt, finn ut hvilken tjeneste som eier dataene og hvilke genererte klienter og asynkrone konsumenter som bruker dem. Bestem rekkefølgen for deployment. Sjekk hvordan publiserte skjemaer når runtime, og hvordan REST-innsendinger blir Kafka-meldinger. Skill dagens JSON-meldinger fra eldre Avro-poster, og sjekk hvordan tilbakemeldinger fra arkivet påvirker opprydding og brukervarsler.</p>
       </section>
-      <div class="next-links"><a class="next-link" href="flow.html"><small>Context</small><strong>Return to system flow</strong></a><a class="next-link" href="applications.html"><small>Details</small><strong>Open application profiles</strong></a></div>
+      <div class="next-links"><a class="next-link" href="flow.html"><small>Sammenheng</small><strong>Tilbake til systemflyten</strong></a><a class="next-link" href="applications.html"><small>Detaljer</small><strong>Åpne applikasjonsprofilene</strong></a></div>
     </div>
   </main>
-  <footer class="site-footer"><div class="footer-inner"><p>Maintained with <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
+  <footer class="site-footer"><div class="footer-inner"><p>Vedlikeholdes i <a href="https://github.com/navikt/archiving-infrastructure">archiving-infrastructure</a>.</p><p>Team FyllUt-SendInn</p></div></footer>
 </body>
 </html>
