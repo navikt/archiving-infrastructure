@@ -2,7 +2,9 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
-import org.junit.jupiter.api.fail
+import org.apache.kafka.clients.admin.Admin
+import org.apache.kafka.clients.admin.AdminClientConfig
+import org.apache.kafka.clients.admin.NewTopic
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.kafka.ConfluentKafkaContainer
@@ -13,6 +15,7 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class EmbeddedDockerImages {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -75,21 +78,23 @@ class EmbeddedDockerImages {
 			"kafka-broker" to kafkaContainer,
 		)
 
-		createTopic(defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!)
-		// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
-		// replay keeps working while it exists (issue #78).
-		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_MESSAGE_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_METRICS_TOPIC"]!!)
-		// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
-		createTopic(defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!)
-		createTopic(defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!)
-		createTopic(defaultProperties["KAFKA_ENTITIES_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!)
-		createTopic(defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!)
+		createTopics(
+			defaultProperties["KAFKA_LOGGEDIN_SUBMISSION_TOPIC"]!!,
+			defaultProperties["KAFKA_NOLOGIN_SUBMISSION_TOPIC"]!!,
+			// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained so legacy
+			// replay keeps working while it exists (issue #78).
+			defaultProperties["KAFKA_PROCESSING_TOPIC"]!!,
+			defaultProperties["KAFKA_MESSAGE_TOPIC"]!!,
+			defaultProperties["KAFKA_ARKIVERINGSTILBAKEMELDING_TOPIC"]!!,
+			defaultProperties["KAFKA_METRICS_TOPIC"]!!,
+			// JSON v3 processing-event/metrics topics: the default system-test path (issue #78).
+			defaultProperties["KAFKA_PROCESSING_TOPIC_V3"]!!,
+			defaultProperties["KAFKA_METRICS_TOPIC_V3"]!!,
+			defaultProperties["KAFKA_ENTITIES_TOPIC"]!!,
+			defaultProperties["KAFKA_NUMBER_OF_CALLS_TOPIC"]!!,
+			defaultProperties["KAFKA_BRUKERNOTIFIKASJON_OPPGAVE_TOPIC"]!!,
+			defaultProperties["KAFKA_BRUKERNOTIFIKASJON_UTKAST_TOPIC"]!!,
+		)
 
 		// Retained for soknadsmottaker/soknadsarkiverer legacy Avro processing-event/metrics replay
 		// and production during the JSON v3 transition (issue #78). The system-test suite's own
@@ -255,20 +260,10 @@ class EmbeddedDockerImages {
 		}
 	}
 
-	private fun createTopic(topic: String) {
-		val topicCommand =
-			"/usr/bin/kafka-topics --create --bootstrap-server=localhost:${defaultPorts["kafka-broker"]} " +
-				"--replication-factor 1 --partitions 1 --topic $topic"
-
-		try {
-			val result = kafkaContainer.execInContainer("/bin/sh", "-c", topicCommand)
-			if (result.exitCode != 0) {
-				logger.error("\n\nKafka Container logs:\n${kafkaContainer.logs}")
-				fail("Failed to create topic '$topic'. Error:\n${result.stderr}")
-			}
-		} catch (e: Exception) {
-			e.printStackTrace()
-			fail("Failed to create topic '$topic'")
+	private fun createTopics(vararg topics: String) {
+		val newTopics = topics.map { NewTopic(it, 1, 1.toShort()) }
+		Admin.create(mapOf(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to getUrlForKafkaBroker())).use { admin ->
+			admin.createTopics(newTopics).all().get(45, TimeUnit.SECONDS)
 		}
 	}
 
