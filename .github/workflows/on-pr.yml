@@ -34,7 +34,7 @@ jobs:
           component_names: |
             soknadsmottaker@main
             soknadsarkiverer@main
-            arkiv-mock@main
+            arkiv-mock@test/archive-document-metadata-125
             innsending-api@main
           prepull_test_images: true
         env:
