@@ -2,11 +2,15 @@ package no.nav.soknad.arkivering.arkiveringsystemtests
 
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.arkiveringsystemtests.environment.EmbeddedDockerImages
+import no.nav.soknad.arkivering.dto.ArchiveDocument
 import no.nav.soknad.arkivering.dto.SafResponses
 import no.nav.soknad.arkivering.innsending.*
 import no.nav.soknad.arkivering.innsending.model.ArkiveringsStatusDto
 import no.nav.soknad.arkivering.innsending.model.AttachmentDto
+import no.nav.soknad.arkivering.innsending.model.Mimetype
 import no.nav.soknad.arkivering.innsending.model.OpplastingsStatusDto
+import no.nav.soknad.arkivering.innsending.model.SkjemaDokumentDto
+import no.nav.soknad.arkivering.innsending.model.SkjemaDto
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
 import no.nav.soknad.arkivering.utils.Skjema.generateVedleggsnr
@@ -302,6 +306,87 @@ class EndToEndTests : SystemTestBase() {
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
 			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
+
+		assertThatSoknad(innsendingsId)
+			.hasStatus(ArkiveringsStatusDto.arkivert)
+	}
+
+	@Test
+	fun `Happy case - logged in first submission archives PDF JSON variant and attachment`() {
+		val formNumber = "NAV 08-07.04D"
+		val mainDocumentTitle = "Søknad"
+		val attachmentTitle = "Vedlegg"
+		val attachmentId = UUID.randomUUID().toString()
+		val mainDocument = loadFile("/mellomstor.pdf")
+		val requestBuilder = SubmitApplicationRequestBuilder(
+			brukerId = testpersonid,
+			skjemanr = formNumber,
+			tittel = mainDocumentTitle,
+			tema = "SYK",
+			status = SoknadsStatusDto.utfylt,
+			hoveddokument = mainDocument.readBytes(),
+		)
+		val jsonVariant = requestBuilder.hoveddokumentVariant
+		val applicationMetadata = SkjemaDto(
+			skjemanr = formNumber,
+			tittel = mainDocumentTitle,
+			tema = "SYK",
+			spraak = "nb_NO",
+			hoveddokument = SkjemaDokumentDto(
+				vedleggsnr = formNumber,
+				tittel = mainDocumentTitle,
+				label = mainDocumentTitle,
+				pakrevd = true,
+				mimetype = Mimetype.applicationSlashPdf,
+			),
+			hoveddokumentVariant = SkjemaDokumentDto(
+				vedleggsnr = formNumber,
+				tittel = mainDocumentTitle,
+				label = mainDocumentTitle,
+				pakrevd = false,
+				mimetype = Mimetype.applicationSlashJson,
+				document = jsonVariant,
+			),
+			status = SoknadsStatusDto.opprettet,
+			vedleggsListe = listOf(
+				SkjemaDokumentDto(
+					vedleggsnr = "T1",
+					tittel = attachmentTitle,
+					label = attachmentTitle,
+					pakrevd = false,
+					mimetype = Mimetype.applicationSlashPdf,
+					formioId = attachmentId,
+				)
+			),
+		)
+		val innsendingsUUID = UUID.fromString(innsendingApi.createDigitalApplication(applicationMetadata).getOrThrow())
+		val innsendingsId = innsendingsUUID.toString()
+		val uploadedAttachment = innsendingApi
+			.uploadDigitalAttachmentFile(innsendingsUUID, attachmentId, loadFile(fileOfSize1mb))
+			.getOrThrow()
+		val attachment = AttachmentDto(
+			attachmentCode = "T1",
+			label = attachmentTitle,
+			uploadStatus = OpplastingsStatusDto.lastetOpp,
+			title = attachmentTitle,
+			fileIds = listOf(uploadedAttachment.id),
+		)
+		val request = requestBuilder
+			.medVedlegg(attachment)
+			.build()
+
+		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsId)
+			.hasEntityInArchive(innsendingsId)
+			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
+			.hasDocumentsInArchive(
+				innsendingsId,
+				listOf(
+					ArchiveDocument(mainDocumentTitle, formNumber, listOf("ARKIV", "ORIGINAL")),
+					ArchiveDocument(attachmentTitle, "T1", listOf("ARKIV")),
+				)
+			)
+			.verify { innsendingApi.submitDigitalApplication(innsendingsUUID, request).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)

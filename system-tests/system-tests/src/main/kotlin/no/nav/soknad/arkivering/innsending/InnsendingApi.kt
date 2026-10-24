@@ -28,6 +28,7 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 	private val ettersending = if (authClient != null) EttersendingApi(config.innsendingApiUrl, authClient) else EttersendingApi(config.innsendingApiUrl)
 	private val sendInnSoknad = if (authClient != null) SendinnSoknadApi(config.innsendingApiUrl, authClient) else SendinnSoknadApi(config.innsendingApiUrl)
 	private val sendInnFil = if (authClient != null) SendinnFilApi(config.innsendingApiUrl, authClient) else SendinnFilApi(config.innsendingApiUrl)
+	private val fyllut = if (authClient != null) FyllutApi(config.innsendingApiUrl, authClient) else FyllutApi(config.innsendingApiUrl)
 	private val endtoend = if (authClient != null) EndtoendApi(config.innsendingApiUrl, authClient) else EndtoendApi(config.innsendingApiUrl)
 
 	private val nologinApplicationApi = if (authClient != null) NologinApplicationApi(config.innsendingApiUrl, authClient) else NologinApplicationApi(config.innsendingApiUrl)
@@ -92,6 +93,24 @@ class InnsendingApi(config: Config, useOauth: Boolean? = false) {
 		val response = nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
 		logger.info("Submitted and sent in not logged in Application ${innsendingsID}")
 		response
+	}
+
+	fun createDigitalApplication(skjemaDto: SkjemaDto) = runCatching {
+		val response = fyllut.fyllUtOpprettSoknad(skjemaDto, force = true)
+		jacksonObjectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(response)
+			.path("innsendingsId")
+			.takeIf { it.isTextual }
+			?.asText()
+			?.takeIf { it.isNotBlank() }
+			?: error("Created application did not return an innsendingsId")
+	}
+
+	fun uploadDigitalAttachmentFile(innsendingsId: UUID, attachmentId: String, file: File) = runCatching {
+		sendInnFil.uploadAttachmentFile(innsendingsId, attachmentId, file)
+	}
+
+	fun submitDigitalApplication(innsendingsId: UUID, request: SubmitApplicationRequest) = runCatching {
+		fyllut.submitDigitalApplication(innsendingsId, request)
 	}
 
 	fun lastOppNoLoginFil(innsendingId: String, vedleggsId: String, fil: File) = runCatching {
