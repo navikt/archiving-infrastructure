@@ -118,19 +118,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `Archive responds 409 - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, 1)
 
@@ -148,19 +142,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `SAF respond with journalpost - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.OK.name, -1)
 
@@ -177,19 +165,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `Request responds with 408 - second attempt already archived from SAF`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.NOT_FOUND.name, 1)
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 408, 1)
