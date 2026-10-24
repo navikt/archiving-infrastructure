@@ -174,5 +174,5 @@ class VerificationTask<T> private constructor(
 	private enum class Presence { PRESENCE, ABSENCE }
 }
 
-private const val verificationDefaultAbsenceTimeout = 30_000L
+internal const val verificationDefaultAbsenceTimeout = 30_000L
 const val verificationDefaultPresenceTimeout = 180_000L

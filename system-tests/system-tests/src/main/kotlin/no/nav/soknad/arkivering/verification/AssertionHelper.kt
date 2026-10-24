@@ -128,9 +128,13 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
-	fun hasNoEntityInArchive(key: String): AssertionHelper {
+	fun hasNoEntityInArchive(
+		key: String,
+		timeoutInMs: Long = verificationDefaultAbsenceTimeout
+	): AssertionHelper {
 		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
+			.withTimeout(timeoutInMs)
 			.forKey(key)
 			.verifyAbsence()
 			.build()
