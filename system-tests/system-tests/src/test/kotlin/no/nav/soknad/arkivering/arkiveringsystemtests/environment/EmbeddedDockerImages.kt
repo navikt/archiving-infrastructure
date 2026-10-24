@@ -115,6 +115,7 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SPRING_PROFILES_ACTIVE" to "docker",
+					"PUBLISH_ARCHIVE_DOCUMENT_METADATA" to "true",
 					"KAFKA_SECURITY"         to "FALSE",
 					"KAFKA_BROKERS"          to "${kafkaContainer.networkAliases[0]}:${defaultPorts["kafka-broker"]}",
 				)

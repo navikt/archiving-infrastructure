@@ -64,7 +64,7 @@ class KafkaListener(private val kafkaConfig: KafkaConfig) {
 
 		entitiesStream
 			.mapValues { json -> mapper.readValue<ArchiveEntity>(json) }
-			.peek { key, entity -> log("$key: Archive Entities   - $entity") }
+			.peek { key, entity -> log("$key: Archive entity received with ${entity.dokumenter.size} documents") }
 			.processValues({ TimestampExtractor() })
 			.foreach { key, entity -> entityConsumers.forEach { it.consume(key, entity) } }
 
