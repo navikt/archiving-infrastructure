@@ -34,7 +34,7 @@ jobs:
           component_names: |
             soknadsmottaker@main
             soknadsarkiverer@main
-            arkiv-mock@test/archived-pdf-pages-126
+            arkiv-mock@main
             innsending-api@main
           prepull_test_images: true
         env:
