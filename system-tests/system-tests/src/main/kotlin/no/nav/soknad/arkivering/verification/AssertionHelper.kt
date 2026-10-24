@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.verification
 
+import no.nav.soknad.arkivering.dto.ArchiveDocument
 import no.nav.soknad.arkivering.dto.ArchiveEntity
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.ProcessingEventJson
@@ -93,6 +94,22 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 			.verifyPresence()
 			.verifyThat({ it.overstyrInnsynsregler == expectedValue }) { entity ->
 				"For key $key: Expected overstyrInnsynsregler to be $expectedValue, but was ${entity.overstyrInnsynsregler}"
+			}
+			.build()
+
+		verificationTaskManager.registerTask(verificationTask)
+		consumerRegistrations.add(kafkaListener.addConsumerForEntities(verificationTask))
+
+		return this
+	}
+
+	fun hasDocumentsInArchive(key: String, expectedDocuments: List<ArchiveDocument>): AssertionHelper {
+		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
+			.withManager(verificationTaskManager)
+			.forKey(key)
+			.verifyPresence()
+			.verifyThat({ it.dokumenter == expectedDocuments }) { entity ->
+				"For key $key: Expected documents $expectedDocuments, but found ${entity.dokumenter}"
 			}
 			.build()
 
