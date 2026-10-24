@@ -31,7 +31,6 @@ import javax.imageio.ImageIO
 @Execution(ExecutionMode.CONCURRENT)
 class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
-	private lateinit var soknadsmottakerApi: SoknadsmottakerApi
 	private lateinit var innsendingApi: InnsendingApi
 
 	val testpersonid = "19876898104"
@@ -44,7 +43,6 @@ class EndToEndTests : SystemTestBase() {
 		}
 
 		setUp()
-		soknadsmottakerApi = SoknadsmottakerApi(soknadApiWithoutOAuth2(config))
 		innsendingApi = InnsendingApi(config)
 	}
 
