@@ -15,6 +15,7 @@ import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -309,6 +310,35 @@ class EndToEndTests : SystemTestBase() {
 				listOf(
 					ArchiveDocument("Søknad", "NAV 08-07.04D", listOf("ARKIV", "ORIGINAL")),
 					ArchiveDocument("Vedlegg", "T1", listOf("ARKIV")),
+				)
+			)
+			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
+
+		assertThatSoknad(innsendingsId)
+			.hasStatus(ArkiveringsStatusDto.arkivert)
+	}
+
+	@Test
+	fun `Happy case - two PDF files for one attachment are archived as one two-page document`() {
+		val innsendingsUUID = UUID.randomUUID()
+		val attachmentId = UUID.randomUUID().toString()
+		val pdf = loadFile("/Synthetic_one_page.pdf")
+		val nologinSoknad = prepareNoLoginApplication(innsendingsUUID, mapOf(attachmentId to listOf(pdf, pdf)))
+		val attachment = checkNotNull(nologinSoknad.attachments).single()
+		val fileIds = checkNotNull(attachment.fileIds)
+		assertEquals(2, fileIds.size)
+		assertEquals(2, fileIds.toSet().size)
+
+		val innsendingsId = innsendingsUUID.toString()
+		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsId)
+			.hasEntityInArchive(innsendingsId)
+			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
+			.hasDocumentsInArchive(
+				innsendingsId,
+				listOf(
+					ArchiveDocument("Søknad", "NAV 08-07.04D", listOf("ARKIV", "ORIGINAL")),
+					ArchiveDocument("Vedlegg", "T1", listOf("ARKIV"), antallSider = 2),
 				)
 			)
 			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
