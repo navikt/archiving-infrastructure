@@ -68,17 +68,11 @@ class EndToEndTests : SystemTestBase() {
 			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
-
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -93,17 +87,11 @@ class EndToEndTests : SystemTestBase() {
 			.verifyHasSize(1)
 			.lastOppFil(0, "Thirty_MB.pdf")
 
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
-
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -119,16 +107,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 500, attemptsThanSoknadsarkivererWillPerform + 1)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 
 		assertThatArkivMock()
 			.hasFailureEvent(innsendingsId, 350_000L)
 			.hasNoEntityInArchive(innsendingsId)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkiveringFeilet)
@@ -151,18 +134,13 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(1, "Ten_MB.pdf")
 			.lastOppFil(2, "OneHundred_KB.pdf")
 
-		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, -1)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
+		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, 1)
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
-			.hasEntityInArchive(innsendingsId)
+			.hasNoEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -187,15 +165,12 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.OK.name, -1)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
-			.verify()
+			.hasNoEntityInArchive(innsendingsId)
+			.hasNoCallInArchive(innsendingsId)
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -220,15 +195,10 @@ class EndToEndTests : SystemTestBase() {
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.NOT_FOUND.name, 1)
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 408, 1)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 
 		assertThatArkivMock()
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -250,16 +220,16 @@ class EndToEndTests : SystemTestBase() {
 			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
-		putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify {
+				// Same key means both records use the same partition. The producer waits for the poison
+				// pill acknowledgement, so Kafka must process it before the valid submission record.
+				putPoisonPillOnKafkaTopic(innsendingsId)
+				innsendingApi.sendInn(soknadTestdata).getOrThrow()
+			}
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -281,16 +251,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 404, erroneousAttempts)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 
 		assertThatArkivMock()
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = erroneousAttempts + 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -312,16 +277,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithErroneousBodyForXAttempts(innsendingsId, erroneousAttempts)
-		try {
-			innsendingApi.sendInn(soknadTestdata)
-		} catch (e: Exception) {
-			throw e
-		}
 
 		assertThatArkivMock()
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = erroneousAttempts + 1)
-			.verify()
+			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -335,21 +295,13 @@ class EndToEndTests : SystemTestBase() {
 		val innsendingsUUID = UUID.randomUUID()
 		val nologinSoknad = prepareNoLoginApplication(innsendingsUUID, mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb))))
 
-		val soknadTestResponse = try {
-			innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad)
-		} catch (e: Exception) {
-			throw e
-		}
-
-		assertTrue(soknadTestResponse.isSuccess)
-
 		val innsendingsId = innsendingsUUID.toString()
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
-			.verify()
+			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
@@ -364,12 +316,10 @@ class EndToEndTests : SystemTestBase() {
 			grantUserDigitalAccess = true
 		)
 
-		assertTrue(innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).isSuccess)
-
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsUUID.toString())
 			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), "VISES_MASKINELT_GODKJENT")
-			.verify()
+			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).getOrThrow() }
 	}
 
 	@Test
@@ -380,12 +330,10 @@ class EndToEndTests : SystemTestBase() {
 			mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb)))
 		)
 
-		assertTrue(innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).isSuccess)
-
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsUUID.toString())
 			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), null)
-			.verify()
+			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).getOrThrow() }
 	}
 
 	// Ten submissions in a loop put a lot of load on the shared containers, so this test is kept apart
