@@ -116,10 +116,15 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 	}
 
 
-	fun verify() {
+	fun verify() = verify { Unit }
+
+	fun <T> verify(action: () -> T): T {
 		try {
+			val result = action()
 			verificationTaskManager.assertAllTasksSucceeds()
+			return result
 		} finally {
+			verificationTaskManager.cancelTasks()
 			consumerRegistrations.forEach { it.deregister() }
 			consumerRegistrations.clear()
 		}
