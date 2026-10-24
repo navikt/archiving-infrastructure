@@ -17,13 +17,6 @@ fun performGetCall(url: String): ByteArray? {
 	}
 }
 
-fun getStatusCodeForGetCall(url: String): Int {
-	val request = Request.Builder().url(url).get().build()
-	restClient.newCall(request).execute().use {
-		return it.code
-	}
-}
-
 fun performPutCall(url: String) {
 	val requestBody = object : RequestBody() {
 		override fun contentType() = "application/json".toMediaType()
