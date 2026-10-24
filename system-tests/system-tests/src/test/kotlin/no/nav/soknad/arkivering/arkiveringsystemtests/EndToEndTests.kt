@@ -13,7 +13,6 @@ import no.nav.soknad.arkivering.innsending.model.SkjemaDokumentDto
 import no.nav.soknad.arkivering.innsending.model.SkjemaDto
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
-import no.nav.soknad.arkivering.utils.Skjema.generateVedleggsnr
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -305,6 +304,13 @@ class EndToEndTests : SystemTestBase() {
 			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
+			.hasDocumentsInArchive(
+				innsendingsId,
+				listOf(
+					ArchiveDocument("Søknad", "NAV 08-07.04D", listOf("ARKIV", "ORIGINAL")),
+					ArchiveDocument("Vedlegg", "T1", listOf("ARKIV")),
+				)
+			)
 			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
@@ -457,16 +463,20 @@ class EndToEndTests : SystemTestBase() {
 				innsendingApi.lastOppNoLoginFil(innsendingsId.toString(), attachmentId, file).getOrThrow().id
 			}
 			AttachmentDto(
-				attachmentCode = generateVedleggsnr(),
-				label = "Inntektsopplysninger for selvstendig næringsdrivende og frilansere som skal ha foreldrepenger eller svangerskapspenger.",
+				attachmentCode = "T1",
+				label = "Vedlegg",
 				uploadStatus = OpplastingsStatusDto.lastetOpp,
-				title = "Vedleggseksempel",
+				title = "Vedlegg",
 				description = "Dette er opplysninger som er nødvendig for beregning av utbetaling av foreldrepenger eller svangerskapspenger.",
 				fileIds = fileIds,
 			)
 		}
 		return SubmitApplicationRequestBuilder(
 			brukerId = testpersonid,
+			skjemanr = "NAV 08-07.04D",
+			tittel = "Søknad",
+			tema = "SYK",
+			hoveddokument = loadFile("/mellomstor.pdf").readBytes(),
 			status = SoknadsStatusDto.utfylt,
 			grantUserDigitalAccess = grantUserDigitalAccess
 		)
