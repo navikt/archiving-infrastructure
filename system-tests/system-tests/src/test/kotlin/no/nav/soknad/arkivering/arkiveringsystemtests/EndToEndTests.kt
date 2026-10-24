@@ -134,11 +134,11 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(1, "Ten_MB.pdf")
 			.lastOppFil(2, "OneHundred_KB.pdf")
 
-		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, -1)
+		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, 1)
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
-			.hasEntityInArchive(innsendingsId)
+			.hasNoEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
 			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
