@@ -109,6 +109,7 @@ class EndToEndTests : SystemTestBase() {
 		assertThatArkivMock()
 			.hasFailureEvent(innsendingsId)
 			.hasNoEntityInArchive(innsendingsId, timeoutInMs = 5_000L)
+			.hasCallCountInArchive(innsendingsId, expectedCount = attemptsThanSoknadsarkivererWillPerform)
 			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
