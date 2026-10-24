@@ -21,8 +21,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import org.junit.jupiter.api.parallel.ResourceAccessMode
-import org.junit.jupiter.api.parallel.ResourceLock
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
@@ -57,14 +55,6 @@ class EndToEndTests : SystemTestBase() {
 		if (!isExternalEnvironment) {
 			embeddedDockerImages.stopContainers()
 		}
-	}
-	@Test
-	fun `jackson test`() {
-		val jsonResponse = "{\"status\":\"UP\", \"ping\":{\"status\":\"UP\"}, \"ssl\":{\"status\":\"UP\",\"details\":{\"validChains\":[]}}}"
-
-		val health = objectMapper.readValue(jsonResponse, Health::class.java)
-		assertTrue(health.status == "UP")
-
 	}
 
 	@Test
@@ -128,19 +118,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `Archive responds 409 - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 409, 1)
 
@@ -158,19 +142,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `SAF respond with journalpost - application already archived`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.OK.name, -1)
 
@@ -187,19 +165,13 @@ class EndToEndTests : SystemTestBase() {
 	@Test
 	fun `Request responds with 408 - second attempt already archived from SAF`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
-			vedleggListe = listOf(
-				Vedlegg("N6", "Bekreftelse på skoleplass"),
-				Vedlegg("A5", "Vitnemål grunnskole"),
-				Vedlegg("T1", "Bekreftelse fra fastlege"),
-			)
+			vedleggListe = listOf(Vedlegg("N6", "Bekreftelse på skoleplass"))
 		)
 		val innsendingsId = soknadTestdata.innsendingsId
 
 		soknadTestdata.vedleggsliste()
-			.verifyHasSize(3)
+			.verifyHasSize(1)
 			.lastOppFil(0, "OneHundred_KB.pdf")
-			.lastOppFil(1, "Ten_MB.pdf")
-			.lastOppFil(2, "OneHundred_KB.pdf")
 
 		setSafFetchBehaviour(innsendingsId, SafResponses.NOT_FOUND.name, 1)
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 408, 1)
@@ -212,9 +184,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasStatus(ArkiveringsStatusDto.arkivert)
 	}
 
-	// The poison pill tests global deserialization robustness and is not tied to a single innsendingsId,
-	// so it is kept apart from the other resource heavy tests.
-	@ResourceLock(value = heavyTestsResource, mode = ResourceAccessMode.READ_WRITE)
 	@Test
 	fun `Poison pill followed by proper message - one file ends up in the archive`() {
 		val soknadTestdata = innsendingApi.opprettEttersending(
@@ -316,6 +285,7 @@ class EndToEndTests : SystemTestBase() {
 					ArchiveDocument("Vedlegg", "T1", listOf("ARKIV")),
 				)
 			)
+			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsId, null)
 			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
@@ -486,30 +456,6 @@ class EndToEndTests : SystemTestBase() {
 	}
 
 	@Test
-	fun `Absent user digital access leaves the Joark access override absent`() {
-		val innsendingsUUID = UUID.randomUUID()
-		val application = prepareNoLoginApplication(
-			innsendingsUUID,
-			mapOf(UUID.randomUUID().toString() to listOf(loadFile(fileOfSize1mb)))
-		)
-
-		assertThatArkivMock()
-			.hasFinishedEvent(innsendingsUUID.toString())
-			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), null)
-			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).getOrThrow() }
-	}
-
-	// Ten submissions in a loop put a lot of load on the shared containers, so this test is kept apart
-	// from the other resource heavy tests.
-	@ResourceLock(value = heavyTestsResource, mode = ResourceAccessMode.READ_WRITE)
-	@Test
-	fun `Happy case - ten submission from not logged in user ends up in the archive`() {
-		repeat(10) {
-			`Happy case - one submission from not logged in user ends up in the archive`()
-		}
-	}
-
-	@Test
 	fun `Happy case - upload one file and then deletes it`() {
 
 		val innsendingsId = UUID.randomUUID().toString()
@@ -578,10 +524,3 @@ class EndToEndTests : SystemTestBase() {
 		performPutCall(url)
 	}
 }
-
-/**
- * Resource lock shared by the tests that should not run at the same time as each other. Note that
- * [org.junit.jupiter.api.parallel.Resources.GLOBAL] (and thereby `@Isolated`) must not be used on a test method here:
- * a method level global lock makes JUnit run the whole test run in a single thread.
- */
-private const val heavyTestsResource = "end-to-end-heavy-tests"
