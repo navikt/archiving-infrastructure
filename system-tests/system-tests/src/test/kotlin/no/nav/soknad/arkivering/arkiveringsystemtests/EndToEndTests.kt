@@ -107,7 +107,7 @@ class EndToEndTests : SystemTestBase() {
 		mockArchiveRespondsWithCodeForXAttempts(innsendingsId, 500, attemptsThanSoknadsarkivererWillPerform + 1)
 
 		assertThatArkivMock()
-			.hasFailureEvent(innsendingsId, 350_000L)
+			.hasFailureEvent(innsendingsId)
 			.hasNoEntityInArchive(innsendingsId)
 			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
