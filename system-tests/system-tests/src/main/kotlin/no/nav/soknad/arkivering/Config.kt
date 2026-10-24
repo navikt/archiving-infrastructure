@@ -26,7 +26,7 @@ val defaultProperties = mapOf(
 	"KAFKA_TRUSTSTORE_PATH"          to "",
 	"KAFKA_CREDSTORE_PASSWORD"       to "",
 
-	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-systemtests",
+	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-soknadinnsending-loggedin-submission-v1-dev",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-systemtests",
 	// Legacy Avro processing-event/metrics topics (referred to as "v2" in the JSON v3 design spec,
 	// see navikt/soknadsarkiverer#260). Retained for legacy replay; the default system-test path

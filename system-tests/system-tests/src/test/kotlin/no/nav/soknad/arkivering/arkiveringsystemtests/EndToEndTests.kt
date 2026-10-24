@@ -219,10 +219,13 @@ class EndToEndTests : SystemTestBase() {
 			.lastOppFil(0, "OneHundred_KB.pdf")
 
 		assertThatArkivMock()
+			.hasFinishedEvent(innsendingsId)
 			.hasEntityInArchive(innsendingsId)
 			.hasCallCountInArchive(innsendingsId, expectedCount = 1)
 			.verify {
-				putPoisonPillOnKafkaTopic(UUID.randomUUID().toString())
+				// Same key means both records use the same partition. The producer waits for the poison
+				// pill acknowledgement, so Kafka must process it before the valid submission record.
+				putPoisonPillOnKafkaTopic(innsendingsId)
 				innsendingApi.sendInn(soknadTestdata).getOrThrow()
 			}
 
