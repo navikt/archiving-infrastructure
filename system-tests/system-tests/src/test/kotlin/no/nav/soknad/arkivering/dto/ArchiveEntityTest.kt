@@ -25,7 +25,7 @@ class ArchiveEntityTest {
 			  "id": "test-id", "title": "Test", "tema": "SYK", "kanal": "NAV_NO", "timesaved": 0,
 			  "overstyrInnsynsregler": null, "additionalMetadata": true,
 			  "dokumenter": [
-			    {"tittel":"Hoveddokument","brevkode":"TEST","variantformater":["ARKIV","ORIGINAL"],"additionalMetadata":true},
+			    {"tittel":"Hoveddokument","brevkode":"TEST","variantformater":["ARKIV","ORIGINAL"],"antallSider":2,"additionalMetadata":true},
 			    {"tittel":"Vedlegg","brevkode":null,"variantformater":["ARKIV"]}
 			  ]
 			}
@@ -34,10 +34,11 @@ class ArchiveEntityTest {
 
 		assertEquals(
 			listOf(
-				ArchiveDocument("Hoveddokument", "TEST", listOf("ARKIV", "ORIGINAL")),
+				ArchiveDocument("Hoveddokument", "TEST", listOf("ARKIV", "ORIGINAL"), antallSider = 2),
 				ArchiveDocument("Vedlegg", null, listOf("ARKIV"))
 			),
 			entity.dokumenter
 		)
+		assertEquals(entity, mapper.readValue<ArchiveEntity>(mapper.writeValueAsString(entity)))
 	}
 }

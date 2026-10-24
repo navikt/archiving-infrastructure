@@ -103,12 +103,21 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
+	/** Checks page counts only when they are set in [expectedDocuments]. */
 	fun hasDocumentsInArchive(key: String, expectedDocuments: List<ArchiveDocument>): AssertionHelper {
 		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
 			.forKey(key)
 			.verifyPresence()
-			.verifyThat({ it.dokumenter == expectedDocuments }) { entity ->
+			.verifyThat({ entity ->
+				entity.dokumenter.size == expectedDocuments.size &&
+					entity.dokumenter.zip(expectedDocuments).all { (actual, expected) ->
+						actual.tittel == expected.tittel &&
+							actual.brevkode == expected.brevkode &&
+							actual.variantformater == expected.variantformater &&
+							(expected.antallSider == null || actual.antallSider == expected.antallSider)
+					}
+			}) { entity ->
 				"For key $key: Expected documents $expectedDocuments, but found ${entity.dokumenter}"
 			}
 			.build()
