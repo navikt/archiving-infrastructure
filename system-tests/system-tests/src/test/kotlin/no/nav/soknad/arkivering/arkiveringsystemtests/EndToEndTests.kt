@@ -23,8 +23,12 @@ import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.junit.jupiter.api.parallel.ResourceAccessMode
 import org.junit.jupiter.api.parallel.ResourceLock
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.io.File
+import java.nio.file.Files
 import java.util.*
+import javax.imageio.ImageIO
 
 @Execution(ExecutionMode.CONCURRENT)
 class EndToEndTests : SystemTestBase() {
@@ -345,6 +349,44 @@ class EndToEndTests : SystemTestBase() {
 
 		assertThatSoknad(innsendingsId)
 			.hasStatus(ArkiveringsStatusDto.arkivert)
+	}
+
+	@Test
+	fun `Happy case - uploaded PNG is converted and archived as one-page PDF`() {
+		val innsendingsUUID = UUID.randomUUID()
+		val imageFile = Files.createTempFile("synthetic-attachment-", ".png").toFile()
+		try {
+			val image = BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB)
+			image.createGraphics().apply {
+				color = Color(40, 100, 180)
+				fillRect(0, 0, image.width, image.height)
+				dispose()
+			}
+			check(ImageIO.write(image, "png", imageFile)) { "PNG writer is unavailable" }
+
+			val nologinSoknad = prepareNoLoginApplication(
+				innsendingsUUID,
+				mapOf(UUID.randomUUID().toString() to listOf(imageFile)),
+			)
+			val innsendingsId = innsendingsUUID.toString()
+			assertThatArkivMock()
+				.hasFinishedEvent(innsendingsId)
+				.hasEntityInArchive(innsendingsId)
+				.hasCallCountInArchive(innsendingsId, expectedCount = 1)
+				.hasDocumentsInArchive(
+					innsendingsId,
+					listOf(
+						ArchiveDocument("Søknad", "NAV 08-07.04D", listOf("ARKIV", "ORIGINAL")),
+						ArchiveDocument("Vedlegg", "T1", listOf("ARKIV"), antallSider = 1),
+					)
+				)
+				.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, nologinSoknad).getOrThrow() }
+
+			assertThatSoknad(innsendingsId)
+				.hasStatus(ArkiveringsStatusDto.arkivert)
+		} finally {
+			Files.deleteIfExists(imageFile.toPath())
+		}
 	}
 
 	@Test
