@@ -115,6 +115,19 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
+	fun hasNoCallInArchive(key: String): AssertionHelper {
+		val verificationTask = VerificationTask.Builder<Int>()
+			.withManager(verificationTaskManager)
+			.forKey(key)
+			.verifyAbsence()
+			.build()
+
+		verificationTaskManager.registerTask(verificationTask)
+		consumerRegistrations.add(kafkaListener.addConsumerForNumberOfCalls(verificationTask))
+
+		return this
+	}
+
 
 	fun verify() = verify { Unit }
 

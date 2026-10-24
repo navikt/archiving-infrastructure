@@ -168,6 +168,8 @@ class EndToEndTests : SystemTestBase() {
 
 		assertThatArkivMock()
 			.hasFinishedEvent(innsendingsId)
+			.hasNoEntityInArchive(innsendingsId)
+			.hasNoCallInArchive(innsendingsId)
 			.verify { innsendingApi.sendInn(soknadTestdata).getOrThrow() }
 
 		assertThatSoknad(innsendingsId)
