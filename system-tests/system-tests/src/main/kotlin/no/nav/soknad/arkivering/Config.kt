@@ -76,16 +76,6 @@ data class SecurityConfig(
 	val trustStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
 )
 
-data class OAuth2Config(
-	val tokenEndpointUrl: String = getProperty("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"),
-	val grantType: String = "client_credentials",
-	val scopeSoknadsmottaker: String = "api://dev-gcp.team-soknad.soknadsmottaker/.default",
-	val scopeInnsendingApi: String = "api://dev-gcp.team-soknad.innsending-api/.default",
-	val clientId: String = getProperty("AZURE_APP_CLIENT_ID"),
-	val clientSecret: String = getProperty("AZURE_APP_CLIENT_SECRET"),
-	val clientAuthMethod: String = "client_secret_basic"
-)
-
 data class Topics(
 	// Legacy Avro processing-event/metrics topics ("v2" in the design spec). Retained for legacy
 	// replay only; not read/written by the default system-test path (issue #78).
