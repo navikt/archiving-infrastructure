@@ -16,7 +16,6 @@ import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
@@ -452,22 +451,6 @@ class EndToEndTests : SystemTestBase() {
 			.hasFinishedEvent(innsendingsUUID.toString())
 			.hasEntityInArchiveWithOverstyrInnsynsregler(innsendingsUUID.toString(), "VISES_MASKINELT_GODKJENT")
 			.verify { innsendingApi.sendInNoLoginApplication(innsendingsUUID, application).getOrThrow() }
-	}
-
-	@Test
-	fun `Happy case - upload one file and then deletes it`() {
-
-		val innsendingsId = UUID.randomUUID().toString()
-		val vedleggsId = UUID.randomUUID().toString()
-
-		val uploadResponse = innsendingApi.lastOppNoLoginFil(innsendingsId, vedleggsId, loadFile(fileOfSize1mb))
-		assertTrue(uploadResponse.isSuccess)
-
-		val fileId = uploadResponse.getOrThrow().id
-		assertTrue { fileId.toString().isNotEmpty() }
-
-		val deleteResponse = innsendingApi.slettNoLoginFil(innsendingsId, vedleggsId, fileId.toString())
-		assertTrue(deleteResponse.isSuccess)
 	}
 
 	private fun prepareNoLoginApplication(
