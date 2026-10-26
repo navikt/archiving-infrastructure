@@ -13,6 +13,18 @@ object E2eTokenConfig {
 	/** Host og port for mock-oauth2-server i Docker-nettverket. Issuer blir http://authserver:6969/<issuerId> */
 	const val AUTH_SERVER_HOST = "authserver:6969"
 
+	/**
+	 * Slår på tokenvalidering i innsending-api og token fra soknadsarkiverer: `-De2eTokenValidation=true`.
+	 * Krever innsending-api med profilen endtoend-auth og soknadsarkiverer med innsendingapi.send-token.
+	 */
+	val tokenValidationEnabled: Boolean
+		get() = System.getProperty("e2eTokenValidation").toBoolean()
+
+	/** Scopet soknadsarkiverer ber om for innsending-api, som i dev */
+	const val SOKNADSARKIVERER_INNSENDING_API_SCOPE = "api://dev-gcp.team-soknad.innsending-api/.default"
+
+	private const val SOKNADSARKIVERER_OBJECT_ID = "0b8f5a1e-7c2d-4e3f-8a9b-5c6d7e8f9a0b"
+
 	const val TOKEN_X_AUDIENCE = "dev-gcp:team-soknad:innsending-api"
 	const val AZURE_AUDIENCE = "aud-localhost"
 
@@ -61,8 +73,7 @@ object E2eTokenConfig {
 	 * JSON_CONFIG for mock-oauth2-server. Hver kaller får claimene sine ut fra client_id.
 	 *
 	 * Når en issuer har tokenCallbacks, gir mock-serveren forespørsler uten treff verken sub eller aud.
-	 * Den siste mappingen gjenskaper derfor standardoppførselen for andre klienter, for eksempel soknadsarkiverer:
-	 * sub er klient-ID-en og aud er scope.
+	 * Den siste mappingen gjenskaper derfor standardoppførselen for andre klienter: sub er klient-ID-en og aud er scope.
 	 */
 	fun mockOAuth2ServerJsonConfig(): String {
 		val tokenCallbacks = Caller.entries.groupBy { it.issuerId }.map { (issuerId, callers) ->
@@ -81,7 +92,7 @@ object E2eTokenConfig {
 			mapOf(
 				"issuerId" to issuerId,
 				"tokenExpiry" to 3600,
-				"requestMappings" to callerMappings + defaultMapping,
+				"requestMappings" to callerMappings + scopeMappings(issuerId) + defaultMapping,
 			)
 		}
 		return jacksonObjectMapper().writeValueAsString(
@@ -92,4 +103,24 @@ object E2eTokenConfig {
 			)
 		)
 	}
+
+	// soknadsarkiverer henter M2M-token selv. Den kjennes igjen på scopet og får claims som en Azure-app i dev
+	private fun scopeMappings(issuerId: String): List<Map<String, Any>> =
+		if (issuerId != "azuread") emptyList()
+		else listOf(
+			mapOf(
+				"requestParam" to "scope",
+				"match" to SOKNADSARKIVERER_INNSENDING_API_SCOPE,
+				"claims" to mapOf(
+					"sub" to SOKNADSARKIVERER_OBJECT_ID,
+					"oid" to SOKNADSARKIVERER_OBJECT_ID,
+					"azp" to "\${clientId}",
+					"azp_name" to "dev-gcp:team-soknad:soknadsarkiverer",
+					"idtyp" to "app",
+					"roles" to listOf("access_as_application"),
+					"aud" to listOf(AZURE_AUDIENCE),
+					"tid" to issuerId,
+				),
+			)
+		)
 }

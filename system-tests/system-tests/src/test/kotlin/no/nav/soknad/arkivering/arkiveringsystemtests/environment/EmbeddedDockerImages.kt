@@ -153,7 +153,7 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(
 				hashMapOf(
-					"SPRING_PROFILES_ACTIVE"                to "endtoend",
+					"SPRING_PROFILES_ACTIVE"                to innsendingApiProfiles(),
 					"DATABASE_PORT"                         to defaultPorts["database"].toString(),
 					"DATABASE_HOST"                         to postgresInnsendingContainer.networkAliases[0],
 					"DATABASE_DATABASE"                     to databaseName,
@@ -205,7 +205,8 @@ class EmbeddedDockerImages {
 					"AZURE_APP_CLIENT_SECRET" to "secret",
 					"DOKARKIV_SCOPE"					to "scope",
 					"SAF_SCOPE"								to "scope",
-					"INNSENDING_API_SCOPE"			to "scope",
+					"INNSENDING_API_SCOPE"			to E2eTokenConfig.SOKNADSARKIVERER_INNSENDING_API_SCOPE,
+					"INNSENDING_API_SEND_TOKEN"	to E2eTokenConfig.tokenValidationEnabled.toString(),
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
@@ -289,6 +290,10 @@ class EmbeddedDockerImages {
 		try { gotenbergContainer.stop() } catch (_: Exception) {}
 		try { postgresInnsendingContainer.stop() } catch (_: Exception) {}
 	}
+
+	// Med -De2eTokenValidation=true validerer innsending-api token. Uten flagget godtar det alt, som før
+	private fun innsendingApiProfiles() =
+		if (E2eTokenConfig.tokenValidationEnabled) "endtoend,endtoend-auth" else "endtoend"
 
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
 	fun getUrlForAuthServer()       = "http://localhost:" + authServerContainer      .firstMappedPort
