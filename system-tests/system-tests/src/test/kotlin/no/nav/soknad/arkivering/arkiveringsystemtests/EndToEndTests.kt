@@ -15,6 +15,9 @@ import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
@@ -87,6 +90,70 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun audience(payload: com.fasterxml.jackson.databind.JsonNode): List<String> =
 		payload["aud"].let { aud -> if (aud.isArray) aud.map { it.asText() } else listOf(aud.asText()) }
+
+	// Tilgangskontrakt for innsending-api med ekte token (#461 i innsending-api).
+	// Hoppes over så lenge innsending-api ikke validerer token i e2e. Da svarer det på alt, og testene ville feilet uten grunn.
+	// Testene sjekker bare om kallet slipper forbi tilgangskontrollen, ikke resultatet. Id-ene finnes ikke, så ingen data endres.
+
+	@Test
+	fun `innsending-api rejects citizen calls without a valid citizen token`() {
+		assumeInnsendingApiValidatesTokens()
+
+		assertRejected(citizenEndpoint(), token = null, "uten token")
+		assertRejected(citizenEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.CITIZEN_LOW_ACR), "TokenX med acr=idporten-loa-substantial")
+		assertRejected(citizenEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.CITIZEN_WRONG_AUDIENCE), "TokenX til annen audience")
+		assertRejected(citizenEndpoint(), tokens.nologin(), "Azure-token mot innbyggerendepunkt")
+
+		assertAllowed(citizenEndpoint(), tokens.citizen(), "TokenX med acr=idporten-loa-high")
+	}
+
+	@Test
+	fun `innsending-api rejects nologin calls without the nologin-access role`() {
+		assumeInnsendingApiValidatesTokens()
+
+		assertRejected(nologinEndpoint(), token = null, "uten token")
+		assertRejected(nologinEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.NOLOGIN_WITHOUT_ROLE), "Azure-token uten nologin-access")
+		assertRejected(nologinEndpoint(), tokens.citizen(), "TokenX-token mot nologin-endepunkt")
+
+		assertAllowed(nologinEndpoint(), tokens.nologin(), "Azure-token med nologin-access")
+	}
+
+	private data class Endpoint(val method: String, val path: String)
+
+	private fun citizenEndpoint() = Endpoint("GET", "/endtoend/v1/soknad/${UUID.randomUUID()}/arkiveringsstatus")
+
+	private fun nologinEndpoint() =
+		Endpoint("DELETE", "/v1/application-nologin/${UUID.randomUUID()}/attachments/${UUID.randomUUID()}/${UUID.randomUUID()}")
+
+	private fun assumeInnsendingApiValidatesTokens() {
+		assumeTrue(tokens.enabled, "Ingen auth-server i dette miljøet")
+		val status = statusFor(citizenEndpoint(), token = null)
+		assumeTrue(status in rejectedStatuses, "innsending-api validerer ikke token i e2e (svarte $status uten token)")
+	}
+
+	private fun assertRejected(endpoint: Endpoint, token: String?, description: String) {
+		val status = statusFor(endpoint, token)
+		assertTrue(status in rejectedStatuses, "${endpoint.method} ${endpoint.path} med $description: forventet avvisning, fikk $status")
+	}
+
+	private fun assertAllowed(endpoint: Endpoint, token: String?, description: String) {
+		val status = statusFor(endpoint, token)
+		assertTrue(status !in rejectedStatuses, "${endpoint.method} ${endpoint.path} med $description: forventet tilgang, fikk $status")
+	}
+
+	private fun statusFor(endpoint: Endpoint, token: String?): Int {
+		val request = Request.Builder()
+			.url(config.innsendingApiUrl + endpoint.path)
+			.method(endpoint.method, null)
+			.apply { token?.let { header("Authorization", "Bearer $it") } }
+			.build()
+		return httpClient.newCall(request).execute().use { it.code }
+	}
+
+	private val httpClient = OkHttpClient()
+
+	// 403 er dagens svar fra token-support. 401 tas med fordi teamet kan velge det i Spring Security-migreringen
+	private val rejectedStatuses = setOf(401, 403)
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {

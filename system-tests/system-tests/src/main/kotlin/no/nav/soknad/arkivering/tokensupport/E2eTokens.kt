@@ -27,6 +27,9 @@ class E2eTokens(private val authServerUrl: String?) {
 	/** Azure M2M-token for Fyllut sine kall uten innlogging, med rollen nologin-access */
 	fun nologin(): String? = token(E2eTokenConfig.Caller.NOLOGIN)
 
+	/** Token for en vilkårlig kaller, også de innsending-api skal avvise */
+	fun forCaller(caller: E2eTokenConfig.Caller): String? = token(caller)
+
 	@Synchronized
 	private fun token(caller: E2eTokenConfig.Caller): String? {
 		val baseUrl = authServerUrl ?: return null

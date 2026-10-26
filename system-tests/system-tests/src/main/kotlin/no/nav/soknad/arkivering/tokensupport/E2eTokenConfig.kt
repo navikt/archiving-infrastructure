@@ -21,34 +21,39 @@ object E2eTokenConfig {
 
 	private const val NOLOGIN_OBJECT_ID = "6f1c2b8e-3d4a-4f5b-9c7d-1e2f3a4b5c6d"
 
+	private val citizenClaims: Map<String, Any> = mapOf(
+		"sub" to TEST_PERSON_ID,
+		"pid" to TEST_PERSON_ID,
+		"acr" to "idporten-loa-high",
+		"idp" to "https://test.idporten.no",
+		"client_id" to "dev-gcp:team-soknad:send-inn-frontend",
+	)
+
+	private val nologinClaims: Map<String, Any> = mapOf(
+		"sub" to NOLOGIN_OBJECT_ID,
+		"oid" to NOLOGIN_OBJECT_ID,
+		"azp" to "e2e-skjemautfylling",
+		"azp_name" to "dev-gcp:skjemadigitalisering:skjemautfylling",
+		"idtyp" to "app",
+		"roles" to listOf("access_as_application", "nologin-access"),
+	)
+
 	enum class Caller(val issuerId: String, val clientId: String, val audience: String, val claims: Map<String, Any>) {
 		// Som send-inn-frontend og fyllut-ettersending: TokenX utvekslet fra ID-porten med høyt sikkerhetsnivå
-		CITIZEN(
-			issuerId = "tokenx",
-			clientId = "e2e-send-inn-frontend",
-			audience = TOKEN_X_AUDIENCE,
-			claims = mapOf(
-				"sub" to TEST_PERSON_ID,
-				"pid" to TEST_PERSON_ID,
-				"acr" to "idporten-loa-high",
-				"idp" to "https://test.idporten.no",
-				"client_id" to "dev-gcp:team-soknad:send-inn-frontend",
-			),
-		),
+		CITIZEN("tokenx", "e2e-send-inn-frontend", TOKEN_X_AUDIENCE, citizenClaims),
 
 		// Som Fyllut (skjemautfylling) uten innlogging: Azure client credentials med app-rollen nologin-access
-		NOLOGIN(
-			issuerId = "azuread",
-			clientId = "e2e-skjemautfylling",
-			audience = AZURE_AUDIENCE,
-			claims = mapOf(
-				"sub" to NOLOGIN_OBJECT_ID,
-				"oid" to NOLOGIN_OBJECT_ID,
-				"azp" to "e2e-skjemautfylling",
-				"azp_name" to "dev-gcp:skjemadigitalisering:skjemautfylling",
-				"idtyp" to "app",
-				"roles" to listOf("access_as_application", "nologin-access"),
-			),
+		NOLOGIN("azuread", "e2e-skjemautfylling", AZURE_AUDIENCE, nologinClaims),
+
+		// Token innsending-api skal avvise. Hvert avviker fra et gyldig token på ett punkt
+		CITIZEN_LOW_ACR(
+			"tokenx", "e2e-citizen-low-acr", TOKEN_X_AUDIENCE,
+			citizenClaims + ("acr" to "idporten-loa-substantial"),
+		),
+		CITIZEN_WRONG_AUDIENCE("tokenx", "e2e-citizen-wrong-audience", "dev-gcp:team-soknad:annen-app", citizenClaims),
+		NOLOGIN_WITHOUT_ROLE(
+			"azuread", "e2e-azure-without-nologin-role", AZURE_AUDIENCE,
+			nologinClaims + ("roles" to listOf("access_as_application")),
 		),
 	}
 
