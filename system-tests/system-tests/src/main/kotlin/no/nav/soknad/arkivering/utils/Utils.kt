@@ -1,37 +1,12 @@
 package no.nav.soknad.arkivering.utils
 
-import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.avroschemas.Soknadstyper
 import no.nav.soknad.arkivering.dto.FileResponses
 import no.nav.soknad.arkivering.soknadsmottaker.model.DocumentData
 import no.nav.soknad.arkivering.soknadsmottaker.model.Soknad
 import no.nav.soknad.arkivering.soknadsmottaker.model.Varianter
-import java.io.File
 import java.time.LocalDateTime
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.io.path.createTempFile
-
-fun loopAndVerify(
-	expectedCount: Int,
-	getCount: () -> Int,
-	finalCheck: () -> Any = { assert(expectedCount == getCount.invoke()) }
-) {
-
-	val startTime = System.currentTimeMillis()
-	val timeout = 30 * 1000
-
-	while (System.currentTimeMillis() < startTime + timeout) {
-		val matches = getCount.invoke()
-
-		if (matches == expectedCount) {
-			break
-		}
-		TimeUnit.MILLISECONDS.sleep(50)
-	}
-	finalCheck.invoke()
-}
-
 
 const val fnr = "10108000398" // Not a real fnr
 const val kjoreliste: String = "NAV 11-12.10"
@@ -125,15 +100,3 @@ fun createVarianter(fileId: String) = Varianter(
 	"innsending.pdf",
 	"PDFA"
 )
-
-
-fun loadFile(fileName: String): File {
-	val resource = Config::class.java.getResourceAsStream(fileName) ?: throw Exception("$fileName not found")
-	val file = createTempFile().toFile()
-	resource.use { input ->
-		file.outputStream().use { output ->
-			input.copyTo(output)
-		}
-	}
-	return file
-}

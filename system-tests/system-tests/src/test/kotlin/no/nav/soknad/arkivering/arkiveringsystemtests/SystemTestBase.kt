@@ -20,7 +20,8 @@ import org.slf4j.LoggerFactory
 abstract class SystemTestBase {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	val attemptsThanSoknadsarkivererWillPerform = 7
+	// Keep in sync with secondsBetweenRetries in soknadsarkiverer's application-endtoend.yml.
+	val attemptsThanSoknadsarkivererWillPerform = 6
 
 	val targetEnvironment: String? = System.getProperty("targetEnvironment")
 	val isExternalEnvironment = targetEnvironment?.matches(externalEnvironments.toRegex()) ?: false

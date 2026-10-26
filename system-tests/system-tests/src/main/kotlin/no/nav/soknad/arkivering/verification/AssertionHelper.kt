@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.verification
 
+import no.nav.soknad.arkivering.dto.ArchiveDocument
 import no.nav.soknad.arkivering.dto.ArchiveEntity
 import no.nav.soknad.arkivering.kafka.KafkaListener
 import no.nav.soknad.arkivering.kafka.ProcessingEventJson
@@ -102,9 +103,38 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
-	fun hasNoEntityInArchive(key: String): AssertionHelper {
+	/** Checks page counts only when they are set in [expectedDocuments]. */
+	fun hasDocumentsInArchive(key: String, expectedDocuments: List<ArchiveDocument>): AssertionHelper {
 		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
 			.withManager(verificationTaskManager)
+			.forKey(key)
+			.verifyPresence()
+			.verifyThat({ entity ->
+				entity.dokumenter.size == expectedDocuments.size &&
+					entity.dokumenter.zip(expectedDocuments).all { (actual, expected) ->
+						actual.tittel == expected.tittel &&
+							actual.brevkode == expected.brevkode &&
+							actual.variantformater == expected.variantformater &&
+							(expected.antallSider == null || actual.antallSider == expected.antallSider)
+					}
+			}) { entity ->
+				"For key $key: Expected documents $expectedDocuments, but found ${entity.dokumenter}"
+			}
+			.build()
+
+		verificationTaskManager.registerTask(verificationTask)
+		consumerRegistrations.add(kafkaListener.addConsumerForEntities(verificationTask))
+
+		return this
+	}
+
+	fun hasNoEntityInArchive(
+		key: String,
+		timeoutInMs: Long = verificationDefaultAbsenceTimeout
+	): AssertionHelper {
+		val verificationTask = VerificationTask.Builder<ArchiveEntity>()
+			.withManager(verificationTaskManager)
+			.withTimeout(timeoutInMs)
 			.forKey(key)
 			.verifyAbsence()
 			.build()
@@ -115,11 +145,29 @@ class AssertionHelper(private val kafkaListener: KafkaListener) {
 		return this
 	}
 
+	fun hasNoCallInArchive(key: String): AssertionHelper {
+		val verificationTask = VerificationTask.Builder<Int>()
+			.withManager(verificationTaskManager)
+			.forKey(key)
+			.verifyAbsence()
+			.build()
 
-	fun verify() {
+		verificationTaskManager.registerTask(verificationTask)
+		consumerRegistrations.add(kafkaListener.addConsumerForNumberOfCalls(verificationTask))
+
+		return this
+	}
+
+
+	fun verify() = verify { Unit }
+
+	fun <T> verify(action: () -> T): T {
 		try {
+			val result = action()
 			verificationTaskManager.assertAllTasksSucceeds()
+			return result
 		} finally {
+			verificationTaskManager.cancelTasks()
 			consumerRegistrations.forEach { it.deregister() }
 			consumerRegistrations.clear()
 		}

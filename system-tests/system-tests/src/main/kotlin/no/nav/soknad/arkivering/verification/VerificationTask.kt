@@ -1,15 +1,12 @@
 package no.nav.soknad.arkivering.verification
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
 import no.nav.soknad.arkivering.kafka.KafkaEntityConsumer
 import no.nav.soknad.arkivering.kafka.KafkaTimestampedEntity
 import no.nav.soknad.arkivering.verification.VerificationTask.Presence
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.schedule
 
 /**
  * This class consumes messages from a Kafka topic (since the class is a [KafkaEntityConsumer]), and on every
@@ -35,27 +32,55 @@ class VerificationTask<T> private constructor(
 	private val key: String?,
 	private val verifiers: MutableList<Assertion<T>>,
 	private val presence: Presence,
-	timeoutInMs: Long
+	private val timeoutInMs: Long
 ) : KafkaEntityConsumer<T> {
+	internal val hasPresence: Boolean get() = presence == Presence.PRESENCE
+	internal val isFinished: Boolean get() = hasSentSignalToChannel.get()
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	private var hasSentSignalToChannel = AtomicBoolean(false)
 	private var lastObservedValueForKey: T? = null
+	private val timer = Timer("VerificationTaskTimer", true)
+	private var timeoutTask: TimerTask? = null
 
 	init {
-		Timer("VerificationTaskTimer", false).schedule(timeoutInMs) {
-			if (presence == Presence.ABSENCE) {
-				// Verify absence - send satisfied signal after timeout.
-				logger.info("$key: Verifying absence  - sending Satisfied signal")
-				sendSatisfiedSignal()
-			} else {
-				// Verify presence - send dissatisfied signal after timeout.
-				if (hasSentSignalToChannel.get().not()) {
-					logger.warn("$key: Verifying presence - sending Dissatisfied signal")
-					sendDissatisfiedSignal()
+		if (presence == Presence.PRESENCE) startTimeout()
+	}
+
+	internal fun startAbsenceWindow() {
+		if (presence == Presence.ABSENCE) startTimeout()
+	}
+
+	private fun startTimeout(): Unit {
+		synchronized(this) {
+			if (hasSentSignalToChannel.get() || timeoutTask != null) return@synchronized
+			val task = object : TimerTask() {
+				override fun run() {
+					if (presence == Presence.ABSENCE) {
+						logger.info("$key: Verifying absence - sending Satisfied signal")
+						sendSatisfiedSignal()
+					} else if (!hasSentSignalToChannel.get()) {
+						logger.warn("$key: Verifying presence - sending Dissatisfied signal")
+						sendDissatisfiedSignal()
+					}
 				}
 			}
+			timeoutTask = task
+			timer.schedule(task, timeoutInMs)
+		}
+	}
+
+	internal fun cancel() {
+		if (hasSentSignalToChannel.compareAndSet(false, true)) {
+			cancelTimer()
+		}
+	}
+
+	private fun cancelTimer() {
+		synchronized(this) {
+			timer.cancel()
+			timer.purge()
 		}
 	}
 
@@ -102,9 +127,8 @@ class VerificationTask<T> private constructor(
 	private fun sendSignal(text: String, value: Boolean) {
 		val hasAlreadySent = hasSentSignalToChannel.getAndSet(true)
 		if (!hasAlreadySent) {
-			runBlocking(Dispatchers.IO) {
-				channel.send(text to value)
-			}
+			cancelTimer()
+			channel.trySend(text to value)
 		}
 	}
 
@@ -150,5 +174,5 @@ class VerificationTask<T> private constructor(
 	private enum class Presence { PRESENCE, ABSENCE }
 }
 
-private const val verificationDefaultAbsenceTimeout = 30_000L
+internal const val verificationDefaultAbsenceTimeout = 30_000L
 const val verificationDefaultPresenceTimeout = 180_000L
