@@ -1,5 +1,6 @@
 package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
 import no.nav.soknad.arkivering.tokensupport.E2eTokenConfig
@@ -11,7 +12,11 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import java.math.BigInteger
+import java.security.KeyPairGenerator
+import java.security.interfaces.RSAPrivateCrtKey
 import java.time.Duration
+import java.util.Base64
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 
@@ -25,7 +30,15 @@ class EmbeddedDockerImages {
 	// whenever Confluent publishes one. Keep in sync with the pre-pull list in the workflows.
 	private val confluentVersion = "7.9.9"
 
+	// Tag 2026-10-29-103705-4f0a3b3, nyeste Texas-bygg da oppsettet ble laget. Digesten peker på multi-arch-indeksen.
+	// Testcontainers godtar ikke tag og digest samtidig, så bare digesten står i navnet
+	private val texasImage =
+		"ghcr.io/nais/texas@sha256:28f2e61eee0d1d8ad58078495ca8871526ce31f0413d30dc8200cdfcf6cb804d"
+	private val texasPort = 3000
+	private val texasProbePort = 3001
+
 	private lateinit var authServerContainer: GenericContainer<*>
+	private var texasContainer: GenericContainer<*>? = null
 	private lateinit var gotenbergContainer: GenericContainer<*>
 	private lateinit var postgresInnsendingContainer: PostgreSQLContainer
 	private lateinit var kafkaContainer: GenericContainer<ConfluentKafkaContainer>
@@ -123,10 +136,17 @@ class EmbeddedDockerImages {
 			.dependsOn(kafkaContainer)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200))
 
-		// Both only depend on Kafka, which is already running
+		if (E2eTokenConfig.tokenValidationEnabled) {
+			texasContainer = createTexasContainer(network)
+		}
+
+		// Texas trenger authserver, de to andre trenger Kafka. Alle tre kjører allerede
 		startInParallel(
-			"schema-registry" to schemaRegistryContainer,
-			"arkiv-mock" to arkivMockContainer,
+			*listOfNotNull(
+				"schema-registry" to schemaRegistryContainer,
+				"arkiv-mock" to arkivMockContainer,
+				texasContainer?.let { "texas" to it },
+			).toTypedArray()
 		)
 
 		soknadsmottakerContainer = GenericContainer("archiving-infrastructure-soknadsmottaker")
@@ -170,9 +190,14 @@ class EmbeddedDockerImages {
 					"AZURE_APP_CLIENT_SECRET"               to "secret",
 					"KONVERTERING_TIL_PDF_URL"							to "http://${gotenbergContainer.networkAliases[0]}:${defaultPorts["gotenberg"]}",
 					"FILE_STORAGE_BUCKET_NAME"							to "innsending-api-file-storage-systemtests",
-				)
+				) + innsendingApiTexasEnv()
 			)
-			.dependsOn(postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer)
+			.dependsOn(
+				*listOfNotNull(
+					postgresInnsendingContainer, kafkaContainer, soknadsmottakerContainer, arkivMockContainer, gotenbergContainer,
+					texasContainer,
+				).toTypedArray()
+			)
 			.waitingFor(Wait.forHttp("/internal/health").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(1)))
 
 		try {
@@ -280,7 +305,9 @@ class EmbeddedDockerImages {
 		try { logger.info("soknadsarkiverer logs:\n${soknadsarkivererContainer.logs}") } catch (_: Exception) {}
 		try { logger.info("arkiv-mock logs:\n${arkivMockContainer.logs}") } catch (_: Exception) {}
 		try { logger.info("innsending-api logs:\n${innsendingApiContainer.logs}") } catch (_: Exception) {}
+		try { texasContainer?.let { logger.info("texas logs:\n${it.logs}") } } catch (_: Exception) {}
 		try { innsendingApiContainer.stop() } catch (_: Exception) {}
+		try { texasContainer?.stop() } catch (_: Exception) {}
 		try { soknadsmottakerContainer.stop() } catch (_: Exception) {}
 		try { soknadsarkivererContainer.stop() } catch (_: Exception) {}
 		try { arkivMockContainer.stop() } catch (_: Exception) {}
@@ -294,6 +321,70 @@ class EmbeddedDockerImages {
 	// Med -De2eTokenValidation=true validerer innsending-api token. Uten flagget godtar det alt, som før
 	private fun innsendingApiProfiles() =
 		if (E2eTokenConfig.tokenValidationEnabled) "endtoend,endtoend-auth" else "endtoend"
+
+	/**
+	 * Texas validerer innkommende token for innsending-api, som sidecaren i Nais. Audience er klient-ID-ene
+	 * innsending-api har i e2e, og issuer og JWKS hentes fra well-known hos mock-oauth2-server.
+	 */
+	@Suppress("HttpUrlsUsage")
+	private fun createTexasContainer(network: Network): GenericContainer<*> {
+		val authServer = "http://${E2eTokenConfig.AUTH_SERVER_HOST}"
+		return GenericContainer(DockerImageName.parse(texasImage))
+			.withNetworkAliases("texas")
+			.withExposedPorts(texasPort, texasProbePort)
+			.withNetwork(network)
+			.withEnv(
+				hashMapOf(
+					"BIND_ADDRESS"           to "0.0.0.0:$texasPort",
+					"PROBE_BIND_ADDRESS"     to "0.0.0.0:$texasProbePort",
+					"TOKEN_X_ENABLED"        to "true",
+					"TOKEN_X_CLIENT_ID"      to E2eTokenConfig.TOKEN_X_AUDIENCE,
+					"TOKEN_X_WELL_KNOWN_URL" to "$authServer/tokenx/.well-known/openid-configuration",
+					"AZURE_ENABLED"          to "true",
+					"AZURE_APP_CLIENT_ID"    to E2eTokenConfig.AZURE_AUDIENCE,
+					"AZURE_APP_WELL_KNOWN_URL" to "$authServer/azuread/.well-known/openid-configuration",
+					// Texas krever en privat nøkkel per utsteder ved oppstart, men bruker den bare til tokenveksling
+					"TOKEN_X_PRIVATE_JWK"    to generatedPrivateJwk("texas-e2e-tokenx"),
+					"AZURE_APP_JWK"          to generatedPrivateJwk("texas-e2e-azure"),
+				)
+			)
+			.dependsOn(authServerContainer)
+			.waitingFor(Wait.forHttp("/healthz").forPort(texasProbePort).forStatusCode(200))
+	}
+
+	@Suppress("HttpUrlsUsage")
+	private fun innsendingApiTexasEnv(): Map<String, String> {
+		val texas = texasContainer ?: return emptyMap()
+		return mapOf(
+			"NAIS_TOKEN_INTROSPECTION_ENDPOINT" to "http://${texas.networkAliases[0]}:$texasPort/api/v1/introspect",
+			"TEXAS_INNKOMMENDE_UTSTEDERE"       to "AZURE,TOKENX",
+			"TOKEN_X_ISSUER"                    to "http://${E2eTokenConfig.AUTH_SERVER_HOST}/tokenx",
+			"AZURE_OPENID_CONFIG_ISSUER"        to "http://${E2eTokenConfig.AUTH_SERVER_HOST}/azuread",
+		)
+	}
+
+	private fun generatedPrivateJwk(keyId: String): String {
+		val generator = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }
+		val key = generator.generateKeyPair().private as RSAPrivateCrtKey
+		fun base64Url(value: BigInteger) =
+			Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray().dropWhile { it == 0.toByte() }.toByteArray())
+		return jacksonObjectMapper().writeValueAsString(
+			mapOf(
+				"kty" to "RSA",
+				"kid" to keyId,
+				"alg" to "RS256",
+				"use" to "sig",
+				"n" to base64Url(key.modulus),
+				"e" to base64Url(key.publicExponent),
+				"d" to base64Url(key.privateExponent),
+				"p" to base64Url(key.primeP),
+				"q" to base64Url(key.primeQ),
+				"dp" to base64Url(key.primeExponentP),
+				"dq" to base64Url(key.primeExponentQ),
+				"qi" to base64Url(key.crtCoefficient),
+			)
+		)
+	}
 
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
 	fun getUrlForAuthServer()       = "http://localhost:" + authServerContainer      .firstMappedPort
