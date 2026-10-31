@@ -4,8 +4,7 @@ FyllUt og SendInn bruker `innsending-api` til å lagre og sende inn søknader og
 vedlegg. `soknadsmottaker` publiserer metadata til Kafka. `soknadsarkiverer`
 henter filene fra `innsending-api`, arkiverer i Joark og melder resultatet tilbake.
 
-Oversikten erstatter ikke [PNG-en](innsending-arkitektur.png), men retter og
-utvider den ut fra lokal kode og konfigurasjon kontrollert 30. oktober 2026.
+Oversikten bygger på lokal kode og konfigurasjon kontrollert 30. oktober 2026.
 Den beskriver systemets forbindelser, ikke verifisert deploymentstatus.
 
 ## Hovedflyt for digital innsending
@@ -125,7 +124,7 @@ flowchart LR
     mottak -.-> metrics
 ```
 
-- Utkast og oppgaver i PNG-en er meldinger til Min side, ikke søknadsdatabaser.
+- Utkast og oppgaver er meldinger til Min side, ikke søknadsdatabaser.
   Mottakeren håndterer også beskjeder og avslutning av varsler.
 - `Processing events` støtter behandlingsstatus og gjenopptakelse i arkivereren.
   `Metrics` er måledata. `Messages` inneholder diagnostikk og kopier av
@@ -140,43 +139,28 @@ flowchart LR
   arkiveringsoverleveringen. Innlogging, tokenutveksling og observerbarhet er
   også utelatt; pilene beskriver ikke tilgangsregler.
 
-## Rettelser fra PNG-en
-
-| PNG-en | Presisering i denne oversikten |
-| --- | --- |
-| «Innsending-api» og «Soknads Admin» | Bruker reponavnene `innsending-api` og `innsending-admin`. |
-| Én «Db» | Skiller PostgreSQL for søknadsdata fra GCS for filinnhold. |
-| «submission» mellom API og mottaker | Dette er et REST-kall, ikke et ekstra Kafka-topic. |
-| «Submission» og «NoLogin-Submission» | Beholder skillet som to Kafka-kanaler, samlet i én boks. |
-| «Messages» til API-et | Arkivstatus går via et eget topic for arkiveringstilbakemeldinger. |
-| «Innsendte» | Ingen separat komponent med dette navnet er identifisert i den kontrollerte flyten. Innsendingsstatus vises som data i API-et og tilbakemeldinger fra arkivereren. |
-| «JP-API», «SAF» og «Joark» | Viser arkivererens to integrasjoner: oppslag via SAF og journalføring via Joarks journalpost-API. Interne forbindelser i arkivet er ikke kartlagt. |
-| Umerkede grønne ovaler | Erstattet med navngitte og merkede forbindelser. |
-| Manglende apper og støttetjenester | Lagt til ettersending, skjemapublisering, filbehandling og Min side. |
-
 ## Kilder og begrensninger
 
 Kontrollen bruker lokal kildekode, ikke bare eldre README-er og illustrasjoner.
-Lenkene peker til filene på `main` og kan endre seg etter kontrollen.
 
-| Del | Kilder |
+| Del | Kilderepoer |
 | --- | --- |
-| Lagring, tjenester og arkiveringstilbakemeldinger | [innsending-api: application.yml](https://github.com/navikt/innsending-api/blob/main/innsender/src/main/resources/application.yml), [CloudStorageClient.kt](https://github.com/navikt/innsending-api/blob/main/innsender/src/main/kotlin/no/nav/soknad/innsending/config/CloudStorageClient.kt), [produksjonskonfigurasjon](https://github.com/navikt/innsending-api/blob/main/.nais/prod-gcp.json) |
-| Innsendingsmetadata som JSON | [soknadsmottaker: InnsendingService.kt](https://github.com/navikt/soknadsmottaker/blob/main/mottaker/src/main/kotlin/no/nav/soknad/arkivering/soknadsmottaker/service/InnsendingService.kt) |
-| Arkivering, Kafka-status og metrikker | [soknadsarkiverer: ArchiverService.kt](https://github.com/navikt/soknadsarkiverer/blob/main/arkiverer/src/main/kotlin/no/nav/soknad/arkivering/soknadsarkiverer/service/ArchiverService.kt), [KafkaPublisher.kt](https://github.com/navikt/soknadsarkiverer/blob/main/arkiverer/src/main/kotlin/no/nav/soknad/arkivering/soknadsarkiverer/kafka/KafkaPublisher.kt), [application.yml](https://github.com/navikt/soknadsarkiverer/blob/main/arkiverer/src/main/resources/application.yml) |
-| Utkast og brukervarsler | [soknadsmottaker: NotificationService.kt](https://github.com/navikt/soknadsmottaker/blob/main/mottaker/src/main/kotlin/no/nav/soknad/arkivering/soknadsmottaker/service/NotificationService.kt), [innsending-api: BrukernotifikasjonPublisher.kt](https://github.com/navikt/innsending-api/blob/main/innsender/src/main/kotlin/no/nav/soknad/innsending/brukernotifikasjon/BrukernotifikasjonPublisher.kt) |
-| Direkte innsending fra FyllUt og søknads-PDF | [FyllUt: common.ts](https://github.com/navikt/skjemabygging-formio/blob/main/packages/fyllut-backend/src/routers/api/send-inn/application/common.ts) |
-| Ettersending og SendInn | [fyllut-ettersending: apiService.ts](https://github.com/navikt/fyllut-ettersending/blob/main/src/api/apiService.ts), [SendInn: API-proxy](https://github.com/navikt/send-inn-frontend/blob/main/pages/api/backend/%5B%5B...all%5D%5D.ts) |
-| Skjemapublisering | [Bygger: Backend.ts](https://github.com/navikt/skjemabygging-formio/blob/main/packages/bygger-backend/src/Backend.ts), [FyllUt: produksjonskonfigurasjon](https://github.com/navikt/skjemabygging-formio/blob/main/.nais/fyllut/prod.yaml), [publisert FyllUt: Dockerfile](https://github.com/navikt/skjemautfylling-formio/blob/main/Dockerfile) |
+| Lagring, tjenester og arkiveringstilbakemeldinger | `innsending-api` |
+| Innsendingsmetadata som JSON | `soknadsmottaker` |
+| Arkivering, Kafka-status og metrikker | `soknadsarkiverer` |
+| Utkast og brukervarsler | `soknadsmottaker`, `innsending-api` |
+| Direkte innsending fra FyllUt og søknads-PDF | `skjemabygging-formio` |
+| Ettersending og SendInn | `fyllut-ettersending`, `send-inn-frontend` |
+| Skjemapublisering | `skjemabygging-formio`, `skjemautfylling-formio` |
 
 Repoene `innsending-admin`, `forms-api`, `skjemabygging-proxy` og
 `upload-convert-to-pdf` var ikke tilgjengelige for direkte kodekontroll.
 Forbindelsene deres bygger på tilgjengelige klientkall, konfigurasjon og den
-eksisterende [systemguiden](flow.html). Admin-flyten og proxyens videre kall
+eksisterende systemguiden. Admin-flyten og proxyens videre kall
 til Foerstesidegenerator er dermed dokumentert, men ikke kodeverifisert på begge
-sider. PNG-ens direkte admin-forbindelse til arkivereren er ikke bekreftet som
+sider. En direkte admin-forbindelse til arkivereren er ikke bekreftet som
 en aktiv kallflyt og er ikke tatt med.
 
 `arkiv-mock` og dette repoet (`archiving-infrastructure`) er testverktøy, ikke
 produksjonsledd. I de lokale systemtestene erstatter `arkiv-mock` Joark og SAF.
-Se [docker-compose.yml](../docker-compose.yml) og [kjøreveiledningen](../README.md).
+README-en beskriver hvordan du kjører testene lokalt.
