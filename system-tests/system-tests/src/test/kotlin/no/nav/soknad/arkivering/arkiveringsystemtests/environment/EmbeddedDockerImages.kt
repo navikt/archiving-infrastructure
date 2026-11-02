@@ -357,7 +357,7 @@ class EmbeddedDockerImages {
 		val texas = texasContainer ?: return emptyMap()
 		return mapOf(
 			"NAIS_TOKEN_INTROSPECTION_ENDPOINT" to "http://${texas.networkAliases[0]}:$texasPort/api/v1/introspect",
-			"TEXAS_INNKOMMENDE_UTSTEDERE"       to "AZURE,TOKENX",
+			"TEXAS_INNKOMMENDE_UTSTEDERE"       to E2eTokenConfig.texasUtstedere,
 			"TOKEN_X_ISSUER"                    to "http://${E2eTokenConfig.AUTH_SERVER_HOST}/tokenx",
 			"AZURE_OPENID_CONFIG_ISSUER"        to "http://${E2eTokenConfig.AUTH_SERVER_HOST}/azuread",
 		)
