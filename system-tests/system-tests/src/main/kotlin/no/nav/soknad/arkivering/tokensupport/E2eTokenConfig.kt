@@ -22,10 +22,10 @@ object E2eTokenConfig {
 
 	/**
 	 * Utstederne Texas validerer i innsending-api, for steg 3i (AZURE) og 3j (AZURE,TOKENX) i #461. Velg med
-	 * -De2eTexasUtstedere. Fra steg 4 validerer Texas alltid begge, og innsending-api leser ikke verdien.
+	 * -De2eTexasIssuers. Fra steg 4 validerer Texas alltid begge, og innsending-api leser ikke verdien.
 	 */
-	val texasUtstedere: String
-		get() = System.getProperty("e2eTexasUtstedere")?.takeIf { it.isNotBlank() } ?: "AZURE,TOKENX"
+	val texasIssuers: String
+		get() = System.getProperty("e2eTexasIssuers")?.takeIf { it.isNotBlank() } ?: "AZURE,TOKENX"
 
 	/** Scopet soknadsarkiverer ber om for innsending-api, som i dev */
 	const val SOKNADSARKIVERER_INNSENDING_API_SCOPE = "api://dev-gcp.team-soknad.innsending-api/.default"
