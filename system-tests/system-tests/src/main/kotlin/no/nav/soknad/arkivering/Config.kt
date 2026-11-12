@@ -26,7 +26,7 @@ val defaultProperties = mapOf(
 	"KAFKA_TRUSTSTORE_PATH"          to "",
 	"KAFKA_CREDSTORE_PASSWORD"       to "",
 
-	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-loggedinsubmission-v1-systemtests",
+	"KAFKA_LOGGEDIN_SUBMISSION_TOPIC"        to "privat-soknadinnsending-loggedin-submission-v1-dev",
 	"KAFKA_NOLOGIN_SUBMISSION_TOPIC"         to "privat-nologinsubmission-v1-systemtests",
 	// Legacy Avro processing-event/metrics topics (referred to as "v2" in the JSON v3 design spec,
 	// see navikt/soknadsarkiverer#260). Retained for legacy replay; the default system-test path
@@ -74,16 +74,6 @@ data class SecurityConfig(
 	val keyStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
 	val trustStorePath: String = getProperty("KAFKA_TRUSTSTORE_PATH"),
 	val trustStorePassword: String = getProperty("KAFKA_CREDSTORE_PASSWORD"),
-)
-
-data class OAuth2Config(
-	val tokenEndpointUrl: String = getProperty("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT"),
-	val grantType: String = "client_credentials",
-	val scopeSoknadsmottaker: String = "api://dev-gcp.team-soknad.soknadsmottaker/.default",
-	val scopeInnsendingApi: String = "api://dev-gcp.team-soknad.innsending-api/.default",
-	val clientId: String = getProperty("AZURE_APP_CLIENT_ID"),
-	val clientSecret: String = getProperty("AZURE_APP_CLIENT_SECRET"),
-	val clientAuthMethod: String = "client_secret_basic"
 )
 
 data class Topics(

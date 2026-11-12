@@ -1,6 +1,5 @@
 package no.nav.soknad.arkivering.verification
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -20,7 +19,7 @@ class VerificationTaskManager {
 	 * The [Channel] transmits a pair with a message and a Boolean status. The status is true if the task finished
 	 * successfully, and false if it was not successful.
 	 */
-	private val channel = Channel<Pair<String, Boolean>>()
+	private val channel = Channel<Pair<String, Boolean>>(Channel.UNLIMITED)
 
 	/**
 	 * All the [VerificationTask]s that this class should keep track of.
@@ -33,14 +32,30 @@ class VerificationTaskManager {
 	}
 
 	fun assertAllTasksSucceeds() {
-		runBlocking(Dispatchers.IO) {
-			repeat(tasks.size) {
-				val result = channel.receive()
-				if (!result.second) {
-					throw Exception("Task failed with message:\n${result.first}")
+		try {
+			runBlocking {
+				val presenceTasks = tasks.filter { it.hasPresence }
+				val absenceTasks = tasks.filter { !it.hasPresence }
+
+				repeat(presenceTasks.size) {
+					val result = channel.receive()
+					if (!result.second) throw Exception("Task failed with message:\n${result.first}")
+				}
+
+				absenceTasks.forEach { it.startAbsenceWindow() }
+				repeat(absenceTasks.size) {
+					val result = channel.receive()
+					if (!result.second) throw Exception("Task failed with message:\n${result.first}")
 				}
 			}
+		} finally {
+			cancelTasks()
 		}
+	}
+
+	internal fun cancelTasks() {
+		tasks.forEach { it.cancel() }
+		channel.close()
 	}
 
 	fun getChannel() = channel

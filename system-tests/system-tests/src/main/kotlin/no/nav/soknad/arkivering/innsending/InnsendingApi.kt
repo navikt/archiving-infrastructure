@@ -25,6 +25,7 @@ class InnsendingApi(config: Config, tokens: E2eTokens = E2eTokens.none) {
 	private val ettersending = EttersendingApi(config.innsendingApiUrl, citizenClient)
 	private val sendInnSoknad = SendinnSoknadApi(config.innsendingApiUrl, citizenClient)
 	private val sendInnFil = SendinnFilApi(config.innsendingApiUrl, citizenClient)
+	private val fyllut = FyllutApi(config.innsendingApiUrl, citizenClient)
 	private val endtoend = EndtoendApi(config.innsendingApiUrl, citizenClient)
 
 	private val nologinApplicationApi = NologinApplicationApi(config.innsendingApiUrl, nologinClient)
@@ -69,17 +70,6 @@ class InnsendingApi(config: Config, tokens: E2eTokens = E2eTokens.none) {
 		}
 	}
 
-	fun sendInn(innsendingsId: String) = runCatching {
-		logger.info("Sender inn søknad: ${innsendingsId}")
-		try {
-			sendInnSoknad.sendInnSoknad(innsendingsId)
-			logger.info("Sendt inn søknad: ${innsendingsId}")
-		} catch (e: Exception) {
-			logger.error("Feil ved innsending av søknad: ${innsendingsId}", e)
-			throw e
-		}
-	}
-
 	fun getArkiveringsstatus(innsendingsId: String): ArkiveringsStatusDto {
 		return endtoend.getArkiveringsstatus(innsendingsId)
 	}
@@ -89,6 +79,24 @@ class InnsendingApi(config: Config, tokens: E2eTokens = E2eTokens.none) {
 		val response = nologinApplicationApi.submitNologinApplication(innsendingsID, submitApplicationRequest)
 		logger.info("Submitted and sent in not logged in Application ${innsendingsID}")
 		response
+	}
+
+	fun createDigitalApplication(skjemaDto: SkjemaDto) = runCatching {
+		val response = fyllut.fyllUtOpprettSoknad(skjemaDto, force = true)
+		jacksonObjectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(response)
+			.path("innsendingsId")
+			.takeIf { it.isTextual }
+			?.asText()
+			?.takeIf { it.isNotBlank() }
+			?: error("Created application did not return an innsendingsId")
+	}
+
+	fun uploadDigitalAttachmentFile(innsendingsId: UUID, attachmentId: String, file: File) = runCatching {
+		sendInnFil.uploadAttachmentFile(innsendingsId, attachmentId, file)
+	}
+
+	fun submitDigitalApplication(innsendingsId: UUID, request: SubmitApplicationRequest) = runCatching {
+		fyllut.submitDigitalApplication(innsendingsId, request)
 	}
 
 	fun lastOppNoLoginFil(innsendingId: String, vedleggsId: String, fil: File) = runCatching {

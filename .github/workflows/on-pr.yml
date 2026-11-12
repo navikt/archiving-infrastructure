@@ -33,9 +33,9 @@ jobs:
         with:
           component_names: |
             soknadsmottaker@main
-            soknadsarkiverer@feat/grant-user-digital-access
-            arkiv-mock@feat/grant-user-digital-access
-            innsending-api@feat/grant-user-digital-access
+            soknadsarkiverer@main
+            arkiv-mock@main
+            innsending-api@main
           prepull_test_images: true
         env:
           GITHUB_NAV_TOKEN: ${{ secrets.READER_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
         uses: ./.github/checkout-and-build
         with:
           component_name: archiving-infrastructure
-          branch: feat/grant-user-digital-access
+          branch: ${GITHUB_HEAD_REF} # Branch of current PR
           sub_directory: system-tests
           skip_tests: false
           run_docker_build: false

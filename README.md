@@ -1,40 +1,87 @@
 # archiving-infrastructure
-This repository contains scripts to run the entire archiving system locally. It also contains end-to-end tests. For a description of the whole archiving system, see [the documentation](https://github.com/navikt/archiving-infrastructure/wiki).
 
-The end-to-end tests perform various tests on the system as a whole from the outside and verify different behaviours across the archiving flow.
-Note that in order to simulate the external interfaces, JOARK and SAF, to the archiving system uses an application, [arkiv-mock](https://github.com/navikt/arkiv-mock), is used.
+Repoet inneholder lokal testinfrastruktur og ende-til-ende-tester for innsending
+og arkivering. Testene i `system-tests/` kontrollerer samspillet mellom
+`innsending-api`, `soknadsmottaker` og `soknadsarkiverer`.
+[arkiv-mock](https://github.com/navikt/arkiv-mock) simulerer Joark og SAF.
+Shell-skriptene og `docker-compose.yml` bygger og starter komponentene,
+mens `docs/` inneholder teamets systemguide.
 
-### Repository overview
-* **docs**: Documentation resources.
-* **system-tests**: Contains the end-to-end tests.
-* **docker-compose.yml**: File with definitions on how to build Docker images locally.
-* ***.sh**: Various scripts to automate running the end-to-end tests, building components etc. See [the Scripts section](#Scripts) for more details
+Se [arkitekturoversikten med Mermaid](docs/innsending-arkitektur.md) og
+[teamets systemguide på GitHub Pages](https://navikt.github.io/archiving-infrastructure/).
 
-## Environments
-The end-to-end tests can run in various different environments:
+## Kjør testene lokalt
 
-### testcontainers (default)
-The easiest way to run the end-to-end tests locally is with `./run-end-to-end-tests.sh`, which will build innsending-api, soknadsmottaker and soknadsarkiverer, create Docker images of them and pull external ones, and then execute the end-to-end tests. Once the Docker images are present on a machine, the end-to-end tests can instead be run with `mvn clean install` in the system-tests directory. This saves time compared to running the `./end-to-end-tests.sh` script. The downside of using Maven, however, is that the user manually needs to update the Docker images if local changes are made to the code bases of the applications. Therefore, it is easier to simply use the script directly.
+### Forutsetninger
 
-The end-to-end tests are in this mode run in testcontainers, which means that the tests themselves will start up Docker containers and run the tests towards them. Apart from having the Docker images available locally, no further setup is needed in this mode. When the tests finish, the Docker containers running the applications are stopped.
+- Installer [mise](https://mise.jdx.dev/) for Java- og Maven-versjonene i `mise.toml`.
+- Ha Docker med Docker Compose tilgjengelig og Docker-miljøet startet.
+- Klon `innsending-api`, `soknadsmottaker`, `soknadsarkiverer` og `arkiv-mock`
+  som søskenmapper til dette repoet. Skriptene forventer stier som
+  `../innsending-api`.
 
-### Docker
-The end-to-end tests can be run without using testcontainers, and instead running the applications in Docker containers not managed by the tests. To start the tests this way, run `./run-end-to-end-tests.sh no-testcontainers`, which will start all applications and other dependencies in Docker containers and then run the end-to-end tests towards those containers. One can also start all the applications this way, then stop the Docker container for one application (e.g. with `docker compose stop soknadsarkiverer`) and instead start that application locally in the IDE.
+Kjør kommandoene fra roten av `archiving-infrastructure`, med mindre noe annet
+er oppgitt.
 
-This mode is especially useful for debugging. The downsides are that the user needs to stop the containers manually afterwards. Also, not all of the end-to-end tests will be run; some of them rely on shutting containers down and starting them up (to simulate pods going down), and this can only be done when running with testcontainers, not in this mode.
+> **Advarsel:** Byggskriptet forsøker å stoppe og fjerne alle containere i aktiv
+> Docker-kontekst og slette ubrukte (dangling) Docker-volumer. Dette gjelder også
+> andre prosjekter, og sletting av volumer kan fjerne lokale data. Bruk et eget
+> Docker-miljø for testene hvis du har containere eller data du vil beholde.
+> Dette gjelder `build.sh`, begge variantene av `run-end-to-end-tests.sh`
+> og `start-components-in-docker.sh`, som alle kjører denne oppryddingen.
 
-### GitHub Actions
-Upon pull request, GitHub Actions will automatically run the end-to-end tests. It will pull the code for innsending-api, soknadsmottaker, soknadsarkiverer arkiv-mock and archiving-infrastructure. On the repository that had the pull request, GitHub Actions will use the branch of the pull request, and for the rest of the repositories, it will use the main branch. 
+### Testcontainers (standard)
 
-## Scripts
-* Run `./run-end-to-end-tests.sh` to build all applications and run the end-to-end tests. This will use testcontainers to start the applications and their dependencies, as described above. By running `./run-end-to-end-tests.sh no-testcontainers`, the applications will start up in "external" Docker containers, and the tests will run against the containers. Running this script is all it takes to run the end-to-end tests; the other scripts will be called by this script.
-* Run `./build.sh` to build all applications and create docker images from them.
-* Run `./start-components-in-docker.sh` to build and start all applications and their dependencies in Docker.
+```sh
+mise install
+mise exec -- ./run-end-to-end-tests.sh
+```
 
-If you lack permission to execute the scripts, run `chmod +x *.sh`.
+Skriptet bygger de fire komponentene og Docker-imagene deres før det kjører
+testene. Testcontainers starter testmiljøet og stopper containerne etterpå.
 
-## Inquiries
-Questions regarding the code or the project can be asked to the team by [raising an issue on the repo](https://github.com/navikt/archiving-infrastructure/issues).
+Hvis imagene allerede er oppdaterte, kan du kjøre testene uten å bygge dem på nytt
+fra `system-tests/`:
 
-### For NAV employees
-NAV employees can reach the team by Slack in the channel #team-fyllut-sendinn
+```sh
+cd system-tests
+mise exec -- mvn clean install
+```
+
+Etter kodeendringer i komponentene må du bygge imagene på nytt. Kjør hovedskriptet
+fra reporoten, eller bruk `mise exec -- ./build.sh` for å bygge uten å kjøre testene.
+
+### Docker Compose for feilsøking
+
+```sh
+mise exec -- ./run-end-to-end-tests.sh no-testcontainers
+```
+
+Denne varianten bygger og starter komponentene med Docker Compose og kjører
+testene mot dem. Tester som krever at Testcontainers stopper og starter
+komponenter, kjøres ikke i denne modusen. Containerne blir stående etter testene.
+Stopp dem fra reporoten når du er ferdig:
+
+```sh
+docker compose down
+```
+
+For å starte miljøet uten å kjøre testene, bruk
+`mise exec -- ./start-components-in-docker.sh`. Du kan deretter stoppe én komponent,
+for eksempel med `docker compose stop soknadsarkiverer`, og kjøre den fra IDE-en
+med konfigurasjon som peker mot Docker-miljøet.
+
+Hvis et skript mangler kjørerettigheter, bruk `chmod +x` på det aktuelle skriptet.
+
+## Tester i GitHub Actions
+
+Pull requests i dette repoet kjører testene fra PR-branchen mot komponentenes
+`main`-brancher. Komponentrepoene har også workflows som kjører disse testene mot
+egne PR-er; de velger hvilken versjon av testrepoet som brukes.
+Se [on-pr.yml](.github/workflows/on-pr.yml).
+
+## Kontakt
+
+Opprett en [issue](https://github.com/navikt/archiving-infrastructure/issues)
+for spørsmål om repoet. Nav-ansatte kan kontakte teamet i Slack-kanalen
+`#team-fyllut-sendinn`.
