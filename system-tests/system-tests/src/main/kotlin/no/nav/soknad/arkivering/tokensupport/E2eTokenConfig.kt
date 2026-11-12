@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
  * Tokenene systemtestene bruker, med claims hentet fra produksjonskonsumentene av innsending-api.
  *
  * Audience må stemme med klient-ID-ene innsending-api får i e2e (TOKEN_X_CLIENT_ID og AZURE_APP_CLIENT_ID).
- * Innsending-api validerer ikke token i e2e ennå, så disse verdiene tar først effekt når valideringen slås på.
+ * Innsending-api validerer bare token i e2e med [tokenValidationEnabled]. Uten flagget ignoreres tokenene.
  */
 object E2eTokenConfig {
 
@@ -16,6 +16,8 @@ object E2eTokenConfig {
 	/**
 	 * Slår på tokenvalidering i innsending-api og token fra soknadsarkiverer: `-De2eTokenValidation=true`.
 	 * Krever innsending-api med profilen endtoend-auth og soknadsarkiverer med innsendingapi.send-token.
+	 * Etter innsending-api#518 validerer endtoend-auth med Texas, og innsending-api starter ikke uten
+	 * NAIS_TOKEN_INTROSPECTION_ENDPOINT, TOKEN_X_ISSUER og AZURE_OPENID_CONFIG_ISSUER. Texas startes i tec/461-e2e-texas.
 	 */
 	val tokenValidationEnabled: Boolean
 		get() = System.getProperty("e2eTokenValidation").toBoolean()

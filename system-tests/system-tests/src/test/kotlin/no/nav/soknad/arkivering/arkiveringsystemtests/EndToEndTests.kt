@@ -59,11 +59,11 @@ class EndToEndTests : SystemTestBase() {
 		}
 	}
 
-	// Innsending-api validerer ikke token i e2e ennå, så resten av testene ville passert med feil token.
-	// Denne testen sikrer at tokenene har issueren og claimene innsending-api vil kreve når valideringen slås på.
+	// Uten -De2eTokenValidation=true ignorerer innsending-api tokenene, så resten av testene ville passert med feil token.
+	// Denne testen sikrer at tokenene har issueren og claimene innsending-api krever når valideringen er slått på.
 	@Test
 	fun `tokens sent to innsending-api have the issuer and claims used in production`() {
-		if (!tokens.enabled) return
+		assumeTrue(tokens.enabled, "Ingen auth-server i dette miljøet")
 
 		val citizen = jwtPayload(tokens.citizen()!!)
 		assertEquals("http://${E2eTokenConfig.AUTH_SERVER_HOST}/tokenx", citizen["iss"].asText())
@@ -87,7 +87,9 @@ class EndToEndTests : SystemTestBase() {
 		payload["aud"].let { aud -> if (aud.isArray) aud.map { it.asText() } else listOf(aud.asText()) }
 
 	// Tilgangskontrakt for innsending-api med ekte token (#461 i innsending-api).
-	// Hoppes over så lenge innsending-api ikke validerer token i e2e. Da svarer det på alt, og testene ville feilet uten grunn.
+	// Hoppes over uten -De2eTokenValidation=true. Da validerer ikke innsending-api token, og testene ville feilet uten grunn.
+	// Med flagget og containere startet av testene kjører de alltid, slik at feil oppsett (for eksempel 503 fordi Texas mangler)
+	// gir rød test og ikke en stille overhopping.
 	// Testene sjekker bare om kallet slipper forbi tilgangskontrollen, ikke resultatet. Id-ene finnes ikke, så ingen data endres.
 
 	@Test
@@ -122,8 +124,7 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun assumeInnsendingApiValidatesTokens() {
 		assumeTrue(tokens.enabled, "Ingen auth-server i dette miljøet")
-		val status = statusFor(citizenEndpoint(), token = null)
-		assumeTrue(status in rejectedStatuses, "innsending-api validerer ikke token i e2e (svarte $status uten token)")
+		assumeTrue(E2eTokenConfig.tokenValidationEnabled, "Tokenvalidering i innsending-api er ikke slått på (-De2eTokenValidation=true)")
 	}
 
 	private fun assertRejected(endpoint: Endpoint, token: String?, description: String) {
@@ -133,7 +134,10 @@ class EndToEndTests : SystemTestBase() {
 
 	private fun assertAllowed(endpoint: Endpoint, token: String?, description: String) {
 		val status = statusFor(endpoint, token)
-		assertTrue(status !in rejectedStatuses, "${endpoint.method} ${endpoint.path} med $description: forventet tilgang, fikk $status")
+		assertTrue(
+			status !in rejectedStatuses && status != tokenValidationUnavailableStatus,
+			"${endpoint.method} ${endpoint.path} med $description: forventet tilgang, fikk $status",
+		)
 	}
 
 	private fun statusFor(endpoint: Endpoint, token: String?): Int {
@@ -147,8 +151,11 @@ class EndToEndTests : SystemTestBase() {
 
 	private val httpClient = OkHttpClient()
 
-	// 403 er dagens svar fra token-support. 401 tas med fordi teamet kan velge det i Spring Security-migreringen
+	// Innsending-api avviser med 401 eller 403 etter migreringen til Spring Security og Texas (innsending-api#518)
 	private val rejectedStatuses = setOf(401, 403)
+
+	// Innsending-api svarer 503 når Texas ikke kan validere tokenet. Det er verken avvisning eller tilgang
+	private val tokenValidationUnavailableStatus = 503
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {
