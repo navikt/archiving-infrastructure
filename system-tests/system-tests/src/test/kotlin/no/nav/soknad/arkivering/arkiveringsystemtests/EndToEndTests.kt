@@ -13,9 +13,14 @@ import no.nav.soknad.arkivering.innsending.model.SkjemaDokumentDto
 import no.nav.soknad.arkivering.innsending.model.SkjemaDto
 import no.nav.soknad.arkivering.innsending.model.SoknadsStatusDto
 import no.nav.soknad.arkivering.innsending.model.SubmitApplicationRequest
+import no.nav.soknad.arkivering.tokensupport.E2eTokenConfig
 import no.nav.soknad.arkivering.utils.SubmitApplicationRequestBuilder
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
@@ -32,7 +37,7 @@ class EndToEndTests : SystemTestBase() {
 	private val embeddedDockerImages = EmbeddedDockerImages()
 	private lateinit var innsendingApi: InnsendingApi
 
-	val testpersonid = "19876898104"
+	val testpersonid = E2eTokenConfig.TEST_PERSON_ID
 
 	@BeforeAll
 	fun setup() {
@@ -42,7 +47,7 @@ class EndToEndTests : SystemTestBase() {
 		}
 
 		setUp()
-		innsendingApi = InnsendingApi(config)
+		innsendingApi = InnsendingApi(config, tokens)
 	}
 
 	@AfterAll
@@ -53,6 +58,104 @@ class EndToEndTests : SystemTestBase() {
 			embeddedDockerImages.stopContainers()
 		}
 	}
+
+	// Uten -De2eTokenValidation=true ignorerer innsending-api tokenene, så resten av testene ville passert med feil token.
+	// Denne testen sikrer at tokenene har issueren og claimene innsending-api krever når valideringen er slått på.
+	@Test
+	fun `tokens sent to innsending-api have the issuer and claims used in production`() {
+		assumeTrue(tokens.enabled, "Ingen auth-server i dette miljøet")
+
+		val citizen = jwtPayload(tokens.citizen()!!)
+		assertEquals("http://${E2eTokenConfig.AUTH_SERVER_HOST}/tokenx", citizen["iss"].asText())
+		assertEquals(listOf(E2eTokenConfig.TOKEN_X_AUDIENCE), audience(citizen))
+		assertEquals(testpersonid, citizen["pid"].asText())
+		assertEquals("idporten-loa-high", citizen["acr"].asText())
+		assertTrue(citizen.has("exp") && citizen.has("iat") && citizen.has("sub"))
+
+		val nologin = jwtPayload(tokens.nologin()!!)
+		assertEquals("http://${E2eTokenConfig.AUTH_SERVER_HOST}/azuread", nologin["iss"].asText())
+		assertEquals(listOf(E2eTokenConfig.AZURE_AUDIENCE), audience(nologin))
+		assertEquals("app", nologin["idtyp"].asText())
+		assertTrue(nologin["roles"].map { it.asText() }.contains("nologin-access"))
+		assertTrue(!nologin.has("pid"), "Azure-token skal ikke ha personident")
+	}
+
+	private fun jwtPayload(token: String) =
+		objectMapper.readTree(Base64.getUrlDecoder().decode(token.split(".")[1]))
+
+	private fun audience(payload: com.fasterxml.jackson.databind.JsonNode): List<String> =
+		payload["aud"].let { aud -> if (aud.isArray) aud.map { it.asText() } else listOf(aud.asText()) }
+
+	// Tilgangskontrakt for innsending-api med ekte token (#461 i innsending-api).
+	// Hoppes over uten -De2eTokenValidation=true. Da validerer ikke innsending-api token, og testene ville feilet uten grunn.
+	// Med flagget og containere startet av testene kjører de alltid, slik at feil oppsett (for eksempel 503 fordi Texas mangler)
+	// gir rød test og ikke en stille overhopping.
+	// Testene sjekker bare om kallet slipper forbi tilgangskontrollen, ikke resultatet. Id-ene finnes ikke, så ingen data endres.
+
+	@Test
+	fun `innsending-api rejects citizen calls without a valid citizen token`() {
+		assumeInnsendingApiValidatesTokens()
+
+		assertRejected(citizenEndpoint(), token = null, "uten token")
+		assertRejected(citizenEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.CITIZEN_LOW_ACR), "TokenX med acr=idporten-loa-substantial")
+		assertRejected(citizenEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.CITIZEN_WRONG_AUDIENCE), "TokenX til annen audience")
+		assertRejected(citizenEndpoint(), tokens.nologin(), "Azure-token mot innbyggerendepunkt")
+
+		assertAllowed(citizenEndpoint(), tokens.citizen(), "TokenX med acr=idporten-loa-high")
+	}
+
+	@Test
+	fun `innsending-api rejects nologin calls without the nologin-access role`() {
+		assumeInnsendingApiValidatesTokens()
+
+		assertRejected(nologinEndpoint(), token = null, "uten token")
+		assertRejected(nologinEndpoint(), tokens.forCaller(E2eTokenConfig.Caller.NOLOGIN_WITHOUT_ROLE), "Azure-token uten nologin-access")
+		assertRejected(nologinEndpoint(), tokens.citizen(), "TokenX-token mot nologin-endepunkt")
+
+		assertAllowed(nologinEndpoint(), tokens.nologin(), "Azure-token med nologin-access")
+	}
+
+	private data class Endpoint(val method: String, val path: String)
+
+	private fun citizenEndpoint() = Endpoint("GET", "/endtoend/v1/soknad/${UUID.randomUUID()}/arkiveringsstatus")
+
+	private fun nologinEndpoint() =
+		Endpoint("DELETE", "/v1/application-nologin/${UUID.randomUUID()}/attachments/${UUID.randomUUID()}/${UUID.randomUUID()}")
+
+	private fun assumeInnsendingApiValidatesTokens() {
+		assumeTrue(tokens.enabled, "Ingen auth-server i dette miljøet")
+		assumeTrue(E2eTokenConfig.tokenValidationEnabled, "Tokenvalidering i innsending-api er ikke slått på (-De2eTokenValidation=true)")
+	}
+
+	private fun assertRejected(endpoint: Endpoint, token: String?, description: String) {
+		val status = statusFor(endpoint, token)
+		assertTrue(status in rejectedStatuses, "${endpoint.method} ${endpoint.path} med $description: forventet avvisning, fikk $status")
+	}
+
+	private fun assertAllowed(endpoint: Endpoint, token: String?, description: String) {
+		val status = statusFor(endpoint, token)
+		assertTrue(
+			status !in rejectedStatuses && status != tokenValidationUnavailableStatus,
+			"${endpoint.method} ${endpoint.path} med $description: forventet tilgang, fikk $status",
+		)
+	}
+
+	private fun statusFor(endpoint: Endpoint, token: String?): Int {
+		val request = Request.Builder()
+			.url(config.innsendingApiUrl + endpoint.path)
+			.method(endpoint.method, null)
+			.apply { token?.let { header("Authorization", "Bearer $it") } }
+			.build()
+		return httpClient.newCall(request).execute().use { it.code }
+	}
+
+	private val httpClient = OkHttpClient()
+
+	// Innsending-api avviser med 401 eller 403 etter migreringen til Spring Security og Texas (innsending-api#518)
+	private val rejectedStatuses = setOf(401, 403)
+
+	// Innsending-api svarer 503 når Texas ikke kan validere tokenet. Det er verken avvisning eller tilgang
+	private val tokenValidationUnavailableStatus = 503
 
 	@Test
 	fun `Happy case - one file ends up in the archive`() {

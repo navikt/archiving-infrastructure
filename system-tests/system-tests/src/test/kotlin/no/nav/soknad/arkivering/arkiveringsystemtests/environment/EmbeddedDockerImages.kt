@@ -2,6 +2,7 @@ package no.nav.soknad.arkivering.arkiveringsystemtests.environment
 
 import no.nav.soknad.arkivering.defaultPorts
 import no.nav.soknad.arkivering.defaultProperties
+import no.nav.soknad.arkivering.tokensupport.E2eTokenConfig
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
 import org.apache.kafka.clients.admin.NewTopic
@@ -61,7 +62,7 @@ class EmbeddedDockerImages {
 			.withEnv(
 				hashMapOf(
 					"SERVER_PORT" to "6969",
-					"JSON_CONFIG" to """{"interactiveLogin":true,"httpServer":"NettyWrapper"}"""
+					"JSON_CONFIG" to E2eTokenConfig.mockOAuth2ServerJsonConfig()
 				)
 			)
 			.waitingFor(Wait.forHttp("/azuread/.well-known/openid-configuration").forStatusCode(200))
@@ -158,7 +159,7 @@ class EmbeddedDockerImages {
 			.withNetwork(network)
 			.withEnv(
 				hashMapOf(
-					"SPRING_PROFILES_ACTIVE"                to "endtoend",
+					"SPRING_PROFILES_ACTIVE"                to innsendingApiProfiles(),
 					"DATABASE_PORT"                         to defaultPorts["database"].toString(),
 					"DATABASE_HOST"                         to postgresInnsendingContainer.networkAliases[0],
 					"DATABASE_DATABASE"                     to databaseName,
@@ -210,7 +211,8 @@ class EmbeddedDockerImages {
 					"AZURE_APP_CLIENT_SECRET" to "secret",
 					"DOKARKIV_SCOPE"					to "scope",
 					"SAF_SCOPE"								to "scope",
-					"INNSENDING_API_SCOPE"			to "scope",
+					"INNSENDING_API_SCOPE"			to E2eTokenConfig.SOKNADSARKIVERER_INNSENDING_API_SCOPE,
+					"INNSENDING_API_SEND_TOKEN"	to E2eTokenConfig.tokenValidationEnabled.toString(),
 					"STATUS_LOG_URL"					to "https://logs.adeo.no"
 				)
 			)
@@ -285,7 +287,12 @@ class EmbeddedDockerImages {
 		try { postgresInnsendingContainer.stop() } catch (_: Exception) {}
 	}
 
+	// Med -De2eTokenValidation=true validerer innsending-api token. Uten flagget godtar det alt, som før
+	private fun innsendingApiProfiles() =
+		if (E2eTokenConfig.tokenValidationEnabled) "endtoend,endtoend-auth" else "endtoend"
+
 	fun getUrlForInnsendingApi()    = "http://localhost:" + innsendingApiContainer   .firstMappedPort
+	fun getUrlForAuthServer()       = "http://localhost:" + authServerContainer      .firstMappedPort
 	fun getUrlForArkivMock()        = "http://localhost:" + arkivMockContainer       .firstMappedPort
 	fun getUrlForSoknadsarkiverer() = "http://localhost:" + soknadsarkivererContainer.firstMappedPort
 	fun getUrlForSoknadsmottaker()  = "http://localhost:" + soknadsmottakerContainer .firstMappedPort

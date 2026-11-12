@@ -3,22 +3,33 @@ package no.nav.soknad.arkivering.innsending
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import no.nav.soknad.arkivering.Config
 import no.nav.soknad.arkivering.innsending.api.*
+import no.nav.soknad.arkivering.innsending.infrastructure.ApiClient
 import no.nav.soknad.arkivering.innsending.model.*
 import no.nav.soknad.arkivering.innsending.infrastructure.Serializer.jacksonObjectMapper
+import no.nav.soknad.arkivering.tokensupport.E2eTokens
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
 import kotlin.runCatching
 
-class InnsendingApi(config: Config) {
+/**
+ * Klient mot innsending-api. Med [tokens] sender den samme tokentype som produksjonskonsumentene:
+ * TokenX for innbyggerkall og Azure M2M med nologin-access for kall uten innlogging.
+ */
+class InnsendingApi(config: Config, tokens: E2eTokens = E2eTokens.none) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	private val ettersending = EttersendingApi(config.innsendingApiUrl)
-	private val sendInnSoknad = SendinnSoknadApi(config.innsendingApiUrl)
-	private val sendInnFil = SendinnFilApi(config.innsendingApiUrl)
-	private val fyllut = FyllutApi(config.innsendingApiUrl)
-	private val endtoend = EndtoendApi(config.innsendingApiUrl)
-	private val nologinApplicationApi = NologinApplicationApi(config.innsendingApiUrl)
+	private val citizenClient = tokens.clientWithBearer(ApiClient.defaultClient, tokens::citizen)
+	private val nologinClient = tokens.clientWithBearer(ApiClient.defaultClient, tokens::nologin)
+
+	private val ettersending = EttersendingApi(config.innsendingApiUrl, citizenClient)
+	private val sendInnSoknad = SendinnSoknadApi(config.innsendingApiUrl, citizenClient)
+	private val sendInnFil = SendinnFilApi(config.innsendingApiUrl, citizenClient)
+	private val fyllut = FyllutApi(config.innsendingApiUrl, citizenClient)
+	private val endtoend = EndtoendApi(config.innsendingApiUrl, citizenClient)
+
+	private val nologinApplicationApi = NologinApplicationApi(config.innsendingApiUrl, nologinClient)
+
 
 	init {
 		jacksonObjectMapper.registerModule(JavaTimeModule())
